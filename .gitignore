@@ -30,4 +30,4 @@ bin/
 .DS_Store
 
 ### Persistencia ###
-src/META-INF/persistence.xml
+/src/META-INF/persistence.xml
