@@ -25,13 +25,13 @@ import static org.junit.Assert.*;
 
 public class EventoDAOTest {
 
-    private static IEventoDAO          eventoDAO;
+    private static IEventoDAO eventoDAO;
     private static IAsistenciaEventoDAO asistenciaDAO;
-    private static IParroquiaDAO        parroquiaDAO;
-    private static IPersonaDAO          personaDAO;
-    private static Parroquia            parroquiaAux;
-    private static Persona              personaAux;
-    private static Evento               eventoAux;
+    private static IParroquiaDAO parroquiaDAO;
+    private static IPersonaDAO personaDAO;
+    private static Parroquia parroquiaAux;
+    private static Persona personaAux;
+    private static Evento eventoAux;
 
     @BeforeClass
     public static void setUp() {

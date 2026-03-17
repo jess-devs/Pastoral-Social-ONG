@@ -24,10 +24,10 @@ import static org.junit.Assert.*;
 public class ExpedienteDAOTest {
 
     private static IExpedienteDAO expedienteDAO;
-    private static IParroquiaDAO  parroquiaDAO;
-    private static IPersonaDAO    personaDAO;
-    private static Parroquia      parroquiaAux;
-    private static Persona        titularAux;
+    private static IParroquiaDAO parroquiaDAO;
+    private static IPersonaDAO personaDAO;
+    private static Parroquia parroquiaAux;
+    private static Persona titularAux;
 
     @BeforeClass
     public static void setUp() {
