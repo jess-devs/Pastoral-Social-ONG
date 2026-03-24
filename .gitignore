@@ -28,6 +28,3 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-
-### Persistencia ###
-/src/META-INF/persistence.xml
