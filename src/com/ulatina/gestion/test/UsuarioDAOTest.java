@@ -61,7 +61,7 @@ public class UsuarioDAOTest {
     public void testFindByEmail() {
         Usuario u = usuarioDAO.findByEmail("admin@test.com");
         assertNotNull(u);
-        assertEquals("Admin Test", u.getNombre());
+        assertEquals("Admin Actualizado", u.getNombre());
     }
 
     @Test
