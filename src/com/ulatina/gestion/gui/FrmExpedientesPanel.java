@@ -26,32 +26,34 @@ import java.util.List;
 public class FrmExpedientesPanel extends JPanel {
 
     // ─── Colores ─────────────────────────────────────────────────────────────
-    private static final Color COLOR_FONDO       = new Color(245, 246, 250);
-    private static final Color COLOR_PANEL       = Color.WHITE;
-    private static final Color COLOR_PRIMARIO    = new Color(34, 197, 94);
-    private static final Color COLOR_PRIMARIO_H  = new Color(22, 163, 74);
-    private static final Color COLOR_GRIS_BTN    = new Color(229, 231, 235);
-    private static final Color COLOR_GRIS_BTN_H  = new Color(209, 213, 219);
-    private static final Color COLOR_BORDE       = new Color(209, 213, 219);
-    private static final Color COLOR_HEADER_TBL  = new Color(249, 250, 251);
-    private static final Color COLOR_FILA_SEL    = new Color(239, 246, 255);
-    private static final Color COLOR_TEXTO       = new Color(17, 24, 39);
-    private static final Color COLOR_TEXTO_GRIS  = new Color(107, 114, 128);
-    private static final Color COLOR_AZUL        = new Color(59, 130, 246);
-    private static final Color COLOR_AZUL_PANEL  = new Color(239, 246, 255);
-    private static final Color COLOR_AZUL_BORDE  = new Color(147, 197, 253);
+    private static final Color COLOR_FONDO = new Color(245, 246, 250);
+    private static final Color COLOR_PANEL = Color.WHITE;
+    private static final Color COLOR_PRIMARIO = new Color(34, 197, 94);
+    private static final Color COLOR_PRIMARIO_H = new Color(22, 163, 74);
+    private static final Color COLOR_GRIS_BTN = new Color(229, 231, 235);
+    private static final Color COLOR_GRIS_BTN_H = new Color(209, 213, 219);
+    private static final Color COLOR_BORDE = new Color(209, 213, 219);
+    private static final Color COLOR_HEADER_TBL = new Color(249, 250, 251);
+    private static final Color COLOR_FILA_SEL = new Color(239, 246, 255);
+    private static final Color COLOR_TEXTO = new Color(17, 24, 39);
+    private static final Color COLOR_TEXTO_GRIS = new Color(107, 114, 128);
+    private static final Color COLOR_AZUL = new Color(59, 130, 246);
+    private static final Color COLOR_AZUL_PANEL = new Color(239, 246, 255);
+    private static final Color COLOR_AZUL_BORDE = new Color(147, 197, 253);
+    private static final Color COLOR_ROJO = new Color(220, 38, 38);
+    private static final Color COLOR_ROJO_H = new Color(185, 28, 28);
 
     private static final Color[] BADGE_BG = {
-        new Color(220, 252, 231),
-        new Color(254, 249, 195),
-        new Color(254, 226, 226),
-        new Color(243, 244, 246)
+            new Color(220, 252, 231),
+            new Color(254, 249, 195),
+            new Color(254, 226, 226),
+            new Color(243, 244, 246)
     };
     private static final Color[] BADGE_FG = {
-        new Color(22, 101, 52),
-        new Color(133, 77, 14),
-        new Color(153, 27, 27),
-        new Color(55, 65, 81)
+            new Color(22, 101, 52),
+            new Color(133, 77, 14),
+            new Color(153, 27, 27),
+            new Color(55, 65, 81)
     };
 
     // ─── DAO ─────────────────────────────────────────────────────────────────
@@ -91,9 +93,9 @@ public class FrmExpedientesPanel extends JPanel {
         panelFiltros = crearPanelFiltros();
         panelFiltros.setVisible(false);
 
-        add(norte,             BorderLayout.NORTH);
+        add(norte, BorderLayout.NORTH);
         add(crearPanelTabla(), BorderLayout.CENTER);
-        add(panelFiltros,      BorderLayout.SOUTH);
+        add(panelFiltros, BorderLayout.SOUTH);
 
         cargarTabla();
     }
@@ -103,9 +105,8 @@ public class FrmExpedientesPanel extends JPanel {
         JPanel p = new JPanel(new BorderLayout(10, 0));
         p.setBackground(COLOR_AZUL_PANEL);
         p.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(COLOR_AZUL_BORDE, 1, true),
-            new EmptyBorder(8, 14, 8, 14)
-        ));
+                new LineBorder(COLOR_AZUL_BORDE, 1, true),
+                new EmptyBorder(8, 14, 8, 14)));
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
 
         lblInfoSeleccion = new JLabel("Expediente seleccionado");
@@ -116,7 +117,7 @@ public class FrmExpedientesPanel extends JPanel {
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         btns.setOpaque(false);
         btns.add(crearBoton("Ver / Editar", COLOR_AZUL, Color.WHITE, e -> abrirFormulario(false)));
-        btns.add(crearBoton("+ Nuevo", COLOR_PRIMARIO, Color.WHITE, e -> abrirFormulario(true)));
+        btns.add(crearBoton("Eliminar", COLOR_ROJO, Color.WHITE, e -> eliminarExpediente()));
         p.add(btns, BorderLayout.EAST);
         return p;
     }
@@ -132,18 +133,20 @@ public class FrmExpedientesPanel extends JPanel {
         txtBuscar.setForeground(COLOR_TEXTO_GRIS);
         txtBuscar.setText("Buscar por nombre, cédula, ficha...");
         txtBuscar.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(COLOR_BORDE, 1, true),
-            new EmptyBorder(0, 12, 0, 12)
-        ));
+                new LineBorder(COLOR_BORDE, 1, true),
+                new EmptyBorder(0, 12, 0, 12)));
         txtBuscar.setPreferredSize(new Dimension(0, 36));
         txtBuscar.addFocusListener(new FocusAdapter() {
-            @Override public void focusGained(FocusEvent e) {
+            @Override
+            public void focusGained(FocusEvent e) {
                 if (txtBuscar.getText().startsWith("Buscar")) {
                     txtBuscar.setText("");
                     txtBuscar.setForeground(COLOR_TEXTO);
                 }
             }
-            @Override public void focusLost(FocusEvent e) {
+
+            @Override
+            public void focusLost(FocusEvent e) {
                 if (txtBuscar.getText().isEmpty()) {
                     txtBuscar.setText("Buscar por nombre, cédula, ficha...");
                     txtBuscar.setForeground(COLOR_TEXTO_GRIS);
@@ -151,16 +154,25 @@ public class FrmExpedientesPanel extends JPanel {
             }
         });
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e)  { filtrarTexto(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e)  { filtrarTexto(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filtrarTexto();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filtrarTexto();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filtrarTexto();
+            }
         });
 
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         derecha.setOpaque(false);
         derecha.add(crearBoton("Filtros", COLOR_GRIS_BTN, COLOR_TEXTO, e -> {
             panelFiltros.setVisible(!panelFiltros.isVisible());
-            revalidate(); repaint();
+            revalidate();
+            repaint();
         }));
         derecha.add(crearBoton("+ Nuevo", COLOR_PRIMARIO, Color.WHITE, e -> abrirFormulario(true)));
 
@@ -175,9 +187,12 @@ public class FrmExpedientesPanel extends JPanel {
         p.setBackground(COLOR_PANEL);
         p.setBorder(new LineBorder(COLOR_BORDE, 1, true));
 
-        String[] cols = {"Ficha", "Nombre", "Cédula", "Estado", "Etapa", "Fecha Inicio"};
+        String[] cols = { "Ficha", "Nombre", "Cédula", "Estado", "Etapa", "Fecha Inicio" };
         modeloTabla = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
 
         tabla = new JTable(modeloTabla);
@@ -214,7 +229,8 @@ public class FrmExpedientesPanel extends JPanel {
         tabla.getColumnModel().getColumn(4).setCellRenderer(etapaRender);
 
         DefaultTableCellRenderer izqPad = new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(
+            @Override
+            public Component getTableCellRendererComponent(
                     JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 super.getTableCellRendererComponent(t, v, sel, foc, r, c);
                 setBorder(new EmptyBorder(0, 12, 0, 4));
@@ -228,11 +244,14 @@ public class FrmExpedientesPanel extends JPanel {
         tabla.setRowSorter(sorter);
 
         tabla.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) actualizarSeleccion();
+            if (!e.getValueIsAdjusting())
+                actualizarSeleccion();
         });
         tabla.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) abrirFormulario(false);
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2)
+                    abrirFormulario(false);
             }
         });
 
@@ -251,9 +270,8 @@ public class FrmExpedientesPanel extends JPanel {
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setBackground(COLOR_PANEL);
         p.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(COLOR_BORDE, 1, true),
-            new EmptyBorder(14, 16, 14, 16)
-        ));
+                new LineBorder(COLOR_BORDE, 1, true),
+                new EmptyBorder(14, 16, 14, 16)));
 
         JLabel titulo = new JLabel("Panel de Filtros (RF-3)");
         titulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -266,14 +284,14 @@ public class FrmExpedientesPanel extends JPanel {
         fila1.setOpaque(false);
         fila1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        cmbEstado = new JComboBox<>(new String[]{"Todos los estados",
-            "ACTIVO", "EN_PROCESO", "CERRADO", "SUSPENDIDO"});
+        cmbEstado = new JComboBox<>(new String[] { "Todos los estados",
+                "ACTIVO", "EN_PROCESO", "CERRADO", "SUSPENDIDO" });
         cmbEstado.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmbEstado.setPreferredSize(new Dimension(160, 32));
 
-        cmbEtapa = new JComboBox<>(new String[]{"Todas las etapas",
-            "REGISTRO", "FAMILIA", "VIVIENDA", "GASTOS",
-            "DOCUMENTOS", "CONSENTIMIENTO", "EVALUACION", "APROBADO"});
+        cmbEtapa = new JComboBox<>(new String[] { "Todas las etapas",
+                "REGISTRO", "FAMILIA", "VIVIENDA", "GASTOS",
+                "DOCUMENTOS", "CONSENTIMIENTO", "EVALUACION", "APROBADO" });
         cmbEtapa.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmbEtapa.setPreferredSize(new Dimension(180, 32));
 
@@ -303,34 +321,39 @@ public class FrmExpedientesPanel extends JPanel {
             List<Expediente> lista = expedienteDAO.findAll();
             for (Expediente exp : lista) {
                 String nombre = exp.getTitular() != null
-                    ? exp.getTitular().getNombres() + " " + exp.getTitular().getApellidos() : "—";
+                        ? exp.getTitular().getNombres() + " " + exp.getTitular().getApellidos()
+                        : "—";
                 String cedula = exp.getTitular() != null && exp.getTitular().getNumeroDocumento() != null
-                    ? exp.getTitular().getNumeroDocumento() : "—";
+                        ? exp.getTitular().getNumeroDocumento()
+                        : "—";
                 String estado = exp.getEstado() != null ? exp.getEstado().name() : "—";
-                String etapa  = exp.getEtapaActual() != null ? exp.getEtapaActual().name() : "—";
-                String fecha  = exp.getFechaInicio() != null ? sdf.format(exp.getFechaInicio()) : "—";
-                modeloTabla.addRow(new Object[]{
-                    exp.getNumeroFicha() != null ? exp.getNumeroFicha() : String.valueOf(exp.getId()),
-                    nombre, cedula, estado, etapa, fecha
+                String etapa = exp.getEtapaActual() != null ? exp.getEtapaActual().name() : "—";
+                String fecha = exp.getFechaInicio() != null ? sdf.format(exp.getFechaInicio()) : "—";
+                modeloTabla.addRow(new Object[] {
+                        exp.getNumeroFicha() != null ? exp.getNumeroFicha() : String.valueOf(exp.getId()),
+                        nombre, cedula, estado, etapa, fecha
                 });
             }
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                "Error al cargar expedientes:\n" + ex.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
+                    "Error al cargar expedientes:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void filtrarTexto() {
         String texto = txtBuscar.getText().trim();
-        if (texto.startsWith("Buscar") || texto.isEmpty()) { sorter.setRowFilter(null); return; }
+        if (texto.startsWith("Buscar") || texto.isEmpty()) {
+            sorter.setRowFilter(null);
+            return;
+        }
         sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 0, 1, 2));
     }
 
     private void aplicarFiltros() {
         String estado = (String) cmbEstado.getSelectedItem();
-        String etapa  = (String) cmbEtapa.getSelectedItem();
+        String etapa = (String) cmbEtapa.getSelectedItem();
         java.util.List<RowFilter<DefaultTableModel, Object>> filtros = new java.util.ArrayList<>();
         if (estado != null && !estado.startsWith("Todos"))
             filtros.add(RowFilter.regexFilter("^" + estado + "$", 3));
@@ -349,33 +372,72 @@ public class FrmExpedientesPanel extends JPanel {
 
     private void actualizarSeleccion() {
         int fila = tabla.getSelectedRow();
-        if (fila < 0) { expedienteSeleccionado = null; panelInfoBar.setVisible(false); return; }
+        if (fila < 0) {
+            expedienteSeleccionado = null;
+            panelInfoBar.setVisible(false);
+            return;
+        }
         int fm = tabla.convertRowIndexToModel(fila);
-        String ficha  = modeloTabla.getValueAt(fm, 0).toString();
+        String ficha = modeloTabla.getValueAt(fm, 0).toString();
         String nombre = modeloTabla.getValueAt(fm, 1).toString();
-        try { expedienteSeleccionado = expedienteDAO.findByNumeroFicha(ficha); }
-        catch (Exception ex) { expedienteSeleccionado = null; }
+        try {
+            expedienteSeleccionado = expedienteDAO.findByNumeroFicha(ficha);
+        } catch (Exception ex) {
+            expedienteSeleccionado = null;
+        }
         lblInfoSeleccion.setText("Seleccionado: " + nombre + "  (Ficha " + ficha + ")");
         panelInfoBar.setVisible(true);
         revalidate();
     }
 
     private void abrirFormulario(boolean esNuevo) {
-        if (esNuevo) {
-            JOptionPane.showMessageDialog(this, "Aquí se abrirá frmCrearExpediente.", "Nuevo", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            if (expedienteSeleccionado == null) {
-                JOptionPane.showMessageDialog(this, "Seleccione un expediente primero.", "Sin selección", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            JOptionPane.showMessageDialog(this, "Editar ficha: " + expedienteSeleccionado.getNumeroFicha(), "Editar", JOptionPane.INFORMATION_MESSAGE);
+        Expediente exp = esNuevo ? null : expedienteSeleccionado;
+        if (!esNuevo && exp == null) {
+            JOptionPane.showMessageDialog(this, "Seleccione un expediente primero.",
+                    "Sin selección", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        FrmDetalleExpediente dlg = new FrmDetalleExpediente(owner, exp, this::cargarTabla);
+        dlg.setVisible(true);
+    }
+
+    // ─── Eliminar expediente seleccionado ────────────────────────────────────
+    private void eliminarExpediente() {
+        if (expedienteSeleccionado == null) {
+            JOptionPane.showMessageDialog(this, "Seleccione un expediente primero.",
+                    "Sin selección", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String nombre = lblInfoSeleccion.getText().replaceFirst("Seleccionado: ", "");
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro que desea eliminar el expediente?\n" + nombre +
+                        "\n\nEsta acción eliminará también todos los datos asociados (familia, vivienda, documentos, etc.)",
+                "Confirmar eliminación",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION)
+            return;
+        try {
+            expedienteDAO.delete(expedienteSeleccionado.getId());
+            expedienteSeleccionado = null;
+            panelInfoBar.setVisible(false);
+            cargarTabla();
+            JOptionPane.showMessageDialog(this, "Expediente eliminado correctamente.",
+                    "Eliminado", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error al eliminar el expediente:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     // ─── Helper botón ─────────────────────────────────────────────────────────
     private JButton crearBoton(String texto, Color bg, Color fg, ActionListener accion) {
         JButton btn = new JButton(texto) {
-            @Override protected void paintComponent(Graphics g) {
+            @Override
+            protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(getBackground());
@@ -395,27 +457,44 @@ public class FrmExpedientesPanel extends JPanel {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(accion);
         btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) {
+            @Override
+            public void mouseEntered(MouseEvent e) {
                 btn.setBackground(bg == COLOR_PRIMARIO ? COLOR_PRIMARIO_H
-                    : bg == COLOR_GRIS_BTN ? COLOR_GRIS_BTN_H : bg.darker());
+                        : bg == COLOR_GRIS_BTN ? COLOR_GRIS_BTN_H
+                                : bg == COLOR_ROJO ? COLOR_ROJO_H
+                                        : bg.darker());
                 btn.repaint();
             }
-            @Override public void mouseExited(MouseEvent e) { btn.setBackground(bg); btn.repaint(); }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(bg);
+                btn.repaint();
+            }
         });
         return btn;
     }
 
     // ─── Badge renderer ───────────────────────────────────────────────────────
     private class BadgeRenderer extends DefaultTableCellRenderer {
-        @Override public Component getTableCellRendererComponent(
+        @Override
+        public Component getTableCellRendererComponent(
                 JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             String estado = value != null ? value.toString() : "";
             int idx;
             switch (estado) {
-                case "ACTIVO":     idx = 0; break;
-                case "EN_PROCESO": idx = 1; break;
-                case "CERRADO":    idx = 2; break;
-                default:           idx = 3; break;
+                case "ACTIVO":
+                    idx = 0;
+                    break;
+                case "EN_PROCESO":
+                    idx = 1;
+                    break;
+                case "CERRADO":
+                    idx = 2;
+                    break;
+                default:
+                    idx = 3;
+                    break;
             }
             JLabel lbl = new JLabel(estado.replace("_", " "));
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
@@ -430,9 +509,8 @@ public class FrmExpedientesPanel extends JPanel {
             JPanel badge = new JPanel(new BorderLayout());
             badge.setBackground(BADGE_BG[idx]);
             badge.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BADGE_FG[idx].brighter(), 1, true),
-                new EmptyBorder(2, 8, 2, 8)
-            ));
+                    new LineBorder(BADGE_FG[idx].brighter(), 1, true),
+                    new EmptyBorder(2, 8, 2, 8)));
             badge.add(lbl);
             wrapper.add(badge);
             return wrapper;

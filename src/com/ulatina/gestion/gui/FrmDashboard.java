@@ -1,5 +1,8 @@
 package com.ulatina.gestion.gui;
 
+import com.ulatina.gestion.dao.impl.ExpedienteDAOImpl;
+import com.ulatina.gestion.model.Expediente;
+import com.ulatina.gestion.model.enums.EstadoExpediente;
 import com.ulatina.gestion.util.JPAUtil;
 
 import javax.swing.*;
@@ -7,6 +10,8 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * FrmDashboard — Pantalla principal del sistema Pastoral Social.
@@ -15,47 +20,52 @@ import java.awt.geom.RoundRectangle2D;
 public class FrmDashboard extends JFrame {
 
     // ─── Colores ─────────────────────────────────────────────────────────────
-    private static final Color SIDE_BG    = new Color(30, 33, 48);
-    private static final Color SIDE_ACTV  = new Color(59, 130, 246);
-    private static final Color SIDE_HOVR  = new Color(45, 50, 70);
-    private static final Color SIDE_SEP   = new Color(50, 55, 75);
-    private static final Color SIDE_TXT   = new Color(180, 185, 210);
-    private static final Color CONT_BG    = new Color(245, 246, 250);
-    private static final Color BLANCO     = Color.WHITE;
-    private static final Color BORDE      = new Color(220, 224, 230);
-    private static final Color TEXT_DARK  = new Color(17, 24, 39);
-    private static final Color TEXT_GRAY  = new Color(107, 114, 128);
+    private static final Color SIDE_BG = new Color(30, 33, 48);
+    private static final Color SIDE_ACTV = new Color(59, 130, 246);
+    private static final Color SIDE_HOVR = new Color(45, 50, 70);
+    private static final Color SIDE_SEP = new Color(50, 55, 75);
+    private static final Color SIDE_TXT = new Color(180, 185, 210);
+    private static final Color CONT_BG = new Color(245, 246, 250);
+    private static final Color BLANCO = Color.WHITE;
+    private static final Color BORDE = new Color(220, 224, 230);
+    private static final Color TEXT_DARK = new Color(17, 24, 39);
+    private static final Color TEXT_GRAY = new Color(107, 114, 128);
 
-    private static final Color AZUL_BG   = new Color(219, 234, 254);
-    private static final Color AZUL_FG   = new Color(37, 99, 235);
-    private static final Color VERDE_BG  = new Color(220, 252, 231);
-    private static final Color VERDE_FG  = new Color(22, 101, 52);
-    private static final Color AMBAR_BG  = new Color(254, 243, 199);
-    private static final Color AMBAR_FG  = new Color(146, 64, 14);
-    private static final Color ROJO_BG   = new Color(254, 226, 226);
-    private static final Color ROJO_FG   = new Color(153, 27, 27);
-    private static final Color PURP_BG   = new Color(237, 233, 254);
-    private static final Color PURP_FG   = new Color(109, 40, 217);
+    private static final Color AZUL_BG = new Color(219, 234, 254);
+    private static final Color AZUL_FG = new Color(37, 99, 235);
+    private static final Color VERDE_BG = new Color(220, 252, 231);
+    private static final Color VERDE_FG = new Color(22, 101, 52);
+    private static final Color AMBAR_BG = new Color(254, 243, 199);
+    private static final Color AMBAR_FG = new Color(146, 64, 14);
+    private static final Color ROJO_BG = new Color(254, 226, 226);
+    private static final Color ROJO_FG = new Color(153, 27, 27);
+    private static final Color PURP_BG = new Color(237, 233, 254);
+    private static final Color PURP_FG = new Color(109, 40, 217);
 
     // ─── Estado ──────────────────────────────────────────────────────────────
-    private JPanel      panelContenido;
-    private JLabel      lblTopbarTitulo;
-    private JButton     btnActivo = null;
+    private JPanel panelContenido;
+    private JLabel lblTopbarTitulo;
+    private JButton btnActivo = null;
+    private JPanel sidebar;
+
+    private final ExpedienteDAOImpl expedienteDAO = new ExpedienteDAOImpl();
 
     // ─── Constructor ─────────────────────────────────────────────────────────
     public FrmDashboard() {
-        setTitle("Pastoral Social — Sistema de Gestión");
+        setTitle("Pastoral Social");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(960, 620));
         setPreferredSize(new Dimension(1080, 680));
         setLayout(new BorderLayout());
 
-        add(crearSidebar(),       BorderLayout.WEST);
+        sidebar = crearSidebar();
+        add(sidebar, BorderLayout.WEST);
         add(crearAreaPrincipal(), BorderLayout.CENTER);
 
         // Cerrar JPA al salir
         addWindowListener(new WindowAdapter() {
-            @Override public void windowClosing(WindowEvent e) {
+            @Override
+            public void windowClosing(WindowEvent e) {
                 JPAUtil.close();
                 dispose();
             }
@@ -98,26 +108,48 @@ public class FrmDashboard extends JFrame {
         sb.add(sep());
 
         // Botones de navegación
-        JButton bDash  = navBtn("  Dashboard");
-        JButton bExp   = navBtn("  Expedientes");
-        JButton bEven  = navBtn("  Eventos");
-        JButton bRep   = navBtn("  Reportes");
-        JButton bCons  = navBtn("  Consulta Vicarial");
+        JButton bDash = navBtn("  Dashboard");
+        JButton bExp = navBtn("  Expedientes");
+        JButton bEven = navBtn("  Eventos");
+        JButton bRep = navBtn("  Reportes");
+        JButton bCons = navBtn("  Consulta Vicarial");
 
         activar(bDash);
 
-        bDash.addActionListener(e -> { activar(bDash); mostrarDashboard(); });
-        bExp.addActionListener(e  -> { activar(bExp);  mostrarExpedientes(); });
-        bEven.addActionListener(e -> { activar(bEven); mostrarProximamente("Eventos"); });
-        bRep.addActionListener(e  -> { activar(bRep);  mostrarProximamente("Reportes"); });
-        bCons.addActionListener(e -> { activar(bCons); mostrarProximamente("Consulta Vicarial"); });
+        bDash.addActionListener(e -> {
+            activar(bDash);
+            mostrarDashboard();
+        });
+        bExp.addActionListener(e -> {
+            activar(bExp);
+            mostrarExpedientes();
+        });
+        bEven.addActionListener(e -> {
+            activar(bEven);
+            mostrarProximamente("Eventos");
+        });
+        bRep.addActionListener(e -> {
+            activar(bRep);
+            mostrarProximamente("Reportes");
+        });
+        bCons.addActionListener(e -> {
+            activar(bCons);
+            mostrarProximamente("Consulta Vicarial");
+        });
 
-        sb.add(bDash); sb.add(bExp); sb.add(bEven); sb.add(bRep); sb.add(bCons);
+        sb.add(bDash);
+        sb.add(bExp);
+        sb.add(bEven);
+        sb.add(bRep);
+        sb.add(bCons);
         sb.add(Box.createVerticalGlue());
         sb.add(sep());
 
         JButton bAdmin = navBtn("  Panel de Administrador");
-        bAdmin.addActionListener(e -> { activar(bAdmin); mostrarProximamente("Administración"); });
+        bAdmin.addActionListener(e -> {
+            activar(bAdmin);
+            mostrarProximamente("Administración");
+        });
         sb.add(bAdmin);
         sb.add(Box.createVerticalStrut(16));
         return sb;
@@ -132,7 +164,8 @@ public class FrmDashboard extends JFrame {
 
     private JButton navBtn(String texto) {
         JButton btn = new JButton(texto) {
-            @Override protected void paintComponent(Graphics g) {
+            @Override
+            protected void paintComponent(Graphics g) {
                 g.setColor(getBackground());
                 g.fillRect(0, 0, getWidth(), getHeight());
                 super.paintComponent(g);
@@ -151,11 +184,20 @@ public class FrmDashboard extends JFrame {
         btn.setPreferredSize(new Dimension(200, 46));
         btn.setBorder(new EmptyBorder(0, 22, 0, 12));
         btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) {
-                if (btn != btnActivo) { btn.setBackground(SIDE_HOVR); btn.repaint(); }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (btn != btnActivo) {
+                    btn.setBackground(SIDE_HOVR);
+                    btn.repaint();
+                }
             }
-            @Override public void mouseExited(MouseEvent e) {
-                if (btn != btnActivo) { btn.setBackground(SIDE_BG); btn.repaint(); }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (btn != btnActivo) {
+                    btn.setBackground(SIDE_BG);
+                    btn.repaint();
+                }
             }
         });
         return btn;
@@ -193,9 +235,8 @@ public class FrmDashboard extends JFrame {
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(BLANCO);
         top.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, BORDE),
-            new EmptyBorder(14, 26, 14, 26)
-        ));
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDE),
+                new EmptyBorder(14, 26, 14, 26)));
         top.setPreferredSize(new Dimension(0, 58));
 
         lblTopbarTitulo = new JLabel("Dashboard");
@@ -219,15 +260,21 @@ public class FrmDashboard extends JFrame {
         p.setBackground(CONT_BG);
         p.setBorder(new EmptyBorder(24, 28, 24, 28));
 
+        // Métricas desde la BD
+        List<Expediente> todos = cargarExpedientesSeguro();
+        long activos = todos.stream().filter(e -> EstadoExpediente.ACTIVO.equals(e.getEstado())).count();
+        long enProceso = todos.stream().filter(e -> EstadoExpediente.EN_PROCESO.equals(e.getEstado())).count();
+        long cerrados = todos.stream().filter(e -> EstadoExpediente.CERRADO.equals(e.getEstado())).count();
+
         // Tarjetas métricas
         JPanel tarjetas = new JPanel(new GridLayout(1, 4, 14, 0));
         tarjetas.setOpaque(false);
         tarjetas.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         tarjetas.setAlignmentX(Component.LEFT_ALIGNMENT);
-        tarjetas.add(tarjeta("128", "Expedientes", AZUL_BG,  AZUL_FG));
-        tarjetas.add(tarjeta("43",  "Activos",     VERDE_BG, VERDE_FG));
-        tarjetas.add(tarjeta("12",  "Pendientes",  AMBAR_BG, AMBAR_FG));
-        tarjetas.add(tarjeta("5",   "Cerrados",    ROJO_BG,  ROJO_FG));
+        tarjetas.add(tarjeta(String.valueOf(todos.size()), "Expedientes", AZUL_BG, AZUL_FG));
+        tarjetas.add(tarjeta(String.valueOf(activos), "Activos", VERDE_BG, VERDE_FG));
+        tarjetas.add(tarjeta(String.valueOf(enProceso), "En Proceso", AMBAR_BG, AMBAR_FG));
+        tarjetas.add(tarjeta(String.valueOf(cerrados), "Cerrados", ROJO_BG, ROJO_FG));
         p.add(tarjetas);
         p.add(Box.createVerticalStrut(28));
 
@@ -242,12 +289,19 @@ public class FrmDashboard extends JFrame {
         grid.setOpaque(false);
         grid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        grid.add(modulo("Expedientes",       "Gestión de casos y seguimiento",  AZUL_BG,  AZUL_FG,  () -> { activarNav("Expedientes");  mostrarExpedientes(); }));
-        grid.add(modulo("Eventos",           "Registro y asistencia",           VERDE_BG, VERDE_FG, () -> mostrarProximamente("Eventos")));
-        grid.add(modulo("Reportes",          "Estadísticas y análisis",         AMBAR_BG, AMBAR_FG, () -> mostrarProximamente("Reportes")));
-        grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector",   PURP_BG,  PURP_FG,  () -> mostrarProximamente("Consulta Vicarial")));
-        grid.add(modulo("Familias",          "Miembros y núcleo familiar",      VERDE_BG, VERDE_FG, () -> mostrarProximamente("Familias")));
-        grid.add(modulo("Administración",    "Usuarios, roles y parroquias",    ROJO_BG,  ROJO_FG,  () -> mostrarProximamente("Administración")));
+        grid.add(modulo("Expedientes", "Gestión de casos y seguimiento", AZUL_BG, AZUL_FG, () -> {
+            activarNav("Expedientes");
+            mostrarExpedientes();
+        }));
+        grid.add(modulo("Eventos", "Registro y asistencia", VERDE_BG, VERDE_FG, () -> mostrarProximamente("Eventos")));
+        grid.add(modulo("Reportes", "Estadísticas y análisis", AMBAR_BG, AMBAR_FG,
+                () -> mostrarProximamente("Reportes")));
+        grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector", PURP_BG, PURP_FG,
+                () -> mostrarProximamente("Consulta Vicarial")));
+        grid.add(modulo("Familias", "Miembros y núcleo familiar", VERDE_BG, VERDE_FG,
+                () -> mostrarProximamente("Familias")));
+        grid.add(modulo("Administración", "Usuarios, roles y parroquias", ROJO_BG, ROJO_FG,
+                () -> mostrarProximamente("Administración")));
         p.add(grid);
         return p;
     }
@@ -255,7 +309,8 @@ public class FrmDashboard extends JFrame {
     // ─── Tarjeta métrica ──────────────────────────────────────────────────────
     private JPanel tarjeta(String num, String etq, Color bg, Color fg) {
         JPanel c = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
+            @Override
+            protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(bg);
@@ -288,7 +343,8 @@ public class FrmDashboard extends JFrame {
     // ─── Módulo clickeable ────────────────────────────────────────────────────
     private JPanel modulo(String titulo, String desc, Color bg, Color fg, Runnable accion) {
         JPanel c = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
+            @Override
+            protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(getBackground());
@@ -304,7 +360,8 @@ public class FrmDashboard extends JFrame {
 
         // Círculo inicial
         JPanel circ = new JPanel(new GridBagLayout()) {
-            @Override protected void paintComponent(Graphics g) {
+            @Override
+            protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(bg);
@@ -333,7 +390,8 @@ public class FrmDashboard extends JFrame {
 
         // Botón "Abrir →"
         JButton btnAbr = new JButton("Abrir →") {
-            @Override protected void paintComponent(Graphics g) {
+            @Override
+            protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(getBackground());
@@ -363,9 +421,22 @@ public class FrmDashboard extends JFrame {
         c.add(btnAbr);
 
         c.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { c.setBackground(new Color(248,250,252)); c.repaint(); }
-            @Override public void mouseExited(MouseEvent e)  { c.setBackground(BLANCO); c.repaint(); }
-            @Override public void mouseClicked(MouseEvent e) { accion.run(); }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                c.setBackground(new Color(248, 250, 252));
+                c.repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                c.setBackground(BLANCO);
+                c.repaint();
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                accion.run();
+            }
         });
         return c;
     }
@@ -401,8 +472,6 @@ public class FrmDashboard extends JFrame {
 
     /** Marca el botón del sidebar que corresponde al nombre del módulo */
     private void activarNav(String nombre) {
-        // El sidebar es el primer hijo del frame (WEST)
-        JPanel sidebar = (JPanel) getContentPane().getComponent(0);
         for (Component c : sidebar.getComponents()) {
             if (c instanceof JButton) {
                 JButton b = (JButton) c;
@@ -414,13 +483,26 @@ public class FrmDashboard extends JFrame {
         }
     }
 
+    /**
+     * Carga todos los expedientes desde la BD; retorna lista vacía si hay error.
+     */
+    private List<Expediente> cargarExpedientesSeguro() {
+        try {
+            return expedienteDAO.findAll();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
     // ═════════════════════════════════════════════════════════════════════════
     // MAIN — punto de entrada de la aplicación
     // ═════════════════════════════════════════════════════════════════════════
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         SwingUtilities.invokeLater(() -> {
             FrmDashboard dashboard = new FrmDashboard();
