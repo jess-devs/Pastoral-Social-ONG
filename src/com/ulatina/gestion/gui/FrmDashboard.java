@@ -1,0 +1,430 @@
+package com.ulatina.gestion.gui;
+
+import com.ulatina.gestion.util.JPAUtil;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.RoundRectangle2D;
+
+/**
+ * FrmDashboard — Pantalla principal del sistema Pastoral Social.
+ * Punto de entrada: main() en esta clase.
+ */
+public class FrmDashboard extends JFrame {
+
+    // ─── Colores ─────────────────────────────────────────────────────────────
+    private static final Color SIDE_BG    = new Color(30, 33, 48);
+    private static final Color SIDE_ACTV  = new Color(59, 130, 246);
+    private static final Color SIDE_HOVR  = new Color(45, 50, 70);
+    private static final Color SIDE_SEP   = new Color(50, 55, 75);
+    private static final Color SIDE_TXT   = new Color(180, 185, 210);
+    private static final Color CONT_BG    = new Color(245, 246, 250);
+    private static final Color BLANCO     = Color.WHITE;
+    private static final Color BORDE      = new Color(220, 224, 230);
+    private static final Color TEXT_DARK  = new Color(17, 24, 39);
+    private static final Color TEXT_GRAY  = new Color(107, 114, 128);
+
+    private static final Color AZUL_BG   = new Color(219, 234, 254);
+    private static final Color AZUL_FG   = new Color(37, 99, 235);
+    private static final Color VERDE_BG  = new Color(220, 252, 231);
+    private static final Color VERDE_FG  = new Color(22, 101, 52);
+    private static final Color AMBAR_BG  = new Color(254, 243, 199);
+    private static final Color AMBAR_FG  = new Color(146, 64, 14);
+    private static final Color ROJO_BG   = new Color(254, 226, 226);
+    private static final Color ROJO_FG   = new Color(153, 27, 27);
+    private static final Color PURP_BG   = new Color(237, 233, 254);
+    private static final Color PURP_FG   = new Color(109, 40, 217);
+
+    // ─── Estado ──────────────────────────────────────────────────────────────
+    private JPanel      panelContenido;
+    private JLabel      lblTopbarTitulo;
+    private JButton     btnActivo = null;
+
+    // ─── Constructor ─────────────────────────────────────────────────────────
+    public FrmDashboard() {
+        setTitle("Pastoral Social — Sistema de Gestión");
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setMinimumSize(new Dimension(960, 620));
+        setPreferredSize(new Dimension(1080, 680));
+        setLayout(new BorderLayout());
+
+        add(crearSidebar(),       BorderLayout.WEST);
+        add(crearAreaPrincipal(), BorderLayout.CENTER);
+
+        // Cerrar JPA al salir
+        addWindowListener(new WindowAdapter() {
+            @Override public void windowClosing(WindowEvent e) {
+                JPAUtil.close();
+                dispose();
+            }
+        });
+
+        pack();
+        setLocationRelativeTo(null);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // SIDEBAR
+    // ═════════════════════════════════════════════════════════════════════════
+    private JPanel crearSidebar() {
+        JPanel sb = new JPanel();
+        sb.setLayout(new BoxLayout(sb, BoxLayout.Y_AXIS));
+        sb.setBackground(SIDE_BG);
+        sb.setPreferredSize(new Dimension(200, 0));
+
+        // Brand
+        JPanel brand = new JPanel();
+        brand.setLayout(new BoxLayout(brand, BoxLayout.Y_AXIS));
+        brand.setBackground(SIDE_BG);
+        brand.setBorder(new EmptyBorder(28, 22, 24, 22));
+        brand.setMaximumSize(new Dimension(200, 88));
+        brand.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel l1 = new JLabel("Pastoral");
+        l1.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        l1.setForeground(BLANCO);
+        l1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel l2 = new JLabel("Social");
+        l2.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        l2.setForeground(SIDE_ACTV);
+        l2.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        brand.add(l1);
+        brand.add(l2);
+        sb.add(brand);
+        sb.add(sep());
+
+        // Botones de navegación
+        JButton bDash  = navBtn("  Dashboard");
+        JButton bExp   = navBtn("  Expedientes");
+        JButton bEven  = navBtn("  Eventos");
+        JButton bRep   = navBtn("  Reportes");
+        JButton bCons  = navBtn("  Consulta Vicarial");
+
+        activar(bDash);
+
+        bDash.addActionListener(e -> { activar(bDash); mostrarDashboard(); });
+        bExp.addActionListener(e  -> { activar(bExp);  mostrarExpedientes(); });
+        bEven.addActionListener(e -> { activar(bEven); mostrarProximamente("Eventos"); });
+        bRep.addActionListener(e  -> { activar(bRep);  mostrarProximamente("Reportes"); });
+        bCons.addActionListener(e -> { activar(bCons); mostrarProximamente("Consulta Vicarial"); });
+
+        sb.add(bDash); sb.add(bExp); sb.add(bEven); sb.add(bRep); sb.add(bCons);
+        sb.add(Box.createVerticalGlue());
+        sb.add(sep());
+
+        JButton bAdmin = navBtn("  Panel de Administrador");
+        bAdmin.addActionListener(e -> { activar(bAdmin); mostrarProximamente("Administración"); });
+        sb.add(bAdmin);
+        sb.add(Box.createVerticalStrut(16));
+        return sb;
+    }
+
+    private Component sep() {
+        JPanel s = new JPanel();
+        s.setBackground(SIDE_SEP);
+        s.setMaximumSize(new Dimension(200, 1));
+        return s;
+    }
+
+    private JButton navBtn(String texto) {
+        JButton btn = new JButton(texto) {
+            @Override protected void paintComponent(Graphics g) {
+                g.setColor(getBackground());
+                g.fillRect(0, 0, getWidth(), getHeight());
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        btn.setForeground(SIDE_TXT);
+        btn.setBackground(SIDE_BG);
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setMaximumSize(new Dimension(200, 46));
+        btn.setPreferredSize(new Dimension(200, 46));
+        btn.setBorder(new EmptyBorder(0, 22, 0, 12));
+        btn.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) {
+                if (btn != btnActivo) { btn.setBackground(SIDE_HOVR); btn.repaint(); }
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                if (btn != btnActivo) { btn.setBackground(SIDE_BG); btn.repaint(); }
+            }
+        });
+        return btn;
+    }
+
+    private void activar(JButton btn) {
+        if (btnActivo != null) {
+            btnActivo.setBackground(SIDE_BG);
+            btnActivo.setForeground(SIDE_TXT);
+            btnActivo.repaint();
+        }
+        btnActivo = btn;
+        btn.setBackground(SIDE_ACTV);
+        btn.setForeground(BLANCO);
+        btn.repaint();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // ÁREA PRINCIPAL
+    // ═════════════════════════════════════════════════════════════════════════
+    private JPanel crearAreaPrincipal() {
+        JPanel area = new JPanel(new BorderLayout());
+        area.setBackground(CONT_BG);
+        area.add(crearTopbar(), BorderLayout.NORTH);
+
+        panelContenido = new JPanel(new BorderLayout());
+        panelContenido.setBackground(CONT_BG);
+        panelContenido.add(crearVistaDashboard(), BorderLayout.CENTER);
+        area.add(panelContenido, BorderLayout.CENTER);
+        return area;
+    }
+
+    // ─── Topbar ───────────────────────────────────────────────────────────────
+    private JPanel crearTopbar() {
+        JPanel top = new JPanel(new BorderLayout());
+        top.setBackground(BLANCO);
+        top.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, BORDE),
+            new EmptyBorder(14, 26, 14, 26)
+        ));
+        top.setPreferredSize(new Dimension(0, 58));
+
+        lblTopbarTitulo = new JLabel("Dashboard");
+        lblTopbarTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTopbarTitulo.setForeground(TEXT_DARK);
+        top.add(lblTopbarTitulo, BorderLayout.WEST);
+
+        JLabel lblUser = new JLabel("Juan  (Voluntario)");
+        lblUser.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblUser.setForeground(TEXT_GRAY);
+        top.add(lblUser, BorderLayout.EAST);
+        return top;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // VISTA DASHBOARD
+    // ═════════════════════════════════════════════════════════════════════════
+    private JPanel crearVistaDashboard() {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBackground(CONT_BG);
+        p.setBorder(new EmptyBorder(24, 28, 24, 28));
+
+        // Tarjetas métricas
+        JPanel tarjetas = new JPanel(new GridLayout(1, 4, 14, 0));
+        tarjetas.setOpaque(false);
+        tarjetas.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+        tarjetas.setAlignmentX(Component.LEFT_ALIGNMENT);
+        tarjetas.add(tarjeta("128", "Expedientes", AZUL_BG,  AZUL_FG));
+        tarjetas.add(tarjeta("43",  "Activos",     VERDE_BG, VERDE_FG));
+        tarjetas.add(tarjeta("12",  "Pendientes",  AMBAR_BG, AMBAR_FG));
+        tarjetas.add(tarjeta("5",   "Cerrados",    ROJO_BG,  ROJO_FG));
+        p.add(tarjetas);
+        p.add(Box.createVerticalStrut(28));
+
+        JLabel lblMod = new JLabel("Módulos del sistema");
+        lblMod.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblMod.setForeground(TEXT_DARK);
+        lblMod.setAlignmentX(Component.LEFT_ALIGNMENT);
+        p.add(lblMod);
+        p.add(Box.createVerticalStrut(14));
+
+        JPanel grid = new JPanel(new GridLayout(2, 3, 14, 14));
+        grid.setOpaque(false);
+        grid.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        grid.add(modulo("Expedientes",       "Gestión de casos y seguimiento",  AZUL_BG,  AZUL_FG,  () -> { activarNav("Expedientes");  mostrarExpedientes(); }));
+        grid.add(modulo("Eventos",           "Registro y asistencia",           VERDE_BG, VERDE_FG, () -> mostrarProximamente("Eventos")));
+        grid.add(modulo("Reportes",          "Estadísticas y análisis",         AMBAR_BG, AMBAR_FG, () -> mostrarProximamente("Reportes")));
+        grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector",   PURP_BG,  PURP_FG,  () -> mostrarProximamente("Consulta Vicarial")));
+        grid.add(modulo("Familias",          "Miembros y núcleo familiar",      VERDE_BG, VERDE_FG, () -> mostrarProximamente("Familias")));
+        grid.add(modulo("Administración",    "Usuarios, roles y parroquias",    ROJO_BG,  ROJO_FG,  () -> mostrarProximamente("Administración")));
+        p.add(grid);
+        return p;
+    }
+
+    // ─── Tarjeta métrica ──────────────────────────────────────────────────────
+    private JPanel tarjeta(String num, String etq, Color bg, Color fg) {
+        JPanel c = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bg);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
+                g2.dispose();
+            }
+        };
+        c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
+        c.setOpaque(false);
+        c.setBorder(new EmptyBorder(14, 20, 14, 20));
+
+        JLabel lNum = new JLabel(num);
+        lNum.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        lNum.setForeground(fg);
+        lNum.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lEtq = new JLabel(etq);
+        lEtq.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lEtq.setForeground(fg);
+        lEtq.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        c.add(Box.createVerticalGlue());
+        c.add(lNum);
+        c.add(Box.createVerticalStrut(4));
+        c.add(lEtq);
+        c.add(Box.createVerticalGlue());
+        return c;
+    }
+
+    // ─── Módulo clickeable ────────────────────────────────────────────────────
+    private JPanel modulo(String titulo, String desc, Color bg, Color fg, Runnable accion) {
+        JPanel c = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 14, 14));
+                g2.dispose();
+            }
+        };
+        c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
+        c.setBackground(BLANCO);
+        c.setOpaque(false);
+        c.setBorder(new EmptyBorder(18, 20, 18, 20));
+        c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Círculo inicial
+        JPanel circ = new JPanel(new GridBagLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bg);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        circ.setOpaque(false);
+        circ.setPreferredSize(new Dimension(40, 40));
+        circ.setMaximumSize(new Dimension(40, 40));
+        circ.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel ini = new JLabel(String.valueOf(titulo.charAt(0)));
+        ini.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        ini.setForeground(fg);
+        circ.add(ini);
+
+        JLabel lTit = new JLabel(titulo);
+        lTit.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lTit.setForeground(TEXT_DARK);
+        lTit.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lDesc = new JLabel("<html><p style='width:140px'>" + desc + "</p></html>");
+        lDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lDesc.setForeground(TEXT_GRAY);
+        lDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Botón "Abrir →"
+        JButton btnAbr = new JButton("Abrir →") {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btnAbr.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnAbr.setBackground(bg);
+        btnAbr.setForeground(fg);
+        btnAbr.setOpaque(false);
+        btnAbr.setContentAreaFilled(false);
+        btnAbr.setBorderPainted(false);
+        btnAbr.setFocusPainted(false);
+        btnAbr.setBorder(new EmptyBorder(5, 14, 5, 14));
+        btnAbr.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnAbr.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnAbr.addActionListener(e -> accion.run());
+
+        c.add(circ);
+        c.add(Box.createVerticalStrut(10));
+        c.add(lTit);
+        c.add(Box.createVerticalStrut(4));
+        c.add(lDesc);
+        c.add(Box.createVerticalStrut(12));
+        c.add(btnAbr);
+
+        c.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) { c.setBackground(new Color(248,250,252)); c.repaint(); }
+            @Override public void mouseExited(MouseEvent e)  { c.setBackground(BLANCO); c.repaint(); }
+            @Override public void mouseClicked(MouseEvent e) { accion.run(); }
+        });
+        return c;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // NAVEGACIÓN
+    // ═════════════════════════════════════════════════════════════════════════
+    private void cambiarVista(JPanel vista, String titulo) {
+        panelContenido.removeAll();
+        panelContenido.add(vista, BorderLayout.CENTER);
+        panelContenido.revalidate();
+        panelContenido.repaint();
+        lblTopbarTitulo.setText(titulo);
+    }
+
+    private void mostrarDashboard() {
+        cambiarVista(crearVistaDashboard(), "Dashboard");
+    }
+
+    private void mostrarExpedientes() {
+        cambiarVista(new FrmExpedientesPanel(), "Expedientes");
+    }
+
+    private void mostrarProximamente(String nombre) {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setBackground(CONT_BG);
+        JLabel lbl = new JLabel(nombre + "  —  Próximamente");
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lbl.setForeground(TEXT_GRAY);
+        p.add(lbl);
+        cambiarVista(p, nombre);
+    }
+
+    /** Marca el botón del sidebar que corresponde al nombre del módulo */
+    private void activarNav(String nombre) {
+        // El sidebar es el primer hijo del frame (WEST)
+        JPanel sidebar = (JPanel) getContentPane().getComponent(0);
+        for (Component c : sidebar.getComponents()) {
+            if (c instanceof JButton) {
+                JButton b = (JButton) c;
+                if (b.getText().trim().equalsIgnoreCase(nombre)) {
+                    activar(b);
+                    break;
+                }
+            }
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // MAIN — punto de entrada de la aplicación
+    // ═════════════════════════════════════════════════════════════════════════
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {}
+
+        SwingUtilities.invokeLater(() -> {
+            FrmDashboard dashboard = new FrmDashboard();
+            dashboard.setVisible(true);
+        });
+    }
+}
