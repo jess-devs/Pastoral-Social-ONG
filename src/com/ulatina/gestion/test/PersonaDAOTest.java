@@ -29,7 +29,7 @@ public class PersonaDAOTest {
         p.setApellidos("Gonzalez Perez");
         p.setTipoDocumento(TipoDocumentoPersona.CEDULA);
         p.setNumeroDocumento("1-2345-6789");
-        p.setSexo(Sexo.F);
+        p.setSexo(Sexo.FEMENINO);
         p.setEstadoCivil(EstadoCivil.CASADO);
         p.setNacionalidad("Costarricense");
         p.setDireccion("San Jose, Barrio Escalante");

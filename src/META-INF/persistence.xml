@@ -24,17 +24,17 @@
         <class>com.ulatina.gestion.model.Vivienda</class>
 
         <properties>
-            <!-- Datos de conexión -->
-            <property name="javax.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/pastoral_social?useSSL=false&amp;serverTimezone=UTC"/>
-            <property name="javax.persistence.jdbc.user" value="root"/>
-            <property name="javax.persistence.jdbc.password" value=""/>
+            <!-- Datos de conexión — driver legacy compatible con Hibernate 3 -->
+            <property name="hibernate.connection.driver_class" value="com.mysql.cj.jdbc.Driver"/>
+            <property name="hibernate.connection.url"          value="jdbc:mysql://localhost:3306/pastoral_social?useSSL=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true"/>
+            <property name="hibernate.connection.username"     value="root"/>
+            <property name="hibernate.connection.password"     value=""/>
 
-            <!-- Configuración de Hibernate -->
-            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL5Dialect"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
-            <property name="hibernate.show_sql" value="true"/>
-            <property name="hibernate.format_sql" value="true"/>
+            <!-- MySQL5InnoDBDialect es el más compatible con Hibernate 3 + MySQL 8 -->
+            <property name="hibernate.dialect"        value="org.hibernate.dialect.MySQL5InnoDBDialect"/>
+            <property name="hibernate.hbm2ddl.auto"   value="update"/>
+            <property name="hibernate.show_sql"       value="true"/>
+            <property name="hibernate.format_sql"     value="true"/>
         </properties>
     </persistence-unit>
 </persistence>

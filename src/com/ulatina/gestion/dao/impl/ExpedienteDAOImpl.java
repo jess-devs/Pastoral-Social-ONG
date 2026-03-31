@@ -16,13 +16,37 @@ public class ExpedienteDAOImpl extends GenericDAOImpl<Expediente, Long> implemen
         super(Expediente.class);
     }
 
+    /**
+     * findAll con JOIN FETCH para cargar titular y parroquia
+     * en la misma sesión y evitar LazyInitializationException.
+     */
+    @Override
+    public List<Expediente> findAll() {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                "SELECT DISTINCT e FROM Expediente e " +
+                "LEFT JOIN FETCH e.titular " +
+                "LEFT JOIN FETCH e.parroquia",
+                Expediente.class
+            ).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
     @Override
     public Expediente findByNumeroFicha(String numeroFicha) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT e FROM Expediente e WHERE e.numeroFicha = :ficha", Expediente.class)
-                     .setParameter("ficha", numeroFicha)
-                     .getSingleResult();
+            return em.createQuery(
+                "SELECT e FROM Expediente e " +
+                "LEFT JOIN FETCH e.titular " +
+                "LEFT JOIN FETCH e.parroquia " +
+                "WHERE e.numeroFicha = :ficha",
+                Expediente.class)
+                .setParameter("ficha", numeroFicha)
+                .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } finally {
@@ -34,9 +58,13 @@ public class ExpedienteDAOImpl extends GenericDAOImpl<Expediente, Long> implemen
     public List<Expediente> findByParroquia(Long parroquiaId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT e FROM Expediente e WHERE e.parroquia.id = :parroquiaId", Expediente.class)
-                     .setParameter("parroquiaId", parroquiaId)
-                     .getResultList();
+            return em.createQuery(
+                "SELECT e FROM Expediente e " +
+                "LEFT JOIN FETCH e.titular " +
+                "WHERE e.parroquia.id = :parroquiaId",
+                Expediente.class)
+                .setParameter("parroquiaId", parroquiaId)
+                .getResultList();
         } finally {
             em.close();
         }
@@ -46,9 +74,13 @@ public class ExpedienteDAOImpl extends GenericDAOImpl<Expediente, Long> implemen
     public List<Expediente> findByTitular(Long titularId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT e FROM Expediente e WHERE e.titular.id = :titularId", Expediente.class)
-                     .setParameter("titularId", titularId)
-                     .getResultList();
+            return em.createQuery(
+                "SELECT e FROM Expediente e " +
+                "LEFT JOIN FETCH e.titular " +
+                "WHERE e.titular.id = :titularId",
+                Expediente.class)
+                .setParameter("titularId", titularId)
+                .getResultList();
         } finally {
             em.close();
         }
@@ -58,9 +90,13 @@ public class ExpedienteDAOImpl extends GenericDAOImpl<Expediente, Long> implemen
     public List<Expediente> findByEstado(EstadoExpediente estado) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT e FROM Expediente e WHERE e.estado = :estado", Expediente.class)
-                     .setParameter("estado", estado)
-                     .getResultList();
+            return em.createQuery(
+                "SELECT e FROM Expediente e " +
+                "LEFT JOIN FETCH e.titular " +
+                "WHERE e.estado = :estado",
+                Expediente.class)
+                .setParameter("estado", estado)
+                .getResultList();
         } finally {
             em.close();
         }
@@ -70,9 +106,13 @@ public class ExpedienteDAOImpl extends GenericDAOImpl<Expediente, Long> implemen
     public List<Expediente> findByEtapa(EtapaExpediente etapa) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT e FROM Expediente e WHERE e.etapaActual = :etapa", Expediente.class)
-                     .setParameter("etapa", etapa)
-                     .getResultList();
+            return em.createQuery(
+                "SELECT e FROM Expediente e " +
+                "LEFT JOIN FETCH e.titular " +
+                "WHERE e.etapaActual = :etapa",
+                Expediente.class)
+                .setParameter("etapa", etapa)
+                .getResultList();
         } finally {
             em.close();
         }
@@ -82,9 +122,13 @@ public class ExpedienteDAOImpl extends GenericDAOImpl<Expediente, Long> implemen
     public List<Expediente> findByColorMarcador(String colorMarcador) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT e FROM Expediente e WHERE e.colorMarcador = :color", Expediente.class)
-                     .setParameter("color", colorMarcador)
-                     .getResultList();
+            return em.createQuery(
+                "SELECT e FROM Expediente e " +
+                "LEFT JOIN FETCH e.titular " +
+                "WHERE e.colorMarcador = :color",
+                Expediente.class)
+                .setParameter("color", colorMarcador)
+                .getResultList();
         } finally {
             em.close();
         }
