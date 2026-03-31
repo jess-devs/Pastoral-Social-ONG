@@ -101,6 +101,14 @@ public class FrmDetalleExpediente extends JDialog {
     // ─── Tab 3: Adendum ───────────────────────────────────────────────────────
     private JTextArea txtAdendumObs;
     private DefaultTableModel modeloGastos;
+    private JTable tablaGastos;
+    private JLabel lblTotalGastos;
+    private JComboBox<CategoriaGasto> cmbCatGasto;
+    private JTextField txtConceptoGasto;
+    private JTextField txtMontoGasto;
+    private JFormattedTextField txtFechaGasto;
+    private GastoMensual gastoEnEdicion = null;
+    private final java.util.List<GastoMensual> gastosActuales = new java.util.ArrayList<>();
     private Adendum adendumActual;
 
     // ─── Tablas read-only ─────────────────────────────────────────────────────
@@ -395,8 +403,8 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void agregarFila(JPanel p, int row,
-            GridBagConstraints lc, GridBagConstraints fc,
-            String lbl1, Component c1, String lbl2, Component c2) {
+                             GridBagConstraints lc, GridBagConstraints fc,
+                             String lbl1, Component c1, String lbl2, Component c2) {
         lc.gridx = 0;
         lc.gridy = row;
         p.add(etiqueta(lbl1), lc);
@@ -496,7 +504,8 @@ public class FrmDetalleExpediente extends JDialog {
         p.setBackground(COLOR_PANEL);
         p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
-        JLabel lObs = new JLabel("Observaciones generales");
+        // ── Sección observaciones ──────────────────────────────────────────
+        JLabel lObs = new JLabel("Observaciones de la entrevista");
         lObs.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lObs.setForeground(COLOR_TEXTO);
 
@@ -506,44 +515,294 @@ public class FrmDetalleExpediente extends JDialog {
         txtAdendumObs.setWrapStyleWord(true);
         JScrollPane scrollObs = new JScrollPane(txtAdendumObs);
         scrollObs.setBorder(new LineBorder(COLOR_BORDE, 1, true));
-        scrollObs.setPreferredSize(new Dimension(0, 100));
+        scrollObs.setPreferredSize(new Dimension(0, 90));
 
         JPanel obsPanel = new JPanel(new BorderLayout(0, 6));
         obsPanel.setOpaque(false);
         obsPanel.add(lObs, BorderLayout.NORTH);
         obsPanel.add(scrollObs, BorderLayout.CENTER);
 
-        JLabel lGastos = new JLabel("Gastos Mensuales");
+        // ── Sección gastos ─────────────────────────────────────────────────
+        JLabel lGastos = new JLabel("Gastos mensuales");
         lGastos.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lGastos.setForeground(COLOR_TEXTO);
-        lGastos.setBorder(new EmptyBorder(8, 0, 4, 0));
+        lGastos.setBorder(new EmptyBorder(4, 0, 6, 0));
 
-        modeloGastos = new DefaultTableModel(
-                new String[] { "Categoría", "Concepto", "Monto", "Fecha" }, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
+        // ── Fila de entrada ────────────────────────────────────────────────
+        cmbCatGasto      = new JComboBox<>(CategoriaGasto.values());
+        txtConceptoGasto = new JTextField(12);
+        txtConceptoGasto.putClientProperty("JTextField.placeholderText", "Ej: Electricidad");
+        txtMontoGasto    = new JTextField(8);
+        txtMontoGasto.putClientProperty("JTextField.placeholderText", "Ej: 18500");
+        txtFechaGasto    = crearCampoFecha();
+
+        // Estilizar campos de entrada
+        for (JComponent c : new JComponent[]{cmbCatGasto, txtConceptoGasto, txtMontoGasto, txtFechaGasto}) {
+            c.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            if (c instanceof JTextField || c instanceof JFormattedTextField) {
+                c.setBorder(BorderFactory.createCompoundBorder(
+                        new LineBorder(COLOR_BORDE, 1, true),
+                        new EmptyBorder(4, 8, 4, 8)));
             }
+            c.setPreferredSize(new Dimension(c.getPreferredSize().width, 32));
+        }
+        cmbCatGasto.setBorder(new LineBorder(COLOR_BORDE, 1, true));
+
+        JButton btnAgregar = crearBoton("+ Agregar gasto", COLOR_PRIMARIO, Color.WHITE, e -> confirmarGasto());
+
+        // Cada campo va envuelto en un sub-panel con su etiqueta encima
+        JPanel entradaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        entradaPanel.setOpaque(false);
+        entradaPanel.add(campoConEtiqueta("Categoría",          cmbCatGasto));
+        entradaPanel.add(campoConEtiqueta("Concepto",           txtConceptoGasto));
+        entradaPanel.add(campoConEtiqueta("Monto (₡)",         txtMontoGasto));
+        entradaPanel.add(campoConEtiqueta("Fecha (dd/mm/aaaa)", txtFechaGasto));
+        // Botón alineado al fondo junto con los campos
+        JPanel btnWrapper = new JPanel(new BorderLayout());
+        btnWrapper.setOpaque(false);
+        btnWrapper.setBorder(new EmptyBorder(18, 0, 0, 0)); // empuja el botón a la altura del campo
+        btnWrapper.add(btnAgregar, BorderLayout.SOUTH);
+        entradaPanel.add(btnWrapper);
+
+        // ── Tabla de gastos ────────────────────────────────────────────────
+        modeloGastos = new DefaultTableModel(
+                new String[]{"Categoría", "Concepto", "Monto", "Fecha", "Acciones"}, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable tablaGastos = new JTable(modeloGastos);
+
+        tablaGastos = new JTable(modeloGastos);
         tablaGastos.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tablaGastos.setRowHeight(32);
+        tablaGastos.setRowHeight(34);
         tablaGastos.setShowVerticalLines(false);
+        tablaGastos.setGridColor(new Color(243, 244, 246));
+        tablaGastos.setFocusable(false);
         tablaGastos.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tablaGastos.getTableHeader().setBackground(new Color(249, 250, 251));
         tablaGastos.getTableHeader().setForeground(COLOR_TEXTO_GRIS);
-        tablaGastos.setFocusable(false);
+        tablaGastos.getTableHeader().setBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BORDE));
+
+        // Columna Acciones: renderer de links "Editar | X"
+        tablaGastos.getColumnModel().getColumn(4).setCellRenderer((tbl, val, sel, foc, row, col) -> {
+            JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+            cell.setOpaque(true);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            JLabel editar = new JLabel("Editar");
+            editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            editar.setForeground(COLOR_AZUL);
+            JLabel sep2 = new JLabel("|");
+            sep2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            sep2.setForeground(COLOR_TEXTO_GRIS);
+            JLabel eliminar = new JLabel("X");
+            eliminar.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            eliminar.setForeground(COLOR_ROJO);
+            cell.add(editar); cell.add(sep2); cell.add(eliminar);
+            return cell;
+        });
+        tablaGastos.getColumnModel().getColumn(4).setMaxWidth(100);
+        tablaGastos.getColumnModel().getColumn(4).setMinWidth(80);
+
+        // MouseListener para Editar | X en la columna Acciones
+        tablaGastos.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                int col = tablaGastos.columnAtPoint(e.getPoint());
+                int row = tablaGastos.rowAtPoint(e.getPoint());
+                if (col != 4 || row < 0 || row >= gastosActuales.size()) return;
+                Rectangle rect = tablaGastos.getCellRect(row, col, false);
+                int relX = e.getX() - rect.x;
+                // "Editar" ocupa ~40px, luego "|", luego "X"
+                if (relX < 50) {
+                    cargarGastoEnFormulario(row);
+                } else {
+                    eliminarGasto(row);
+                }
+            }
+        });
+
         JScrollPane scrollGastos = new JScrollPane(tablaGastos);
         scrollGastos.setBorder(new LineBorder(COLOR_BORDE, 1, true));
+        scrollGastos.getViewport().setBackground(Color.WHITE);
 
-        JPanel gastosPanel = new JPanel(new BorderLayout(0, 4));
+        // ── Fila de total ──────────────────────────────────────────────────
+        JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        totalPanel.setBackground(new Color(249, 250, 251));
+        totalPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDE),
+                new EmptyBorder(0, 0, 0, 8)));
+        JLabel lTotal = new JLabel("Total gastos mensuales:");
+        lTotal.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lTotal.setForeground(COLOR_TEXTO_GRIS);
+        lblTotalGastos = new JLabel("0.00 colones");
+        lblTotalGastos.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTotalGastos.setForeground(COLOR_TEXTO);
+        totalPanel.add(lTotal);
+        totalPanel.add(lblTotalGastos);
+
+        JPanel gastosConTotal = new JPanel(new BorderLayout());
+        gastosConTotal.setOpaque(false);
+        gastosConTotal.add(scrollGastos, BorderLayout.CENTER);
+        gastosConTotal.add(totalPanel, BorderLayout.SOUTH);
+
+        JPanel gastosPanel = new JPanel(new BorderLayout(0, 6));
         gastosPanel.setOpaque(false);
         gastosPanel.add(lGastos, BorderLayout.NORTH);
-        gastosPanel.add(scrollGastos, BorderLayout.CENTER);
+        gastosPanel.add(entradaPanel, BorderLayout.NORTH);
 
-        p.add(obsPanel, BorderLayout.NORTH);
-        p.add(gastosPanel, BorderLayout.CENTER);
+        // Norte: obs + label gastos + entrada
+        JPanel norte = new JPanel(new BorderLayout(0, 8));
+        norte.setOpaque(false);
+        norte.add(obsPanel, BorderLayout.NORTH);
+        JPanel gastosTop = new JPanel(new BorderLayout(0, 4));
+        gastosTop.setOpaque(false);
+        gastosTop.add(lGastos, BorderLayout.NORTH);
+        gastosTop.add(entradaPanel, BorderLayout.CENTER);
+        norte.add(gastosTop, BorderLayout.CENTER);
+
+        p.add(norte, BorderLayout.NORTH);
+        p.add(gastosConTotal, BorderLayout.CENTER);
         return p;
+    }
+
+    // ─── Helper: campo con etiqueta encima ───────────────────────────────────
+    private JPanel campoConEtiqueta(String texto, JComponent campo) {
+        JPanel wrap = new JPanel(new BorderLayout(0, 3));
+        wrap.setOpaque(false);
+        JLabel lbl = new JLabel(texto);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lbl.setForeground(COLOR_TEXTO_GRIS);
+        wrap.add(lbl, BorderLayout.NORTH);
+        wrap.add(campo, BorderLayout.CENTER);
+        return wrap;
+    }
+
+    // ─── Cargar gasto en formulario para edición ──────────────────────────────
+    private void cargarGastoEnFormulario(int row) {
+        if (row < 0 || row >= gastosActuales.size()) return;
+        gastoEnEdicion = gastosActuales.get(row);
+        cmbCatGasto.setSelectedItem(gastoEnEdicion.getCategoria());
+        txtConceptoGasto.setText(nvl(gastoEnEdicion.getConcepto()));
+        txtMontoGasto.setText(gastoEnEdicion.getMonto() != null ? gastoEnEdicion.getMonto().toPlainString() : "");
+        if (gastoEnEdicion.getFecha() != null)
+            txtFechaGasto.setText(sdf.format(gastoEnEdicion.getFecha()));
+    }
+
+    // ─── Confirmar (agregar o actualizar) gasto ───────────────────────────────
+    private void confirmarGasto() {
+        String concepto = txtConceptoGasto.getText().trim();
+        String montoStr = txtMontoGasto.getText().trim();
+        String fechaStr = txtFechaGasto.getText().trim();
+
+        if (concepto.isEmpty() || montoStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Concepto y monto son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        BigDecimal monto;
+        try {
+            monto = new BigDecimal(montoStr.replace(",", "."));
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "El monto debe ser un número válido.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Asegurar que existe el adendum
+        try {
+            if (adendumActual == null) {
+                if (expediente == null || expediente.getId() == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Guarde el expediente primero antes de agregar gastos.",
+                            "Aviso", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                adendumActual = adendumDAO.findByExpediente(expediente.getId());
+                if (adendumActual == null) {
+                    adendumActual = new Adendum();
+                    adendumActual.setExpediente(expediente);
+                    adendumActual.setObservaciones(txtAdendumObs.getText().trim());
+                    adendumDAO.save(adendumActual);
+                }
+            }
+
+            GastoMensual gasto = (gastoEnEdicion != null) ? gastoEnEdicion : new GastoMensual();
+            gasto.setCategoria((CategoriaGasto) cmbCatGasto.getSelectedItem());
+            gasto.setConcepto(concepto);
+            gasto.setMonto(monto);
+            gasto.setFecha(parseFecha(fechaStr));
+            gasto.setAdendum(adendumActual);
+
+            if (gasto.getId() == null) {
+                gastoDAO.save(gasto);
+            } else {
+                gastoDAO.update(gasto);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error al guardar el gasto:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Limpiar formulario y recargar tabla
+        gastoEnEdicion = null;
+        limpiarFormularioGasto();
+        recargarTablaGastos();
+    }
+
+    // ─── Eliminar gasto ───────────────────────────────────────────────────────
+    private void eliminarGasto(int row) {
+        if (row < 0 || row >= gastosActuales.size()) return;
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Eliminar este gasto?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        GastoMensual g = gastosActuales.get(row);
+        try {
+            if (g.getId() != null) gastoDAO.delete(g.getId());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        recargarTablaGastos();
+    }
+
+    // ─── Limpiar formulario de gasto ──────────────────────────────────────────
+    private void limpiarFormularioGasto() {
+        cmbCatGasto.setSelectedIndex(0);
+        txtConceptoGasto.setText("");
+        txtMontoGasto.setText("");
+        try { txtFechaGasto.setText(""); } catch (Exception ignored) {}
+    }
+
+    // ─── Recargar tabla desde DAO ─────────────────────────────────────────────
+    private void recargarTablaGastos() {
+        modeloGastos.setRowCount(0);
+        gastosActuales.clear();
+        if (adendumActual == null || adendumActual.getId() == null) return;
+        try {
+            java.util.List<GastoMensual> gastos = gastoDAO.findByAdendum(adendumActual.getId());
+            BigDecimal total = BigDecimal.ZERO;
+            for (GastoMensual g : gastos) {
+                gastosActuales.add(g);
+                BigDecimal m = g.getMonto() != null ? g.getMonto() : BigDecimal.ZERO;
+                total = total.add(m);
+                String catDisplay = g.getCategoria() != null
+                        ? g.getCategoria().name().replace("_", " ")
+                        .substring(0, 1).toUpperCase()
+                        + g.getCategoria().name().replace("_", " ").substring(1).toLowerCase()
+                        : "—";
+                modeloGastos.addRow(new Object[]{
+                        catDisplay,
+                        nvl(g.getConcepto()),
+                        String.format("%,.0f", m),
+                        g.getFecha() != null ? sdf.format(g.getFecha()) : "—",
+                        ""
+                });
+            }
+            lblTotalGastos.setText(String.format("%,.0f colones", total));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     // ─── Tab 4: Docs ──────────────────────────────────────────────────────────
@@ -755,19 +1014,7 @@ public class FrmDetalleExpediente extends JDialog {
             adendumActual = adendumDAO.findByExpediente(expediente.getId());
             if (adendumActual != null) {
                 txtAdendumObs.setText(nvl(adendumActual.getObservaciones()));
-                // NO acceder adendumActual.getGastosMensuales() → lazy en entidad detached
-                if (adendumActual.getId() != null) {
-                    List<GastoMensual> gastos = gastoDAO.findByAdendum(adendumActual.getId());
-                    modeloGastos.setRowCount(0);
-                    for (GastoMensual g : gastos) {
-                        modeloGastos.addRow(new Object[] {
-                                g.getCategoria() != null ? g.getCategoria().name() : "—",
-                                nvl(g.getConcepto()),
-                                g.getMonto() != null ? g.getMonto().toPlainString() : "0.00",
-                                g.getFecha() != null ? sdf.format(g.getFecha()) : "—"
-                        });
-                    }
-                }
+                recargarTablaGastos();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1055,9 +1302,8 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private String generarNumeroFicha() {
-        String fecha = new java.text.SimpleDateFormat("yyyyMMdd").format(new Date());
-        int sufijo = (int) (Math.random() * 9000) + 1000;
-        return "EXP-" + fecha + "-" + sufijo;
+        String id = txtNumeroDoc.getText();
+        return "EXP-" + id;
     }
 
     private JButton crearBoton(String texto, Color bg, Color fg, ActionListener accion) {
@@ -1087,8 +1333,8 @@ public class FrmDetalleExpediente extends JDialog {
             public void mouseEntered(MouseEvent e) {
                 btn.setBackground(bg == COLOR_PRIMARIO ? COLOR_PRIMARIO_H
                         : bg == COLOR_GRIS_BTN ? COLOR_GRIS_BTN_H
-                                : bg == COLOR_PURPURA ? COLOR_PURPURA_H
-                                        : bg.darker());
+                        : bg == COLOR_PURPURA ? COLOR_PURPURA_H
+                        : bg.darker());
                 btn.repaint();
             }
 
