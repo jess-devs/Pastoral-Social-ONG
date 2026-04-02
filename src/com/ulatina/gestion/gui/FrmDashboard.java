@@ -1,8 +1,7 @@
 package com.ulatina.gestion.gui;
 
-import com.ulatina.gestion.dao.impl.ExpedienteDAOImpl;
-import com.ulatina.gestion.model.Expediente;
-import com.ulatina.gestion.model.enums.EstadoExpediente;
+import com.ulatina.gestion.controller.ExpedienteController;
+import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.util.JPAUtil;
 
 import javax.swing.*;
@@ -10,8 +9,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * FrmDashboard — Pantalla principal del sistema Pastoral Social.
@@ -19,36 +16,13 @@ import java.util.List;
  */
 public class FrmDashboard extends JFrame {
 
-    // ─── Colores ─────────────────────────────────────────────────────────────
-    private static final Color SIDE_BG = new Color(30, 33, 48);
-    private static final Color SIDE_ACTV = new Color(59, 130, 246);
-    private static final Color SIDE_HOVR = new Color(45, 50, 70);
-    private static final Color SIDE_SEP = new Color(50, 55, 75);
-    private static final Color SIDE_TXT = new Color(180, 185, 210);
-    private static final Color CONT_BG = new Color(245, 246, 250);
-    private static final Color BLANCO = Color.WHITE;
-    private static final Color BORDE = new Color(220, 224, 230);
-    private static final Color TEXT_DARK = new Color(17, 24, 39);
-    private static final Color TEXT_GRAY = new Color(107, 114, 128);
-
-    private static final Color AZUL_BG = new Color(219, 234, 254);
-    private static final Color AZUL_FG = new Color(37, 99, 235);
-    private static final Color VERDE_BG = new Color(220, 252, 231);
-    private static final Color VERDE_FG = new Color(22, 101, 52);
-    private static final Color AMBAR_BG = new Color(254, 243, 199);
-    private static final Color AMBAR_FG = new Color(146, 64, 14);
-    private static final Color ROJO_BG = new Color(254, 226, 226);
-    private static final Color ROJO_FG = new Color(153, 27, 27);
-    private static final Color PURP_BG = new Color(237, 233, 254);
-    private static final Color PURP_FG = new Color(109, 40, 217);
-
     // ─── Estado ──────────────────────────────────────────────────────────────
     private JPanel panelContenido;
     private JLabel lblTopbarTitulo;
     private JButton btnActivo = null;
     private JPanel sidebar;
 
-    private final ExpedienteDAOImpl expedienteDAO = new ExpedienteDAOImpl();
+    private final ExpedienteController expedienteController = new ExpedienteController();
 
     // ─── Constructor ─────────────────────────────────────────────────────────
     public FrmDashboard() {
@@ -81,25 +55,25 @@ public class FrmDashboard extends JFrame {
     private JPanel crearSidebar() {
         JPanel sb = new JPanel();
         sb.setLayout(new BoxLayout(sb, BoxLayout.Y_AXIS));
-        sb.setBackground(SIDE_BG);
+        sb.setBackground(AppColors.SIDE_BG);
         sb.setPreferredSize(new Dimension(200, 0));
 
         // Brand
         JPanel brand = new JPanel();
         brand.setLayout(new BoxLayout(brand, BoxLayout.Y_AXIS));
-        brand.setBackground(SIDE_BG);
+        brand.setBackground(AppColors.SIDE_BG);
         brand.setBorder(new EmptyBorder(28, 22, 24, 22));
         brand.setMaximumSize(new Dimension(200, 88));
         brand.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel l1 = new JLabel("Pastoral");
         l1.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        l1.setForeground(BLANCO);
+        l1.setForeground(AppColors.PANEL);
         l1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel l2 = new JLabel("Social");
         l2.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        l2.setForeground(SIDE_ACTV);
+        l2.setForeground(AppColors.SIDE_ACTV);
         l2.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         brand.add(l1);
@@ -157,7 +131,7 @@ public class FrmDashboard extends JFrame {
 
     private Component sep() {
         JPanel s = new JPanel();
-        s.setBackground(SIDE_SEP);
+        s.setBackground(AppColors.SIDE_SEP);
         s.setMaximumSize(new Dimension(200, 1));
         return s;
     }
@@ -172,8 +146,8 @@ public class FrmDashboard extends JFrame {
             }
         };
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        btn.setForeground(SIDE_TXT);
-        btn.setBackground(SIDE_BG);
+        btn.setForeground(AppColors.SIDE_TXT);
+        btn.setBackground(AppColors.SIDE_BG);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setOpaque(false);
         btn.setContentAreaFilled(false);
@@ -187,7 +161,7 @@ public class FrmDashboard extends JFrame {
             @Override
             public void mouseEntered(MouseEvent e) {
                 if (btn != btnActivo) {
-                    btn.setBackground(SIDE_HOVR);
+                    btn.setBackground(AppColors.SIDE_HOVR);
                     btn.repaint();
                 }
             }
@@ -195,7 +169,7 @@ public class FrmDashboard extends JFrame {
             @Override
             public void mouseExited(MouseEvent e) {
                 if (btn != btnActivo) {
-                    btn.setBackground(SIDE_BG);
+                    btn.setBackground(AppColors.SIDE_BG);
                     btn.repaint();
                 }
             }
@@ -205,13 +179,13 @@ public class FrmDashboard extends JFrame {
 
     private void activar(JButton btn) {
         if (btnActivo != null) {
-            btnActivo.setBackground(SIDE_BG);
-            btnActivo.setForeground(SIDE_TXT);
+            btnActivo.setBackground(AppColors.SIDE_BG);
+            btnActivo.setForeground(AppColors.SIDE_TXT);
             btnActivo.repaint();
         }
         btnActivo = btn;
-        btn.setBackground(SIDE_ACTV);
-        btn.setForeground(BLANCO);
+        btn.setBackground(AppColors.SIDE_ACTV);
+        btn.setForeground(AppColors.PANEL);
         btn.repaint();
     }
 
@@ -220,11 +194,11 @@ public class FrmDashboard extends JFrame {
     // ═════════════════════════════════════════════════════════════════════════
     private JPanel crearAreaPrincipal() {
         JPanel area = new JPanel(new BorderLayout());
-        area.setBackground(CONT_BG);
+        area.setBackground(AppColors.FONDO);
         area.add(crearTopbar(), BorderLayout.NORTH);
 
         panelContenido = new JPanel(new BorderLayout());
-        panelContenido.setBackground(CONT_BG);
+        panelContenido.setBackground(AppColors.FONDO);
         panelContenido.add(crearVistaDashboard(), BorderLayout.CENTER);
         area.add(panelContenido, BorderLayout.CENTER);
         return area;
@@ -233,20 +207,20 @@ public class FrmDashboard extends JFrame {
     // ─── Topbar ───────────────────────────────────────────────────────────────
     private JPanel crearTopbar() {
         JPanel top = new JPanel(new BorderLayout());
-        top.setBackground(BLANCO);
+        top.setBackground(AppColors.PANEL);
         top.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDE),
+                BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE),
                 new EmptyBorder(14, 26, 14, 26)));
         top.setPreferredSize(new Dimension(0, 58));
 
         lblTopbarTitulo = new JLabel("Dashboard");
         lblTopbarTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblTopbarTitulo.setForeground(TEXT_DARK);
+        lblTopbarTitulo.setForeground(AppColors.TEXTO);
         top.add(lblTopbarTitulo, BorderLayout.WEST);
 
         JLabel lblUser = new JLabel("Juan  (Voluntario)");
         lblUser.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblUser.setForeground(TEXT_GRAY);
+        lblUser.setForeground(AppColors.TEXTO_GRIS);
         top.add(lblUser, BorderLayout.EAST);
         return top;
     }
@@ -257,30 +231,27 @@ public class FrmDashboard extends JFrame {
     private JPanel crearVistaDashboard() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-        p.setBackground(CONT_BG);
+        p.setBackground(AppColors.FONDO);
         p.setBorder(new EmptyBorder(24, 28, 24, 28));
 
-        // Métricas desde la BD
-        List<Expediente> todos = cargarExpedientesSeguro();
-        long activos = todos.stream().filter(e -> EstadoExpediente.ACTIVO.equals(e.getEstado())).count();
-        long enProceso = todos.stream().filter(e -> EstadoExpediente.EN_PROCESO.equals(e.getEstado())).count();
-        long cerrados = todos.stream().filter(e -> EstadoExpediente.CERRADO.equals(e.getEstado())).count();
+        // Métricas desde el controller
+        ExpedienteController.DashboardMetrics m = expedienteController.getMetrics();
 
         // Tarjetas métricas
         JPanel tarjetas = new JPanel(new GridLayout(1, 4, 14, 0));
         tarjetas.setOpaque(false);
         tarjetas.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         tarjetas.setAlignmentX(Component.LEFT_ALIGNMENT);
-        tarjetas.add(tarjeta(String.valueOf(todos.size()), "Expedientes", AZUL_BG, AZUL_FG));
-        tarjetas.add(tarjeta(String.valueOf(activos), "Activos", VERDE_BG, VERDE_FG));
-        tarjetas.add(tarjeta(String.valueOf(enProceso), "En Proceso", AMBAR_BG, AMBAR_FG));
-        tarjetas.add(tarjeta(String.valueOf(cerrados), "Cerrados", ROJO_BG, ROJO_FG));
+        tarjetas.add(tarjeta(String.valueOf(m.total), "Expedientes", AppColors.AZUL_CARD_BG, AppColors.AZUL_CARD_FG));
+        tarjetas.add(tarjeta(String.valueOf(m.activos), "Activos", AppColors.VERDE_BG, AppColors.VERDE_FG));
+        tarjetas.add(tarjeta(String.valueOf(m.enProceso), "En Proceso", AppColors.AMBAR_BG, AppColors.AMBAR_FG));
+        tarjetas.add(tarjeta(String.valueOf(m.cerrados), "Cerrados", AppColors.ROJO_CARD_BG, AppColors.ROJO_CARD_FG));
         p.add(tarjetas);
         p.add(Box.createVerticalStrut(28));
 
         JLabel lblMod = new JLabel("Módulos del sistema");
         lblMod.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lblMod.setForeground(TEXT_DARK);
+        lblMod.setForeground(AppColors.TEXTO);
         lblMod.setAlignmentX(Component.LEFT_ALIGNMENT);
         p.add(lblMod);
         p.add(Box.createVerticalStrut(14));
@@ -289,19 +260,21 @@ public class FrmDashboard extends JFrame {
         grid.setOpaque(false);
         grid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        grid.add(modulo("Expedientes", "Gestión de casos y seguimiento", AZUL_BG, AZUL_FG, () -> {
-            activarNav("Expedientes");
-            mostrarExpedientes();
-        }));
-        grid.add(modulo("Eventos", "Registro y asistencia", VERDE_BG, VERDE_FG, () -> mostrarProximamente("Eventos")));
-        grid.add(modulo("Reportes", "Estadísticas y análisis", AMBAR_BG, AMBAR_FG,
+        grid.add(modulo("Expedientes", "Gestión de casos y seguimiento", AppColors.AZUL_CARD_BG, AppColors.AZUL_CARD_FG,
+                () -> {
+                    activarNav("Expedientes");
+                    mostrarExpedientes();
+                }));
+        grid.add(modulo("Eventos", "Registro y asistencia", AppColors.VERDE_BG, AppColors.VERDE_FG,
+                () -> mostrarProximamente("Eventos")));
+        grid.add(modulo("Reportes", "Estadísticas y análisis", AppColors.AMBAR_BG, AppColors.AMBAR_FG,
                 () -> mostrarProximamente("Reportes")));
-        grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector", PURP_BG, PURP_FG,
+        grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector", AppColors.PURP_BG, AppColors.PURPURA,
                 () -> mostrarProximamente("Consulta Vicarial")));
-        grid.add(modulo("Familias", "Miembros y núcleo familiar", VERDE_BG, VERDE_FG,
+        grid.add(modulo("Familias", "Miembros y núcleo familiar", AppColors.VERDE_BG, AppColors.VERDE_FG,
                 () -> mostrarProximamente("Familias")));
-        grid.add(modulo("Administración", "Usuarios, roles y parroquias", ROJO_BG, ROJO_FG,
-                () -> mostrarProximamente("Administración")));
+        grid.add(modulo("Administración", "Usuarios, roles y parroquias", AppColors.ROJO_CARD_BG,
+                AppColors.ROJO_CARD_FG, () -> mostrarProximamente("Administración")));
         p.add(grid);
         return p;
     }
@@ -353,7 +326,7 @@ public class FrmDashboard extends JFrame {
             }
         };
         c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
-        c.setBackground(BLANCO);
+        c.setBackground(AppColors.PANEL);
         c.setOpaque(false);
         c.setBorder(new EmptyBorder(18, 20, 18, 20));
         c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -380,12 +353,12 @@ public class FrmDashboard extends JFrame {
 
         JLabel lTit = new JLabel(titulo);
         lTit.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lTit.setForeground(TEXT_DARK);
+        lTit.setForeground(AppColors.TEXTO);
         lTit.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lDesc = new JLabel("<html><p style='width:140px'>" + desc + "</p></html>");
         lDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lDesc.setForeground(TEXT_GRAY);
+        lDesc.setForeground(AppColors.TEXTO_GRIS);
         lDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Botón "Abrir →"
@@ -429,7 +402,7 @@ public class FrmDashboard extends JFrame {
 
             @Override
             public void mouseExited(MouseEvent e) {
-                c.setBackground(BLANCO);
+                c.setBackground(AppColors.PANEL);
                 c.repaint();
             }
 
@@ -462,10 +435,10 @@ public class FrmDashboard extends JFrame {
 
     private void mostrarProximamente(String nombre) {
         JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(CONT_BG);
+        p.setBackground(AppColors.FONDO);
         JLabel lbl = new JLabel(nombre + "  —  Próximamente");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lbl.setForeground(TEXT_GRAY);
+        lbl.setForeground(AppColors.TEXTO_GRIS);
         p.add(lbl);
         cambiarVista(p, nombre);
     }
@@ -480,18 +453,6 @@ public class FrmDashboard extends JFrame {
                     break;
                 }
             }
-        }
-    }
-
-    /**
-     * Carga todos los expedientes desde la BD; retorna lista vacía si hay error.
-     */
-    private List<Expediente> cargarExpedientesSeguro() {
-        try {
-            return expedienteDAO.findAll();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return Collections.emptyList();
         }
     }
 

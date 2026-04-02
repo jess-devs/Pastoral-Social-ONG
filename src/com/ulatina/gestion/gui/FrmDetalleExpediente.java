@@ -1,13 +1,15 @@
 package com.ulatina.gestion.gui;
 
-import com.ulatina.gestion.dao.impl.*;
+import com.ulatina.gestion.controller.ExpedienteController;
+import com.ulatina.gestion.controller.ParroquiaController;
+import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.*;
 import com.ulatina.gestion.model.enums.*;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
@@ -19,26 +21,9 @@ import java.util.List;
 
 /**
  * FrmDetalleExpediente — Dialog de creación/edición de expedientes.
- * Usa los DAOs existentes del proyecto Pastoral-Social-ONG.
  * Modo nuevo: expediente == null. Modo editar: expediente != null.
  */
 public class FrmDetalleExpediente extends JDialog {
-
-    // ─── Colores (igual que FrmExpedientesPanel) ──────────────────────────────
-    private static final Color COLOR_FONDO = new Color(245, 246, 250);
-    private static final Color COLOR_PANEL = Color.WHITE;
-    private static final Color COLOR_PRIMARIO = new Color(34, 197, 94);
-    private static final Color COLOR_PRIMARIO_H = new Color(22, 163, 74);
-    private static final Color COLOR_GRIS_BTN = new Color(229, 231, 235);
-    private static final Color COLOR_GRIS_BTN_H = new Color(209, 213, 219);
-    private static final Color COLOR_BORDE = new Color(209, 213, 219);
-    private static final Color COLOR_TEXTO = new Color(17, 24, 39);
-    private static final Color COLOR_TEXTO_GRIS = new Color(107, 114, 128);
-    private static final Color COLOR_AZUL = new Color(59, 130, 246);
-    private static final Color COLOR_PURPURA = new Color(109, 40, 217);
-    private static final Color COLOR_PURPURA_H = new Color(91, 33, 182);
-    private static final Color COLOR_AMARILLO_BG = new Color(254, 243, 199);
-    private static final Color COLOR_ROJO = new Color(220, 38, 38);
 
     // ─── Estado ───────────────────────────────────────────────────────────────
     private Expediente expediente;
@@ -46,17 +31,9 @@ public class FrmDetalleExpediente extends JDialog {
     private final Runnable onGuardado;
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
-    // ─── DAOs ─────────────────────────────────────────────────────────────────
-    private final ExpedienteDAOImpl expedienteDAO = new ExpedienteDAOImpl();
-    private final PersonaDAOImpl personaDAO = new PersonaDAOImpl();
-    private final ViviendaDAOImpl viviendaDAO = new ViviendaDAOImpl();
-    private final AdendumDAOImpl adendumDAO = new AdendumDAOImpl();
-    private final GastoMensualDAOImpl gastoDAO = new GastoMensualDAOImpl();
-    private final MiembroFamiliarDAOImpl miembroDAO = new MiembroFamiliarDAOImpl();
-    private final DocumentoAdjuntoDAOImpl documentoDAO = new DocumentoAdjuntoDAOImpl();
-    private final AsistenciaSolicitadaDAOImpl asistenciaDAO = new AsistenciaSolicitadaDAOImpl();
-    private final EntrevistaDAOImpl entrevistaDAO = new EntrevistaDAOImpl();
-    private final ParroquiaDAOImpl parroquiaDAO = new ParroquiaDAOImpl();
+    // ─── Controllers ──────────────────────────────────────────────────────────
+    private final ExpedienteController expedienteController = new ExpedienteController();
+    private final ParroquiaController parroquiaController = new ParroquiaController();
 
     // ─── Componentes — título ────────────────────────────────────────────────
     private JLabel lblTituloPrincipal;
@@ -140,7 +117,7 @@ public class FrmDetalleExpediente extends JDialog {
     // ═════════════════════════════════════════════════════════════════════════
     private void initComponents() {
         setTitle(esNuevo ? "Nuevo Expediente" : "Expediente #" + expediente.getNumeroFicha());
-        getContentPane().setBackground(COLOR_FONDO);
+        getContentPane().setBackground(AppColors.FONDO);
         setLayout(new BorderLayout());
 
         tabbedPane = crearTabbedPane();
@@ -153,20 +130,20 @@ public class FrmDetalleExpediente extends JDialog {
     // ─── Panel título ─────────────────────────────────────────────────────────
     private JPanel crearPanelTitulo() {
         JPanel p = new JPanel(new BorderLayout(12, 0));
-        p.setBackground(COLOR_PANEL);
+        p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(16, 24, 12, 24));
 
         lblTituloPrincipal = new JLabel(esNuevo ? "Nuevo Expediente"
                 : "#" + expediente.getNumeroFicha() + "  —  " + nombreTitular());
         lblTituloPrincipal.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblTituloPrincipal.setForeground(COLOR_TEXTO);
+        lblTituloPrincipal.setForeground(AppColors.TEXTO);
 
         lblMarcadorBadge = new JLabel("  URGENTE  ") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(COLOR_ROJO);
+                g2.setColor(AppColors.ROJO);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 20, 20));
                 g2.dispose();
                 super.paintComponent(g);
@@ -190,7 +167,7 @@ public class FrmDetalleExpediente extends JDialog {
     private JTabbedPane crearTabbedPane() {
         JTabbedPane tp = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
         tp.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tp.setBackground(COLOR_FONDO);
+        tp.setBackground(AppColors.FONDO);
 
         tp.addTab("Datos", crearTabDatos());
         tp.addTab("Familia", crearTabFamilia());
@@ -205,7 +182,7 @@ public class FrmDetalleExpediente extends JDialog {
     // ─── Tab 0: Datos ─────────────────────────────────────────────────────────
     private JScrollPane crearTabDatos() {
         JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(COLOR_PANEL);
+        p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
         GridBagConstraints lc = new GridBagConstraints();
@@ -217,7 +194,7 @@ public class FrmDetalleExpediente extends JDialog {
         fc.weightx = 1.0;
         fc.insets = new Insets(2, 4, 5, 12);
 
-        GridBagConstraints wc = new GridBagConstraints(); // full-width
+        GridBagConstraints wc = new GridBagConstraints();
         wc.gridwidth = GridBagConstraints.REMAINDER;
         wc.fill = GridBagConstraints.HORIZONTAL;
         wc.weightx = 1.0;
@@ -231,18 +208,16 @@ public class FrmDetalleExpediente extends JDialog {
         lc.gridwidth = 4;
         JLabel secTitular = new JLabel("DATOS DEL TITULAR");
         secTitular.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        secTitular.setForeground(COLOR_TEXTO_GRIS);
+        secTitular.setForeground(AppColors.TEXTO_GRIS);
         secTitular.setBorder(new EmptyBorder(0, 0, 4, 0));
         p.add(secTitular, lc);
         lc.gridwidth = 1;
         row++;
 
-        // Nombres | Apellidos
         txtNombres = new JTextField(15);
         txtApellidos = new JTextField(15);
         agregarFila(p, row++, lc, fc, "Nombres *", txtNombres, "Apellidos *", txtApellidos);
 
-        // Tipo Doc + Número Doc | Teléfono
         cmbTipoDoc = new JComboBox<>(TipoDocumentoPersona.values());
         txtNumeroDoc = new JTextField(12);
         txtTelefono = new JTextField(12);
@@ -252,22 +227,18 @@ public class FrmDetalleExpediente extends JDialog {
         docPanel.add(txtNumeroDoc);
         agregarFila(p, row++, lc, fc, "Documento *", docPanel, "Teléfono", txtTelefono);
 
-        // Fecha Nacimiento | Sexo
-        txtFechaNac = crearCampoFecha();
+        txtFechaNac = UIFactory.crearCampoFecha();
         cmbSexo = new JComboBox<>(Sexo.values());
         agregarFila(p, row++, lc, fc, "Fecha Nacimiento", txtFechaNac, "Sexo", cmbSexo);
 
-        // Estado Civil | Profesión/Oficio
         cmbEstadoCivil = new JComboBox<>(EstadoCivil.values());
         txtProfesion = new JTextField(15);
         agregarFila(p, row++, lc, fc, "Estado Civil", cmbEstadoCivil, "Profesión/Oficio", txtProfesion);
 
-        // Nivel Educación | País Origen
         txtNivelEducacion = new JTextField(15);
         txtPaisOrigen = new JTextField(15);
         agregarFila(p, row++, lc, fc, "Nivel Educación", txtNivelEducacion, "País Origen", txtPaisOrigen);
 
-        // Nacionalidad | Cond. Migratoria
         txtNacionalidad = new JTextField(15);
         txtCondicionMigratoria = new JTextField(15);
         agregarFila(p, row++, lc, fc, "Nacionalidad", txtNacionalidad, "Cond. Migratoria", txtCondicionMigratoria);
@@ -296,14 +267,14 @@ public class FrmDetalleExpediente extends JDialog {
         lc.gridwidth = 1;
         row++;
 
-        // Condición de Salud (con borde amarillo)
+        // Condición de Salud
         txtCondicionSalud = new JTextArea(2, 20);
         txtCondicionSalud.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtCondicionSalud.setLineWrap(true);
         txtCondicionSalud.setWrapStyleWord(true);
         JScrollPane scrollSalud = new JScrollPane(txtCondicionSalud);
         scrollSalud.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_AMARILLO_BG, 2, true),
+                new LineBorder(AppColors.AMBAR_BG, 2, true),
                 new EmptyBorder(2, 4, 2, 4)));
         lc.gridx = 0;
         lc.gridy = row;
@@ -318,7 +289,7 @@ public class FrmDetalleExpediente extends JDialog {
 
         // Separador
         JSeparator sep = new JSeparator();
-        sep.setForeground(COLOR_BORDE);
+        sep.setForeground(AppColors.BORDE);
         lc.gridx = 0;
         lc.gridy = row;
         lc.gridwidth = 4;
@@ -336,18 +307,16 @@ public class FrmDetalleExpediente extends JDialog {
         lc.gridwidth = 4;
         JLabel secExp = new JLabel("DATOS DEL EXPEDIENTE");
         secExp.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        secExp.setForeground(COLOR_TEXTO_GRIS);
+        secExp.setForeground(AppColors.TEXTO_GRIS);
         secExp.setBorder(new EmptyBorder(0, 0, 4, 0));
         p.add(secExp, lc);
         lc.gridwidth = 1;
         row++;
 
-        // Entrevistador | Estado
         txtEntrevistador = new JTextField(15);
         cmbEstado = new JComboBox<>(EstadoExpediente.values());
         agregarFila(p, row++, lc, fc, "Entrevistador", txtEntrevistador, "Estado", cmbEstado);
 
-        // Parroquia | Color Marcador
         cmbParroquia = new JComboBox<>();
         cmbParroquia.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -366,9 +335,8 @@ public class FrmDetalleExpediente extends JDialog {
         });
         agregarFila(p, row++, lc, fc, "Parroquia", cmbParroquia, "Color Marcador", cmbColorMarcador);
 
-        // Fecha Inicio | Fecha Prevista
-        txtFechaInicio = crearCampoFecha();
-        txtFechaPrevista = crearCampoFecha();
+        txtFechaInicio = UIFactory.crearCampoFecha();
+        txtFechaPrevista = UIFactory.crearCampoFecha();
         agregarFila(p, row++, lc, fc, "Fecha Inicio *", txtFechaInicio, "Fecha Prevista Concl.", txtFechaPrevista);
 
         // Observaciones (full width)
@@ -377,7 +345,7 @@ public class FrmDetalleExpediente extends JDialog {
         txtObservaciones.setLineWrap(true);
         txtObservaciones.setWrapStyleWord(true);
         JScrollPane scrollObs = new JScrollPane(txtObservaciones);
-        scrollObs.setBorder(new LineBorder(COLOR_BORDE, 1, true));
+        scrollObs.setBorder(new LineBorder(AppColors.BORDE, 1, true));
         lc.gridx = 0;
         lc.gridy = row;
         lc.gridwidth = 1;
@@ -398,13 +366,13 @@ public class FrmDetalleExpediente extends JDialog {
 
         JScrollPane scroll = new JScrollPane(p);
         scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setBackground(COLOR_PANEL);
+        scroll.getViewport().setBackground(AppColors.PANEL);
         return scroll;
     }
 
     private void agregarFila(JPanel p, int row,
-                             GridBagConstraints lc, GridBagConstraints fc,
-                             String lbl1, Component c1, String lbl2, Component c2) {
+            GridBagConstraints lc, GridBagConstraints fc,
+            String lbl1, Component c1, String lbl2, Component c2) {
         lc.gridx = 0;
         lc.gridy = row;
         p.add(etiqueta(lbl1), lc);
@@ -422,7 +390,7 @@ public class FrmDetalleExpediente extends JDialog {
     private JLabel etiqueta(String texto) {
         JLabel l = new JLabel(texto);
         l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        l.setForeground(COLOR_TEXTO_GRIS);
+        l.setForeground(AppColors.TEXTO_GRIS);
         return l;
     }
 
@@ -441,7 +409,7 @@ public class FrmDetalleExpediente extends JDialog {
     // ─── Tab 2: Vivienda ──────────────────────────────────────────────────────
     private JPanel crearTabVivienda() {
         JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(COLOR_PANEL);
+        p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(20, 28, 20, 28));
 
         GridBagConstraints lc = new GridBagConstraints();
@@ -460,7 +428,6 @@ public class FrmDetalleExpediente extends JDialog {
 
         int row = 0;
 
-        // Dirección (full width)
         lc.gridx = 0;
         lc.gridy = row;
         p.add(etiqueta("Dirección de Vivienda"), lc);
@@ -501,20 +468,19 @@ public class FrmDetalleExpediente extends JDialog {
     // ─── Tab 3: Adendum ───────────────────────────────────────────────────────
     private JPanel crearTabAdendum() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
-        p.setBackground(COLOR_PANEL);
+        p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
-        // ── Sección observaciones ──────────────────────────────────────────
         JLabel lObs = new JLabel("Observaciones de la entrevista");
         lObs.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lObs.setForeground(COLOR_TEXTO);
+        lObs.setForeground(AppColors.TEXTO);
 
         txtAdendumObs = new JTextArea(4, 20);
         txtAdendumObs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtAdendumObs.setLineWrap(true);
         txtAdendumObs.setWrapStyleWord(true);
         JScrollPane scrollObs = new JScrollPane(txtAdendumObs);
-        scrollObs.setBorder(new LineBorder(COLOR_BORDE, 1, true));
+        scrollObs.setBorder(new LineBorder(AppColors.BORDE, 1, true));
         scrollObs.setPreferredSize(new Dimension(0, 90));
 
         JPanel obsPanel = new JPanel(new BorderLayout(0, 6));
@@ -522,52 +488,50 @@ public class FrmDetalleExpediente extends JDialog {
         obsPanel.add(lObs, BorderLayout.NORTH);
         obsPanel.add(scrollObs, BorderLayout.CENTER);
 
-        // ── Sección gastos ─────────────────────────────────────────────────
         JLabel lGastos = new JLabel("Gastos mensuales");
         lGastos.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lGastos.setForeground(COLOR_TEXTO);
+        lGastos.setForeground(AppColors.TEXTO);
         lGastos.setBorder(new EmptyBorder(4, 0, 6, 0));
 
-        // ── Fila de entrada ────────────────────────────────────────────────
-        cmbCatGasto      = new JComboBox<>(CategoriaGasto.values());
+        cmbCatGasto = new JComboBox<>(CategoriaGasto.values());
         txtConceptoGasto = new JTextField(12);
         txtConceptoGasto.putClientProperty("JTextField.placeholderText", "Ej: Electricidad");
-        txtMontoGasto    = new JTextField(8);
+        txtMontoGasto = new JTextField(8);
         txtMontoGasto.putClientProperty("JTextField.placeholderText", "Ej: 18500");
-        txtFechaGasto    = crearCampoFecha();
+        txtFechaGasto = UIFactory.crearCampoFecha();
 
-        // Estilizar campos de entrada
-        for (JComponent c : new JComponent[]{cmbCatGasto, txtConceptoGasto, txtMontoGasto, txtFechaGasto}) {
+        for (JComponent c : new JComponent[] { cmbCatGasto, txtConceptoGasto, txtMontoGasto, txtFechaGasto }) {
             c.setFont(new Font("Segoe UI", Font.PLAIN, 13));
             if (c instanceof JTextField || c instanceof JFormattedTextField) {
                 c.setBorder(BorderFactory.createCompoundBorder(
-                        new LineBorder(COLOR_BORDE, 1, true),
+                        new LineBorder(AppColors.BORDE, 1, true),
                         new EmptyBorder(4, 8, 4, 8)));
             }
             c.setPreferredSize(new Dimension(c.getPreferredSize().width, 32));
         }
-        cmbCatGasto.setBorder(new LineBorder(COLOR_BORDE, 1, true));
+        cmbCatGasto.setBorder(new LineBorder(AppColors.BORDE, 1, true));
 
-        JButton btnAgregar = crearBoton("+ Agregar gasto", COLOR_PRIMARIO, Color.WHITE, e -> confirmarGasto());
+        JButton btnAgregar = UIFactory.crearBotonDialog("+ Agregar gasto", AppColors.PRIMARIO, Color.WHITE,
+                e -> confirmarGasto());
 
-        // Cada campo va envuelto en un sub-panel con su etiqueta encima
         JPanel entradaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         entradaPanel.setOpaque(false);
-        entradaPanel.add(campoConEtiqueta("Categoría",          cmbCatGasto));
-        entradaPanel.add(campoConEtiqueta("Concepto",           txtConceptoGasto));
-        entradaPanel.add(campoConEtiqueta("Monto (₡)",         txtMontoGasto));
+        entradaPanel.add(campoConEtiqueta("Categoría", cmbCatGasto));
+        entradaPanel.add(campoConEtiqueta("Concepto", txtConceptoGasto));
+        entradaPanel.add(campoConEtiqueta("Monto (₡)", txtMontoGasto));
         entradaPanel.add(campoConEtiqueta("Fecha (dd/mm/aaaa)", txtFechaGasto));
-        // Botón alineado al fondo junto con los campos
         JPanel btnWrapper = new JPanel(new BorderLayout());
         btnWrapper.setOpaque(false);
-        btnWrapper.setBorder(new EmptyBorder(18, 0, 0, 0)); // empuja el botón a la altura del campo
+        btnWrapper.setBorder(new EmptyBorder(18, 0, 0, 0));
         btnWrapper.add(btnAgregar, BorderLayout.SOUTH);
         entradaPanel.add(btnWrapper);
 
-        // ── Tabla de gastos ────────────────────────────────────────────────
         modeloGastos = new DefaultTableModel(
-                new String[]{"Categoría", "Concepto", "Monto", "Fecha", "Acciones"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+                new String[] { "Categoría", "Concepto", "Monto", "Fecha", "Acciones" }, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
 
         tablaGastos = new JTable(modeloGastos);
@@ -577,64 +541,62 @@ public class FrmDetalleExpediente extends JDialog {
         tablaGastos.setGridColor(new Color(243, 244, 246));
         tablaGastos.setFocusable(false);
         tablaGastos.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaGastos.getTableHeader().setBackground(new Color(249, 250, 251));
-        tablaGastos.getTableHeader().setForeground(COLOR_TEXTO_GRIS);
-        tablaGastos.getTableHeader().setBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BORDE));
+        tablaGastos.getTableHeader().setBackground(AppColors.HEADER_TBL);
+        tablaGastos.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
+        tablaGastos.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
 
-        // Columna Acciones: renderer de links "Editar | X"
         tablaGastos.getColumnModel().getColumn(4).setCellRenderer((tbl, val, sel, foc, row, col) -> {
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
             cell.setOpaque(true);
             cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
             JLabel editar = new JLabel("Editar");
             editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            editar.setForeground(COLOR_AZUL);
+            editar.setForeground(AppColors.AZUL);
             JLabel sep2 = new JLabel("|");
             sep2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            sep2.setForeground(COLOR_TEXTO_GRIS);
+            sep2.setForeground(AppColors.TEXTO_GRIS);
             JLabel eliminar = new JLabel("X");
             eliminar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            eliminar.setForeground(COLOR_ROJO);
-            cell.add(editar); cell.add(sep2); cell.add(eliminar);
+            eliminar.setForeground(AppColors.ROJO);
+            cell.add(editar);
+            cell.add(sep2);
+            cell.add(eliminar);
             return cell;
         });
         tablaGastos.getColumnModel().getColumn(4).setMaxWidth(100);
         tablaGastos.getColumnModel().getColumn(4).setMinWidth(80);
 
-        // MouseListener para Editar | X en la columna Acciones
         tablaGastos.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 int col = tablaGastos.columnAtPoint(e.getPoint());
                 int row = tablaGastos.rowAtPoint(e.getPoint());
-                if (col != 4 || row < 0 || row >= gastosActuales.size()) return;
+                if (col != 4 || row < 0 || row >= gastosActuales.size())
+                    return;
                 Rectangle rect = tablaGastos.getCellRect(row, col, false);
                 int relX = e.getX() - rect.x;
-                // "Editar" ocupa ~40px, luego "|", luego "X"
-                if (relX < 50) {
+                if (relX < 50)
                     cargarGastoEnFormulario(row);
-                } else {
+                else
                     eliminarGasto(row);
-                }
             }
         });
 
         JScrollPane scrollGastos = new JScrollPane(tablaGastos);
-        scrollGastos.setBorder(new LineBorder(COLOR_BORDE, 1, true));
+        scrollGastos.setBorder(new LineBorder(AppColors.BORDE, 1, true));
         scrollGastos.getViewport().setBackground(Color.WHITE);
 
-        // ── Fila de total ──────────────────────────────────────────────────
         JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
-        totalPanel.setBackground(new Color(249, 250, 251));
+        totalPanel.setBackground(AppColors.HEADER_TBL);
         totalPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDE),
+                BorderFactory.createMatteBorder(1, 0, 0, 0, AppColors.BORDE),
                 new EmptyBorder(0, 0, 0, 8)));
         JLabel lTotal = new JLabel("Total gastos mensuales:");
         lTotal.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lTotal.setForeground(COLOR_TEXTO_GRIS);
+        lTotal.setForeground(AppColors.TEXTO_GRIS);
         lblTotalGastos = new JLabel("0.00 colones");
         lblTotalGastos.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblTotalGastos.setForeground(COLOR_TEXTO);
+        lblTotalGastos.setForeground(AppColors.TEXTO);
         totalPanel.add(lTotal);
         totalPanel.add(lblTotalGastos);
 
@@ -643,12 +605,6 @@ public class FrmDetalleExpediente extends JDialog {
         gastosConTotal.add(scrollGastos, BorderLayout.CENTER);
         gastosConTotal.add(totalPanel, BorderLayout.SOUTH);
 
-        JPanel gastosPanel = new JPanel(new BorderLayout(0, 6));
-        gastosPanel.setOpaque(false);
-        gastosPanel.add(lGastos, BorderLayout.NORTH);
-        gastosPanel.add(entradaPanel, BorderLayout.NORTH);
-
-        // Norte: obs + label gastos + entrada
         JPanel norte = new JPanel(new BorderLayout(0, 8));
         norte.setOpaque(false);
         norte.add(obsPanel, BorderLayout.NORTH);
@@ -669,7 +625,7 @@ public class FrmDetalleExpediente extends JDialog {
         wrap.setOpaque(false);
         JLabel lbl = new JLabel(texto);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lbl.setForeground(COLOR_TEXTO_GRIS);
+        lbl.setForeground(AppColors.TEXTO_GRIS);
         wrap.add(lbl, BorderLayout.NORTH);
         wrap.add(campo, BorderLayout.CENTER);
         return wrap;
@@ -677,7 +633,8 @@ public class FrmDetalleExpediente extends JDialog {
 
     // ─── Cargar gasto en formulario para edición ──────────────────────────────
     private void cargarGastoEnFormulario(int row) {
-        if (row < 0 || row >= gastosActuales.size()) return;
+        if (row < 0 || row >= gastosActuales.size())
+            return;
         gastoEnEdicion = gastosActuales.get(row);
         cmbCatGasto.setSelectedItem(gastoEnEdicion.getCategoria());
         txtConceptoGasto.setText(nvl(gastoEnEdicion.getConcepto()));
@@ -693,8 +650,8 @@ public class FrmDetalleExpediente extends JDialog {
         String fechaStr = txtFechaGasto.getText().trim();
 
         if (concepto.isEmpty() || montoStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Concepto y monto son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Concepto y monto son obligatorios.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -702,12 +659,11 @@ public class FrmDetalleExpediente extends JDialog {
         try {
             monto = new BigDecimal(montoStr.replace(",", "."));
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "El monto debe ser un número válido.", "Validación", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El monto debe ser un número válido.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // Asegurar que existe el adendum
         try {
             if (adendumActual == null) {
                 if (expediente == null || expediente.getId() == null) {
@@ -716,12 +672,12 @@ public class FrmDetalleExpediente extends JDialog {
                             "Aviso", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                adendumActual = adendumDAO.findByExpediente(expediente.getId());
+                adendumActual = expedienteController.findAdendumByExpediente(expediente.getId());
                 if (adendumActual == null) {
                     adendumActual = new Adendum();
                     adendumActual.setExpediente(expediente);
                     adendumActual.setObservaciones(txtAdendumObs.getText().trim());
-                    adendumDAO.save(adendumActual);
+                    expedienteController.guardarAdendum(adendumActual);
                 }
             }
 
@@ -731,21 +687,15 @@ public class FrmDetalleExpediente extends JDialog {
             gasto.setMonto(monto);
             gasto.setFecha(parseFecha(fechaStr));
             gasto.setAdendum(adendumActual);
+            expedienteController.guardarGasto(gasto);
 
-            if (gasto.getId() == null) {
-                gastoDAO.save(gasto);
-            } else {
-                gastoDAO.update(gasto);
-            }
         } catch (Exception ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(this,
                     "Error al guardar el gasto:\n" + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Limpiar formulario y recargar tabla
         gastoEnEdicion = null;
         limpiarFormularioGasto();
         recargarTablaGastos();
@@ -753,13 +703,16 @@ public class FrmDetalleExpediente extends JDialog {
 
     // ─── Eliminar gasto ───────────────────────────────────────────────────────
     private void eliminarGasto(int row) {
-        if (row < 0 || row >= gastosActuales.size()) return;
+        if (row < 0 || row >= gastosActuales.size())
+            return;
         int confirm = JOptionPane.showConfirmDialog(this,
                 "¿Eliminar este gasto?", "Confirmar", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) return;
+        if (confirm != JOptionPane.YES_OPTION)
+            return;
         GastoMensual g = gastosActuales.get(row);
         try {
-            if (g.getId() != null) gastoDAO.delete(g.getId());
+            if (g.getId() != null)
+                expedienteController.eliminarGasto(g.getId());
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -771,38 +724,37 @@ public class FrmDetalleExpediente extends JDialog {
         cmbCatGasto.setSelectedIndex(0);
         txtConceptoGasto.setText("");
         txtMontoGasto.setText("");
-        try { txtFechaGasto.setText(""); } catch (Exception ignored) {}
+        try {
+            txtFechaGasto.setText("");
+        } catch (Exception ignored) {
+        }
     }
 
-    // ─── Recargar tabla desde DAO ─────────────────────────────────────────────
+    // ─── Recargar tabla de gastos ─────────────────────────────────────────────
     private void recargarTablaGastos() {
         modeloGastos.setRowCount(0);
         gastosActuales.clear();
-        if (adendumActual == null || adendumActual.getId() == null) return;
-        try {
-            java.util.List<GastoMensual> gastos = gastoDAO.findByAdendum(adendumActual.getId());
-            BigDecimal total = BigDecimal.ZERO;
-            for (GastoMensual g : gastos) {
-                gastosActuales.add(g);
-                BigDecimal m = g.getMonto() != null ? g.getMonto() : BigDecimal.ZERO;
-                total = total.add(m);
-                String catDisplay = g.getCategoria() != null
-                        ? g.getCategoria().name().replace("_", " ")
-                        .substring(0, 1).toUpperCase()
-                        + g.getCategoria().name().replace("_", " ").substring(1).toLowerCase()
-                        : "—";
-                modeloGastos.addRow(new Object[]{
-                        catDisplay,
-                        nvl(g.getConcepto()),
-                        String.format("%,.0f", m),
-                        g.getFecha() != null ? sdf.format(g.getFecha()) : "—",
-                        ""
-                });
-            }
-            lblTotalGastos.setText(String.format("%,.0f colones", total));
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (adendumActual == null || adendumActual.getId() == null)
+            return;
+        List<GastoMensual> gastos = expedienteController.findGastosByAdendum(adendumActual.getId());
+        BigDecimal total = BigDecimal.ZERO;
+        for (GastoMensual g : gastos) {
+            gastosActuales.add(g);
+            BigDecimal m = g.getMonto() != null ? g.getMonto() : BigDecimal.ZERO;
+            total = total.add(m);
+            String catDisplay = g.getCategoria() != null
+                    ? g.getCategoria().name().replace("_", " ").substring(0, 1).toUpperCase()
+                            + g.getCategoria().name().replace("_", " ").substring(1).toLowerCase()
+                    : "—";
+            modeloGastos.addRow(new Object[] {
+                    catDisplay,
+                    nvl(g.getConcepto()),
+                    String.format("%,.0f", m),
+                    g.getFecha() != null ? sdf.format(g.getFecha()) : "—",
+                    ""
+            });
         }
+        lblTotalGastos.setText(String.format("%,.0f colones", total));
     }
 
     // ─── Tab 4: Docs ──────────────────────────────────────────────────────────
@@ -844,12 +796,12 @@ public class FrmDetalleExpediente extends JDialog {
     // ─── Helper: panel tabla genérico (read-only) ─────────────────────────────
     private JPanel crearTabTabla(DefaultTableModel modelo, String descripcion) {
         JPanel p = new JPanel(new BorderLayout(0, 8));
-        p.setBackground(COLOR_PANEL);
+        p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
         JLabel lbl = new JLabel(descripcion);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lbl.setForeground(COLOR_TEXTO_GRIS);
+        lbl.setForeground(AppColors.TEXTO_GRIS);
 
         JTable tabla = new JTable(modelo);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -858,13 +810,13 @@ public class FrmDetalleExpediente extends JDialog {
         tabla.setGridColor(new Color(243, 244, 246));
         tabla.setFocusable(false);
         tabla.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tabla.getTableHeader().setBackground(new Color(249, 250, 251));
-        tabla.getTableHeader().setForeground(COLOR_TEXTO_GRIS);
-        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BORDE));
+        tabla.getTableHeader().setBackground(AppColors.HEADER_TBL);
+        tabla.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
+        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
 
         JScrollPane scroll = new JScrollPane(tabla);
-        scroll.setBorder(new LineBorder(COLOR_BORDE, 1, true));
-        scroll.getViewport().setBackground(COLOR_PANEL);
+        scroll.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        scroll.getViewport().setBackground(AppColors.PANEL);
 
         p.add(lbl, BorderLayout.NORTH);
         p.add(scroll, BorderLayout.CENTER);
@@ -874,19 +826,20 @@ public class FrmDetalleExpediente extends JDialog {
     // ─── Barra inferior ───────────────────────────────────────────────────────
     private JPanel crearBarraInferior() {
         JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(COLOR_PANEL);
+        p.setBackground(AppColors.PANEL);
         p.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDE),
+                BorderFactory.createMatteBorder(1, 0, 0, 0, AppColors.BORDE),
                 new EmptyBorder(12, 24, 12, 24)));
 
-        JButton btnCancelar = crearBoton("Cancelar", COLOR_GRIS_BTN, COLOR_TEXTO, e -> dispose());
+        JButton btnCancelar = UIFactory.crearBotonDialog("Cancelar", AppColors.GRIS_BTN, AppColors.TEXTO,
+                e -> dispose());
 
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         derecha.setOpaque(false);
 
-        JButton btnGuardar = crearBoton("Guardar", COLOR_PRIMARIO, Color.WHITE, e -> guardar());
+        JButton btnGuardar = UIFactory.crearBotonDialog("Guardar", AppColors.PRIMARIO, Color.WHITE, e -> guardar());
 
-        JButton btnProlong = crearBoton("+ Prolongar ayuda", COLOR_PURPURA, Color.WHITE,
+        JButton btnProlong = UIFactory.crearBotonDialog("+ Prolongar ayuda", AppColors.PURPURA, Color.WHITE,
                 e -> JOptionPane.showMessageDialog(this,
                         "La función de prolongación de ayuda estará disponible en la próxima versión.",
                         "Próximamente", JOptionPane.INFORMATION_MESSAGE));
@@ -904,30 +857,22 @@ public class FrmDetalleExpediente extends JDialog {
     // CARGA DE DATOS
     // ═════════════════════════════════════════════════════════════════════════
     private void cargarDatos() {
-        // Poblar parroquias — intenta activas primero, si no hay usa findAll
-        try {
-            List<Parroquia> parroquias = parroquiaDAO.findActivas();
-            if (parroquias == null || parroquias.isEmpty()) {
-                parroquias = parroquiaDAO.findAll();
-            }
-            for (Parroquia par : parroquias)
-                cmbParroquia.addItem(par);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        // Poblar parroquias via controller
+        for (Parroquia par : parroquiaController.findParroquiasDisponibles())
+            cmbParroquia.addItem(par);
 
         if (esNuevo) {
             cmbEstado.setSelectedItem(EstadoExpediente.EN_PROCESO);
             cmbColorMarcador.setSelectedIndex(0);
             txtFechaInicio.setValue(null);
             try {
-                txtFechaInicio.setText(sdf.format(new Date()));
+                txtFechaInicio.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
             } catch (Exception ignored) {
             }
             return;
         }
 
-        // ── Modo editar: poblar campos de Persona ──
+        // Modo editar: poblar campos de Persona
         Persona p = expediente.getTitular();
         if (p != null) {
             txtNombres.setText(nvl(p.getNombres()));
@@ -953,7 +898,7 @@ public class FrmDetalleExpediente extends JDialog {
             txtCondicionMigratoria.setText(nvl(p.getCondicionMigratoria()));
         }
 
-        // ── Campos de Expediente ──
+        // Campos de Expediente
         txtEntrevistador.setText(nvl(expediente.getEntrevistador()));
         if (expediente.getEstado() != null)
             cmbEstado.setSelectedItem(expediente.getEstado());
@@ -969,7 +914,6 @@ public class FrmDetalleExpediente extends JDialog {
             lblMarcadorBadge.setVisible("URGENTE".equals(marcador));
         }
 
-        // Seleccionar parroquia en combo
         if (expediente.getParroquia() != null) {
             for (int i = 0; i < cmbParroquia.getItemCount(); i++) {
                 if (cmbParroquia.getItemAt(i).getId().equals(expediente.getParroquia().getId())) {
@@ -979,7 +923,6 @@ public class FrmDetalleExpediente extends JDialog {
             }
         }
 
-        // ── Cargar subtabs ──
         cargarVivienda();
         cargarAdendum();
         cargarTablaFamilia();
@@ -991,123 +934,93 @@ public class FrmDetalleExpediente extends JDialog {
     private void cargarVivienda() {
         if (expediente == null || expediente.getId() == null)
             return;
-        try {
-            viviendaActual = viviendaDAO.findByExpediente(expediente.getId());
-            if (viviendaActual != null) {
-                txtDirVivienda.setText(nvl(viviendaActual.getDireccion()));
-                if (viviendaActual.getTipo() != null)
-                    cmbTipoVivienda.setSelectedItem(viviendaActual.getTipo());
-                if (viviendaActual.getTenencia() != null)
-                    cmbTenencia.setSelectedItem(viviendaActual.getTenencia());
-                if (viviendaActual.getCondicion() != null)
-                    cmbCondicion.setSelectedItem(viviendaActual.getCondicion());
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        viviendaActual = expedienteController.findViviendaByExpediente(expediente.getId());
+        if (viviendaActual != null) {
+            txtDirVivienda.setText(nvl(viviendaActual.getDireccion()));
+            if (viviendaActual.getTipo() != null)
+                cmbTipoVivienda.setSelectedItem(viviendaActual.getTipo());
+            if (viviendaActual.getTenencia() != null)
+                cmbTenencia.setSelectedItem(viviendaActual.getTenencia());
+            if (viviendaActual.getCondicion() != null)
+                cmbCondicion.setSelectedItem(viviendaActual.getCondicion());
         }
     }
 
     private void cargarAdendum() {
         if (expediente == null || expediente.getId() == null)
             return;
-        try {
-            adendumActual = adendumDAO.findByExpediente(expediente.getId());
-            if (adendumActual != null) {
-                txtAdendumObs.setText(nvl(adendumActual.getObservaciones()));
-                recargarTablaGastos();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        adendumActual = expedienteController.findAdendumByExpediente(expediente.getId());
+        if (adendumActual != null) {
+            txtAdendumObs.setText(nvl(adendumActual.getObservaciones()));
+            recargarTablaGastos();
         }
     }
 
     private void cargarTablaFamilia() {
         if (expediente == null || expediente.getId() == null)
             return;
-        try {
-            modeloFamilia.setRowCount(0);
-            List<MiembroFamiliar> miembros = miembroDAO.findByExpediente(expediente.getId());
-            for (MiembroFamiliar m : miembros) {
-                String nombre = "—";
-                try {
-                    if (m.getPersona() != null) {
-                        nombre = nvl(m.getPersona().getNombres()) + " " + nvl(m.getPersona().getApellidos());
-                    }
-                } catch (Exception ignored) {
-                    /* LazyInitializationException en entidad detached */ }
-                modeloFamilia.addRow(new Object[] {
-                        nombre,
-                        nvl(m.getRelacionTitular()),
-                        nvl(m.getOcupacion()),
-                        Boolean.TRUE.equals(m.getTrabaja()) ? "Sí" : "No",
-                        m.getIngresoMensual() != null ? m.getIngresoMensual().toPlainString() : "0.00",
-                        Boolean.TRUE.equals(m.getEsJefatura()) ? "Sí" : "No"
-                });
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        modeloFamilia.setRowCount(0);
+        for (MiembroFamiliar m : expedienteController.findMiembrosByExpediente(expediente.getId())) {
+            String nombre = "—";
+            try {
+                if (m.getPersona() != null)
+                    nombre = nvl(m.getPersona().getNombres()) + " " + nvl(m.getPersona().getApellidos());
+            } catch (Exception ignored) {
+                /* LazyInitializationException en entidad detached */ }
+            modeloFamilia.addRow(new Object[] {
+                    nombre,
+                    nvl(m.getRelacionTitular()),
+                    nvl(m.getOcupacion()),
+                    Boolean.TRUE.equals(m.getTrabaja()) ? "Sí" : "No",
+                    m.getIngresoMensual() != null ? m.getIngresoMensual().toPlainString() : "0.00",
+                    Boolean.TRUE.equals(m.getEsJefatura()) ? "Sí" : "No"
+            });
         }
     }
 
     private void cargarTablaDocs() {
         if (expediente == null || expediente.getId() == null)
             return;
-        try {
-            modeloDocs.setRowCount(0);
-            List<DocumentoAdjunto> docs = documentoDAO.findByExpediente(expediente.getId());
-            for (DocumentoAdjunto d : docs) {
-                // NO acceder d.getSubidoPor() → lazy en entidad detached
-                modeloDocs.addRow(new Object[] {
-                        d.getTipo() != null ? d.getTipo().name() : "—",
-                        nvl(d.getDescripcion()),
-                        d.getFechaSubida() != null ? sdf.format(d.getFechaSubida()) : "—",
-                        Boolean.TRUE.equals(d.getEsDocFirmado()) ? "Sí" : "No"
-                });
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        modeloDocs.setRowCount(0);
+        for (DocumentoAdjunto d : expedienteController.findDocsByExpediente(expediente.getId())) {
+            modeloDocs.addRow(new Object[] {
+                    d.getTipo() != null ? d.getTipo().name() : "—",
+                    nvl(d.getDescripcion()),
+                    d.getFechaSubida() != null ? sdf.format(d.getFechaSubida()) : "—",
+                    Boolean.TRUE.equals(d.getEsDocFirmado()) ? "Sí" : "No"
+            });
         }
     }
 
     private void cargarTablaAsistencia() {
         if (expediente == null || expediente.getId() == null)
             return;
-        try {
-            modeloAsistencia.setRowCount(0);
-            List<AsistenciaSolicitada> lista = asistenciaDAO.findByExpediente(expediente.getId());
-            for (AsistenciaSolicitada a : lista) {
-                modeloAsistencia.addRow(new Object[] {
-                        a.getTipoAsistencia() != null ? a.getTipoAsistencia().name().replace("_", " ") : "—",
-                        nvl(a.getModalidad()),
-                        nvl(a.getFrecuencia()),
-                        nvl(a.getDuracion()),
-                        a.getValor() != null ? a.getValor().toPlainString() : "—"
-                });
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        modeloAsistencia.setRowCount(0);
+        for (AsistenciaSolicitada a : expedienteController.findAsistenciasByExpediente(expediente.getId())) {
+            modeloAsistencia.addRow(new Object[] {
+                    a.getTipoAsistencia() != null ? a.getTipoAsistencia().name().replace("_", " ") : "—",
+                    nvl(a.getModalidad()),
+                    nvl(a.getFrecuencia()),
+                    nvl(a.getDuracion()),
+                    a.getValor() != null ? a.getValor().toPlainString() : "—"
+            });
         }
     }
 
     private void cargarTablaEntrevistas() {
         if (expediente == null || expediente.getId() == null)
             return;
-        try {
-            modeloEntrevistas.setRowCount(0);
-            List<Entrevista> lista = entrevistaDAO.findByExpediente(expediente.getId());
-            for (Entrevista e : lista) {
-                String obs = nvl(e.getObservaciones());
-                if (obs.length() > 60)
-                    obs = obs.substring(0, 57) + "...";
-                modeloEntrevistas.addRow(new Object[] {
-                        e.getFecha() != null ? sdf.format(e.getFecha()) : "—",
-                        nvl(e.getEntrevistador()),
-                        Boolean.TRUE.equals(e.getRecomiendaAyuda()) ? "Sí" : "No",
-                        obs
-                });
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        modeloEntrevistas.setRowCount(0);
+        for (Entrevista e : expedienteController.findEntrevistasByExpediente(expediente.getId())) {
+            String obs = nvl(e.getObservaciones());
+            if (obs.length() > 60)
+                obs = obs.substring(0, 57) + "...";
+            modeloEntrevistas.addRow(new Object[] {
+                    e.getFecha() != null ? sdf.format(e.getFecha()) : "—",
+                    nvl(e.getEntrevistador()),
+                    Boolean.TRUE.equals(e.getRecomiendaAyuda()) ? "Sí" : "No",
+                    obs
+            });
         }
     }
 
@@ -1135,12 +1048,7 @@ public class FrmDetalleExpediente extends JDialog {
         try {
             // 2. Buscar o crear Persona
             String numDoc = txtNumeroDoc.getText().trim();
-            Persona titular = null;
-            try {
-                titular = personaDAO.findByNumeroDocumento(numDoc);
-            } catch (Exception ignored) {
-            }
-
+            Persona titular = expedienteController.findPersonaByNumeroDocumento(numDoc);
             if (titular == null)
                 titular = new Persona();
 
@@ -1160,18 +1068,13 @@ public class FrmDetalleExpediente extends JDialog {
             titular.setTieneSeguro(chkTieneSeguro.isSelected());
             titular.setCondicionMigratoria(txtCondicionMigratoria.getText().trim());
             titular.setFechaNacimiento(parseFecha(txtFechaNac.getText()));
-
-            if (titular.getId() == null) {
-                personaDAO.save(titular);
-            } else {
-                personaDAO.update(titular);
-            }
+            expedienteController.guardarPersona(titular);
 
             // 3. Crear o actualizar Expediente
             boolean wasNuevo = esNuevo || (expediente == null);
             if (wasNuevo) {
                 expediente = new Expediente();
-                expediente.setNumeroFicha(generarNumeroFicha());
+                expediente.setNumeroFicha(expedienteController.generarNumeroFicha(numDoc));
                 expediente.setEtapaActual(EtapaExpediente.REGISTRO);
             }
 
@@ -1184,12 +1087,7 @@ public class FrmDetalleExpediente extends JDialog {
             expediente.setObservaciones(txtObservaciones.getText().trim());
             String marcador = (String) cmbColorMarcador.getSelectedItem();
             expediente.setColorMarcador("NINGUNO".equals(marcador) ? null : marcador);
-
-            if (wasNuevo) {
-                expedienteDAO.save(expediente);
-            } else {
-                expedienteDAO.update(expediente);
-            }
+            expedienteController.guardarExpediente(expediente);
 
             // 4. Guardar Vivienda si hay datos
             if (expediente.getId() != null) {
@@ -1203,11 +1101,7 @@ public class FrmDetalleExpediente extends JDialog {
                     viviendaActual.setTipo((TipoVivienda) cmbTipoVivienda.getSelectedItem());
                     viviendaActual.setTenencia((TenenciaVivienda) cmbTenencia.getSelectedItem());
                     viviendaActual.setCondicion((CondicionVivienda) cmbCondicion.getSelectedItem());
-                    if (viviendaActual.getId() == null) {
-                        viviendaDAO.save(viviendaActual);
-                    } else {
-                        viviendaDAO.update(viviendaActual);
-                    }
+                    expedienteController.guardarVivienda(viviendaActual);
                 }
             }
 
@@ -1220,11 +1114,7 @@ public class FrmDetalleExpediente extends JDialog {
                         adendumActual.setExpediente(expediente);
                     }
                     adendumActual.setObservaciones(obsAd);
-                    if (adendumActual.getId() == null) {
-                        adendumDAO.save(adendumActual);
-                    } else {
-                        adendumDAO.update(adendumActual);
-                    }
+                    expedienteController.guardarAdendum(adendumActual);
                 }
             }
 
@@ -1246,7 +1136,7 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // HELPERS UI
+    // HELPERS
     // ═════════════════════════════════════════════════════════════════════════
     private void actualizarTitulo() {
         if (expediente == null)
@@ -1278,19 +1168,6 @@ public class FrmDetalleExpediente extends JDialog {
         return s != null ? s : "";
     }
 
-    private JFormattedTextField crearCampoFecha() {
-        try {
-            MaskFormatter mask = new MaskFormatter("##/##/####");
-            mask.setPlaceholderCharacter('_');
-            JFormattedTextField f = new JFormattedTextField(mask);
-            f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            f.setColumns(10);
-            return f;
-        } catch (ParseException e) {
-            return new JFormattedTextField();
-        }
-    }
-
     private Date parseFecha(String texto) {
         if (texto == null || texto.trim().isEmpty() || texto.contains("_"))
             return null;
@@ -1299,51 +1176,5 @@ public class FrmDetalleExpediente extends JDialog {
         } catch (ParseException e) {
             return null;
         }
-    }
-
-    private String generarNumeroFicha() {
-        String id = txtNumeroDoc.getText();
-        return "EXP-" + id;
-    }
-
-    private JButton crearBoton(String texto, Color bg, Color fg, ActionListener accion) {
-        JButton btn = new JButton(texto) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getBackground());
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setBackground(bg);
-        btn.setForeground(fg);
-        btn.setOpaque(false);
-        btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false);
-        btn.setBorder(new EmptyBorder(7, 18, 7, 18));
-        btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.addActionListener(accion);
-        btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(bg == COLOR_PRIMARIO ? COLOR_PRIMARIO_H
-                        : bg == COLOR_GRIS_BTN ? COLOR_GRIS_BTN_H
-                        : bg == COLOR_PURPURA ? COLOR_PURPURA_H
-                        : bg.darker());
-                btn.repaint();
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(bg);
-                btn.repaint();
-            }
-        });
-        return btn;
     }
 }
