@@ -9,6 +9,16 @@ import java.util.Date;
 
 @Entity
 @Table(name = "gasto_mensual")
+@NamedQueries({
+        @NamedQuery(
+                name = "GastoMensual.findByAdendum",
+                query = "SELECT g FROM GastoMensual g WHERE g.adendum.id = :adendumId"
+        ),
+        @NamedQuery(
+                name = "GastoMensual.findByCategoria",
+                query = "SELECT g FROM GastoMensual g WHERE g.categoria = :categoria"
+        )
+})
 public class GastoMensual implements Serializable {
 
     private static final long serialVersionUID = 1L;

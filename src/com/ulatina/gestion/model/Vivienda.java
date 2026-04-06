@@ -9,6 +9,20 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "vivienda")
+@NamedQueries({
+        @NamedQuery(
+                name = "Vivienda.findByExpediente",
+                query = "SELECT v FROM Vivienda v WHERE v.expediente.id = :expedienteId"
+        ),
+        @NamedQuery(
+                name = "Vivienda.findByTipo",
+                query = "SELECT v FROM Vivienda v WHERE v.tipo = :tipo"
+        ),
+        @NamedQuery(
+                name = "Vivienda.findByCondicion",
+                query = "SELECT v FROM Vivienda v WHERE v.condicion = :condicion"
+        )
+})
 public class Vivienda implements Serializable {
 
     private static final long serialVersionUID = 1L;
