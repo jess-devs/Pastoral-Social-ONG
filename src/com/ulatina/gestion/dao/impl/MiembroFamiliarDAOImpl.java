@@ -17,7 +17,9 @@ public class MiembroFamiliarDAOImpl extends GenericDAOImpl<MiembroFamiliar, Long
     public List<MiembroFamiliar> findByExpediente(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT m FROM MiembroFamiliar m WHERE m.expediente.id = :expedienteId", MiembroFamiliar.class)
+            return em.createQuery(
+                    "SELECT m FROM MiembroFamiliar m JOIN FETCH m.persona WHERE m.expediente.id = :expedienteId",
+                    MiembroFamiliar.class)
                      .setParameter("expedienteId", expedienteId)
                      .getResultList();
         } finally {
