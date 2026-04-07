@@ -968,7 +968,7 @@ public class FrmDetalleExpediente extends JDialog {
             expedienteController.guardarPersona(nueva);
             personaSeleccionada = nueva;
             txtBuscarCedula.setText(doc);
-            lblPersonaSeleccionada.setText("\u2713 " + nom + " " + ape);
+            lblPersonaSeleccionada.setText(nom + " " + ape);
             lblPersonaSeleccionada.setForeground(new Color(0x166534));
             dlg.dispose();
         }));
@@ -1033,7 +1033,7 @@ public class FrmDetalleExpediente extends JDialog {
 
         if (personaSeleccionada != null) {
             txtBuscarCedula.setText(nvl(personaSeleccionada.getNumeroDocumento()));
-            lblPersonaSeleccionada.setText("\u2713 " + nvl(personaSeleccionada.getNombres()) + " " + nvl(personaSeleccionada.getApellidos()));
+            lblPersonaSeleccionada.setText(nvl(personaSeleccionada.getNombres()) + " " + nvl(personaSeleccionada.getApellidos()));
             lblPersonaSeleccionada.setForeground(new Color(0x166534));
         }
         if (m.getRelacionTitular() != null) {
