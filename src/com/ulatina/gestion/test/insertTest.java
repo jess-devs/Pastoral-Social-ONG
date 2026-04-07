@@ -5,24 +5,31 @@ import com.ulatina.gestion.dao.IParroquiaDAO;
 import com.ulatina.gestion.dao.impl.ParroquiaDAOImpl;
 import com.ulatina.gestion.model.Parroquia;
 
+import javax.swing.*;
+
 public class insertTest
 {
     private static IParroquiaDAO dao;
 
     public static void main(String[] args) {
 
-        dao = new ParroquiaDAOImpl();
+        try {
+            dao = new ParroquiaDAOImpl();
 
-        Parroquia p = new Parroquia();
-        p.setNombre("Parroquia San Jose Test");
-        p.setSectorFilial("Sector Norte");
-        p.setVicaria("Vicaria Central");
-        p.setDireccion("100m norte del parque");
-        p.setTelefono("2222-1111");
-        p.setActiva(true);
-        dao.save(p);
+            Parroquia p = new Parroquia();
+            p.setNombre("Parroquia San Jose Test 3");
+            p.setSectorFilial("Sector Norte 3");
+            p.setVicaria("Vicaria Central 3");
+            p.setDireccion("100m norte del parque 3");
+            p.setTelefono("2222-1333");
+            p.setActiva(true);
+            dao.save(p);
 
-        System.out.println("funciona  parroquia");
+            JOptionPane.showMessageDialog(null, "Parroquia Insertada correctamente");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage());
+        }
+
     }
 
 }

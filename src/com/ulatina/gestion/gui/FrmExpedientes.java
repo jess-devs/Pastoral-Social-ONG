@@ -389,9 +389,9 @@ public class FrmExpedientes extends JFrame {
         String etapa = (String) cmbEtapa.getSelectedItem();
         List<RowFilter<DefaultTableModel, Object>> filtros = new java.util.ArrayList<>();
         if (estado != null && !estado.startsWith("Todos"))
-            filtros.add(RowFilter.regexFilter("^" + estado + "$", 3));
+            filtros.add(RowFilter.regexFilter("^" + estado + "₡", 3));
         if (etapa != null && !etapa.startsWith("Todas"))
-            filtros.add(RowFilter.regexFilter("^" + etapa + "$", 4));
+            filtros.add(RowFilter.regexFilter("^" + etapa + "₡", 4));
         sorter.setRowFilter(filtros.isEmpty() ? null : RowFilter.andFilter(filtros));
     }
 
