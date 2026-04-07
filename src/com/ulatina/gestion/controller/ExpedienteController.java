@@ -178,6 +178,15 @@ public class ExpedienteController {
         gastoDAO.delete(id);
     }
 
+    public void guardarMiembro(MiembroFamiliar m) {
+        if (m.getId() == null) miembroDAO.save(m);
+        else miembroDAO.update(m);
+    }
+
+    public void eliminarMiembro(Long id) {
+        miembroDAO.delete(id);
+    }
+
     // ═════════════════════════════════════════════════════════════════════════
     // UTILITARIO
     // ═════════════════════════════════════════════════════════════════════════

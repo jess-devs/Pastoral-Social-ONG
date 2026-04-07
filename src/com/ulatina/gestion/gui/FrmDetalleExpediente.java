@@ -94,6 +94,21 @@ public class FrmDetalleExpediente extends JDialog {
     private DefaultTableModel modeloAsistencia;
     private DefaultTableModel modeloEntrevistas;
 
+    // ─── Tab 1: Familia — formulario inline ───────────────────────────────────
+    private JPanel panelFormFamilia;
+    private JLabel lblHeaderFormFamilia;
+    private JLabel lblPersonaSeleccionada;
+    private JTextField txtBuscarCedula;
+    private JComboBox<String> cmbRelacion;
+    private JButton btnJefatura;
+    private JTextField txtOcupacion;
+    private JButton btnTrabaja;
+    private JTextField txtIngreso;
+    private MiembroFamiliar miembroEnEdicion;
+    private Persona personaSeleccionada;
+    private final java.util.List<MiembroFamiliar> listaMiembros = new java.util.ArrayList<>();
+    private JTable tablaFamilia;
+
     // ─── Constructor ──────────────────────────────────────────────────────────
     public FrmDetalleExpediente(Window owner, Expediente expediente, Runnable onGuardado) {
         super(owner, ModalityType.APPLICATION_MODAL);
@@ -396,14 +411,247 @@ public class FrmDetalleExpediente extends JDialog {
 
     // ─── Tab 1: Familia ───────────────────────────────────────────────────────
     private JPanel crearTabFamilia() {
+        JPanel p = new JPanel(new BorderLayout(0, 0));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(new EmptyBorder(16, 24, 16, 24));
+
+        // ── Barra superior ────────────────────────────────────────────────────
+        JPanel barraTop = new JPanel(new BorderLayout());
+        barraTop.setOpaque(false);
+        barraTop.setBorder(new EmptyBorder(0, 0, 10, 0));
+
+        JLabel lblTitGrupo = new JLabel("Grupo Familiar");
+        lblTitGrupo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblTitGrupo.setForeground(AppColors.TEXTO);
+
+        JButton btnAgregarMiembro = UIFactory.crearBotonSmall("+ Agregar", AppColors.PRIMARIO, Color.WHITE,
+                e -> mostrarFormFamilia(true));
+
+        barraTop.add(lblTitGrupo, BorderLayout.WEST);
+        barraTop.add(btnAgregarMiembro, BorderLayout.EAST);
+
+        // ── Tabla ─────────────────────────────────────────────────────────────
         modeloFamilia = new DefaultTableModel(
-                new String[] { "Nombre", "Relación", "Ocupación", "Trabaja", "Ingreso Mensual", "Jefatura" }, 0) {
+                new String[]{"Nombre", "Cédula", "Relación", "Jefatura", "Ocupación", "Ingreso", "Acciones"}, 0) {
             @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
+            public boolean isCellEditable(int r, int c) { return false; }
         };
-        return crearTabTabla(modeloFamilia, "Miembros familiares del expediente");
+
+        tablaFamilia = new JTable(modeloFamilia);
+        tablaFamilia.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tablaFamilia.setRowHeight(38);
+        tablaFamilia.setShowVerticalLines(false);
+        tablaFamilia.setShowHorizontalLines(true);
+        tablaFamilia.setGridColor(new Color(243, 244, 246));
+        tablaFamilia.setSelectionBackground(AppColors.FILA_SEL);
+        tablaFamilia.setFocusable(false);
+        tablaFamilia.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tablaFamilia.getTableHeader().setBackground(AppColors.HEADER_TBL);
+        tablaFamilia.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
+        tablaFamilia.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
+
+        // Anchos de columnas
+        tablaFamilia.getColumnModel().getColumn(0).setPreferredWidth(160);
+        tablaFamilia.getColumnModel().getColumn(1).setPreferredWidth(110);
+        tablaFamilia.getColumnModel().getColumn(2).setPreferredWidth(90);
+        tablaFamilia.getColumnModel().getColumn(3).setPreferredWidth(80);
+        tablaFamilia.getColumnModel().getColumn(4).setPreferredWidth(100);
+        tablaFamilia.getColumnModel().getColumn(5).setPreferredWidth(90);
+        tablaFamilia.getColumnModel().getColumn(6).setPreferredWidth(90);
+        tablaFamilia.getColumnModel().getColumn(6).setMaxWidth(100);
+        tablaFamilia.getColumnModel().getColumn(6).setMinWidth(80);
+
+        // Renderer badge Jefatura (col 3)
+        tablaFamilia.getColumnModel().getColumn(3).setCellRenderer((tbl, val, sel, foc, row, col) -> {
+            boolean esJef = "Sí".equals(val);
+            Color bg = esJef ? AppColors.BADGE_BG[0] : AppColors.BADGE_BG[3];
+            Color fg = esJef ? AppColors.BADGE_FG[0] : AppColors.BADGE_FG[3];
+            JLabel badge = new JLabel(String.valueOf(val), SwingConstants.CENTER);
+            badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            badge.setOpaque(true);
+            badge.setBackground(bg);
+            badge.setForeground(fg);
+            badge.setBorder(new EmptyBorder(3, 10, 3, 10));
+            JPanel cell = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
+            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            cell.add(badge);
+            return cell;
+        });
+
+        // Renderer Acciones (col 6)
+        tablaFamilia.getColumnModel().getColumn(6).setCellRenderer((tbl, val, sel, foc, row, col) -> {
+            JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+            cell.setOpaque(true);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            JLabel editar = new JLabel("Editar");
+            editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            editar.setForeground(AppColors.AZUL);
+            JLabel sep = new JLabel("|");
+            sep.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            sep.setForeground(AppColors.TEXTO_GRIS);
+            JLabel eliminar = new JLabel("X");
+            eliminar.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            eliminar.setForeground(AppColors.ROJO);
+            cell.add(editar);
+            cell.add(sep);
+            cell.add(eliminar);
+            return cell;
+        });
+
+        tablaFamilia.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int col = tablaFamilia.columnAtPoint(e.getPoint());
+                int row = tablaFamilia.rowAtPoint(e.getPoint());
+                if (col != 6 || row < 0 || row >= listaMiembros.size()) return;
+                Rectangle rect = tablaFamilia.getCellRect(row, col, false);
+                int relX = e.getX() - rect.x;
+                if (relX < 50) cargarMiembroEnFormulario(row);
+                else eliminarMiembro(row);
+            }
+        });
+
+        JScrollPane scrollTabla = new JScrollPane(tablaFamilia);
+        scrollTabla.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        scrollTabla.getViewport().setBackground(Color.WHITE);
+
+        // ── Formulario inline ─────────────────────────────────────────────────
+        panelFormFamilia = crearPanelFormFamilia();
+        panelFormFamilia.setVisible(false);
+
+        p.add(barraTop, BorderLayout.NORTH);
+        p.add(scrollTabla, BorderLayout.CENTER);
+        p.add(panelFormFamilia, BorderLayout.SOUTH);
+        return p;
+    }
+
+    private JPanel crearPanelFormFamilia() {
+        JPanel contenedor = new JPanel(new BorderLayout(0, 0));
+        contenedor.setOpaque(false);
+        contenedor.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+        // Header azul
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(AppColors.AZUL);
+        header.setBorder(new EmptyBorder(8, 14, 8, 14));
+        lblHeaderFormFamilia = new JLabel("Agregar miembro familiar");
+        lblHeaderFormFamilia.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblHeaderFormFamilia.setForeground(Color.WHITE);
+        header.add(lblHeaderFormFamilia, BorderLayout.WEST);
+
+        // Body
+        JPanel body = new JPanel();
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBackground(Color.WHITE);
+        body.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1),
+                new EmptyBorder(12, 14, 12, 14)));
+
+        // Campos comunes
+        txtBuscarCedula = new JTextField(14);
+        txtBuscarCedula.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtBuscarCedula.putClientProperty("JTextField.placeholderText", "Buscar por cédula...");
+        txtBuscarCedula.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true), new EmptyBorder(4, 8, 4, 8)));
+        txtBuscarCedula.setPreferredSize(new Dimension(160, 30));
+        txtBuscarCedula.addActionListener(e -> buscarPersonaPorCedula());
+
+        JButton btnBuscar = UIFactory.crearBotonSmall("Buscar", AppColors.AZUL, Color.WHITE, e -> buscarPersonaPorCedula());
+        JButton btnCrearNueva = UIFactory.crearBotonSmall("Crear nueva", AppColors.GRIS_BTN, AppColors.TEXTO,
+                e -> abrirFormNuevaPersona());
+
+        lblPersonaSeleccionada = new JLabel("Ninguna persona seleccionada");
+        lblPersonaSeleccionada.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        lblPersonaSeleccionada.setForeground(AppColors.TEXTO_GRIS);
+
+        JPanel fila1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        fila1.setOpaque(false);
+        fila1.add(campoConEtiqueta("Persona (cédula):", txtBuscarCedula));
+        JPanel btnsBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        btnsBusqueda.setOpaque(false);
+        btnsBusqueda.setBorder(new EmptyBorder(18, 0, 0, 0));
+        btnsBusqueda.add(btnBuscar);
+        btnsBusqueda.add(btnCrearNueva);
+        fila1.add(btnsBusqueda);
+        JPanel wrapLblPersona = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        wrapLblPersona.setOpaque(false);
+        wrapLblPersona.setBorder(new EmptyBorder(14, 0, 0, 0));
+        wrapLblPersona.add(lblPersonaSeleccionada);
+        fila1.add(wrapLblPersona);
+        fila1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        cmbRelacion = new JComboBox<>(new String[]{
+                "Esposo/a", "Hijo/a", "Padre", "Madre", "Hermano/a", "Abuelo/a", "Tío/a", "Sobrino/a", "Otro"
+        });
+        cmbRelacion.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbRelacion.setPreferredSize(new Dimension(130, 30));
+
+        btnJefatura = crearBtnToggle("No");
+        txtOcupacion = new JTextField(12);
+        txtOcupacion.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtOcupacion.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true), new EmptyBorder(4, 8, 4, 8)));
+        txtOcupacion.setPreferredSize(new Dimension(130, 30));
+
+        JPanel fila2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        fila2.setOpaque(false);
+        fila2.add(campoConEtiqueta("Relación con titular", cmbRelacion));
+        fila2.add(campoConEtiqueta("Jefatura?", btnJefatura));
+        fila2.add(campoConEtiqueta("Ocupación", txtOcupacion));
+        fila2.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        btnTrabaja = crearBtnToggle("Sí");
+        txtIngreso = new JTextField(10);
+        txtIngreso.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtIngreso.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true), new EmptyBorder(4, 8, 4, 8)));
+        txtIngreso.setPreferredSize(new Dimension(120, 30));
+        txtIngreso.putClientProperty("JTextField.placeholderText", "0");
+
+        JPanel fila3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        fila3.setOpaque(false);
+        fila3.add(campoConEtiqueta("Trabaja?", btnTrabaja));
+        fila3.add(campoConEtiqueta("Ingreso mensual (₡)", txtIngreso));
+        fila3.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton btnGuardarMiembro = UIFactory.crearBotonDialog("Guardar", AppColors.PRIMARIO, Color.WHITE,
+                e -> confirmarMiembro());
+        JButton btnCancelarMiembro = UIFactory.crearBotonDialog("Cancelar", AppColors.GRIS_BTN, AppColors.TEXTO,
+                e -> mostrarFormFamilia(false));
+
+        JPanel filaBtns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 4));
+        filaBtns.setOpaque(false);
+        filaBtns.add(btnGuardarMiembro);
+        filaBtns.add(btnCancelarMiembro);
+        filaBtns.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        body.add(fila1);
+        body.add(Box.createVerticalStrut(4));
+        body.add(fila2);
+        body.add(fila3);
+        body.add(filaBtns);
+
+        contenedor.add(header, BorderLayout.NORTH);
+        contenedor.add(body, BorderLayout.CENTER);
+        return contenedor;
+    }
+
+    /** Botón toggle Sí/No con colores verde/gris. */
+    private JButton crearBtnToggle(String estadoInicial) {
+        boolean[] estado = {estadoInicial.equals("Sí")};
+        JButton btn = UIFactory.crearBotonSmall(
+                estado[0] ? "Sí" : "No",
+                estado[0] ? AppColors.PRIMARIO : AppColors.GRIS_BTN,
+                estado[0] ? Color.WHITE : AppColors.TEXTO);
+        btn.setPreferredSize(new Dimension(52, 30));
+        btn.addActionListener(e -> {
+            estado[0] = !estado[0];
+            btn.setText(estado[0] ? "Sí" : "No");
+            btn.setBackground(estado[0] ? AppColors.PRIMARIO : AppColors.GRIS_BTN);
+            btn.setForeground(estado[0] ? Color.WHITE : AppColors.TEXTO);
+            btn.repaint();
+        });
+        return btn;
     }
 
     // ─── Tab 2: Vivienda ──────────────────────────────────────────────────────
@@ -617,6 +865,197 @@ public class FrmDetalleExpediente extends JDialog {
         p.add(norte, BorderLayout.NORTH);
         p.add(gastosConTotal, BorderLayout.CENTER);
         return p;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // LÓGICA — Tab Familia
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private void mostrarFormFamilia(boolean visible) {
+        if (!visible) {
+            miembroEnEdicion = null;
+            personaSeleccionada = null;
+            txtBuscarCedula.setText("");
+            lblPersonaSeleccionada.setText("Ninguna persona seleccionada");
+            lblPersonaSeleccionada.setForeground(AppColors.TEXTO_GRIS);
+            cmbRelacion.setSelectedIndex(0);
+            resetearToggle(btnJefatura, false);
+            txtOcupacion.setText("");
+            resetearToggle(btnTrabaja, true);
+            txtIngreso.setText("");
+            lblHeaderFormFamilia.setText("Agregar miembro familiar");
+        }
+        panelFormFamilia.setVisible(visible);
+        panelFormFamilia.getParent().revalidate();
+        panelFormFamilia.getParent().repaint();
+    }
+
+    private void resetearToggle(JButton btn, boolean estadoSi) {
+        btn.setText(estadoSi ? "Sí" : "No");
+        btn.setBackground(estadoSi ? AppColors.PRIMARIO : AppColors.GRIS_BTN);
+        btn.setForeground(estadoSi ? Color.WHITE : AppColors.TEXTO);
+        btn.repaint();
+    }
+
+    private void buscarPersonaPorCedula() {
+        String cedula = txtBuscarCedula.getText().trim();
+        if (cedula.isEmpty()) return;
+        Persona p = expedienteController.findPersonaByNumeroDocumento(cedula);
+        if (p != null) {
+            personaSeleccionada = p;
+            lblPersonaSeleccionada.setText("\u2713 " + nvl(p.getNombres()) + " " + nvl(p.getApellidos()));
+            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+        } else {
+            personaSeleccionada = null;
+            lblPersonaSeleccionada.setText("No encontrada — use 'Crear nueva'");
+            lblPersonaSeleccionada.setForeground(AppColors.ROJO);
+            JOptionPane.showMessageDialog(this,
+                    "No se encontró persona con cédula \"" + cedula + "\".\nUse 'Crear nueva' para registrarla.",
+                    "Persona no encontrada", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void abrirFormNuevaPersona() {
+        JDialog dlg = new JDialog(this, "Nueva Persona", true);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(AppColors.PANEL);
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(AppColors.PANEL);
+        form.setBorder(new EmptyBorder(16, 20, 8, 20));
+
+        GridBagConstraints lc = new GridBagConstraints();
+        lc.anchor = GridBagConstraints.WEST;
+        lc.insets = new Insets(4, 4, 2, 4);
+        GridBagConstraints fc = new GridBagConstraints();
+        fc.fill = GridBagConstraints.HORIZONTAL;
+        fc.weightx = 1.0;
+        fc.insets = new Insets(2, 4, 4, 4);
+
+        JTextField txtNom = new JTextField(14);
+        JTextField txtApe = new JTextField(14);
+        JComboBox<TipoDocumentoPersona> cmbTipo = new JComboBox<>(TipoDocumentoPersona.values());
+        JTextField txtDoc = new JTextField(12);
+        JTextField txtTel = new JTextField(12);
+
+        agregarFila(form, 0, lc, fc, "Nombres *", txtNom, "Apellidos *", txtApe);
+        agregarFila(form, 1, lc, fc, "Tipo Doc *", cmbTipo, "Número Doc *", txtDoc);
+        lc.gridx = 0; lc.gridy = 2; form.add(etiqueta("Teléfono"), lc);
+        fc.gridx = 1; fc.gridy = 2; form.add(txtTel, fc);
+
+        JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 8));
+        btns.setOpaque(false);
+        btns.add(UIFactory.crearBotonDialog("Guardar", AppColors.PRIMARIO, Color.WHITE, e -> {
+            String nom = txtNom.getText().trim();
+            String ape = txtApe.getText().trim();
+            String doc = txtDoc.getText().trim();
+            if (nom.isEmpty() || ape.isEmpty() || doc.isEmpty()) {
+                JOptionPane.showMessageDialog(dlg, "Nombres, Apellidos y Número de Documento son obligatorios.",
+                        "Datos incompletos", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (expedienteController.findPersonaByNumeroDocumento(doc) != null) {
+                JOptionPane.showMessageDialog(dlg, "Ya existe una persona con ese número de documento.",
+                        "Documento duplicado", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            Persona nueva = new Persona();
+            nueva.setNombres(nom);
+            nueva.setApellidos(ape);
+            nueva.setTipoDocumento((TipoDocumentoPersona) cmbTipo.getSelectedItem());
+            nueva.setNumeroDocumento(doc);
+            nueva.setTelefono(txtTel.getText().trim());
+            expedienteController.guardarPersona(nueva);
+            personaSeleccionada = nueva;
+            txtBuscarCedula.setText(doc);
+            lblPersonaSeleccionada.setText("\u2713 " + nom + " " + ape);
+            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+            dlg.dispose();
+        }));
+        btns.add(UIFactory.crearBotonDialog("Cancelar", AppColors.GRIS_BTN, AppColors.TEXTO, e -> dlg.dispose()));
+
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(btns, BorderLayout.SOUTH);
+        dlg.pack();
+        dlg.setMinimumSize(new Dimension(480, 200));
+        dlg.setLocationRelativeTo(this);
+        dlg.setVisible(true);
+    }
+
+    private void confirmarMiembro() {
+        if (expediente == null || expediente.getId() == null) {
+            JOptionPane.showMessageDialog(this, "Guarde el expediente antes de agregar miembros familiares.",
+                    "Expediente no guardado", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (personaSeleccionada == null) {
+            JOptionPane.showMessageDialog(this, "Seleccione o cree una persona primero.",
+                    "Persona requerida", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        // Verificar duplicado (solo en modo nuevo)
+        if (miembroEnEdicion == null) {
+            for (MiembroFamiliar m : listaMiembros) {
+                if (m.getPersona() != null && m.getPersona().getId() != null
+                        && m.getPersona().getId().equals(personaSeleccionada.getId())) {
+                    JOptionPane.showMessageDialog(this, "Esta persona ya es miembro de este expediente.",
+                            "Duplicado", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+        }
+
+        MiembroFamiliar miembro = (miembroEnEdicion != null) ? miembroEnEdicion : new MiembroFamiliar();
+        miembro.setPersona(personaSeleccionada);
+        miembro.setExpediente(expediente);
+        miembro.setRelacionTitular((String) cmbRelacion.getSelectedItem());
+        miembro.setEsJefatura("Sí".equals(btnJefatura.getText()));
+        miembro.setOcupacion(txtOcupacion.getText().trim());
+        miembro.setTrabaja("Sí".equals(btnTrabaja.getText()));
+        String ingresoTxt = txtIngreso.getText().trim().replace(",", "");
+        if (!ingresoTxt.isEmpty()) {
+            try { miembro.setIngresoMensual(new BigDecimal(ingresoTxt)); }
+            catch (NumberFormatException ex) { miembro.setIngresoMensual(BigDecimal.ZERO); }
+        } else {
+            miembro.setIngresoMensual(BigDecimal.ZERO);
+        }
+
+        expedienteController.guardarMiembro(miembro);
+        cargarTablaFamilia();
+        mostrarFormFamilia(false);
+    }
+
+    private void cargarMiembroEnFormulario(int row) {
+        if (row < 0 || row >= listaMiembros.size()) return;
+        MiembroFamiliar m = listaMiembros.get(row);
+        miembroEnEdicion = m;
+        try { personaSeleccionada = m.getPersona(); } catch (Exception ignored) { personaSeleccionada = null; }
+
+        if (personaSeleccionada != null) {
+            txtBuscarCedula.setText(nvl(personaSeleccionada.getNumeroDocumento()));
+            lblPersonaSeleccionada.setText("\u2713 " + nvl(personaSeleccionada.getNombres()) + " " + nvl(personaSeleccionada.getApellidos()));
+            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+        }
+        if (m.getRelacionTitular() != null) {
+            cmbRelacion.setSelectedItem(m.getRelacionTitular());
+        }
+        resetearToggle(btnJefatura, Boolean.TRUE.equals(m.getEsJefatura()));
+        txtOcupacion.setText(nvl(m.getOcupacion()));
+        resetearToggle(btnTrabaja, Boolean.TRUE.equals(m.getTrabaja()));
+        txtIngreso.setText(m.getIngresoMensual() != null ? m.getIngresoMensual().toPlainString() : "");
+        lblHeaderFormFamilia.setText("Editar miembro familiar");
+        mostrarFormFamilia(true);
+    }
+
+    private void eliminarMiembro(int row) {
+        if (row < 0 || row >= listaMiembros.size()) return;
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Eliminar este miembro del grupo familiar?",
+                "Confirmar eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        MiembroFamiliar m = listaMiembros.get(row);
+        if (m.getId() != null) expedienteController.eliminarMiembro(m.getId());
+        cargarTablaFamilia();
     }
 
     // ─── Helper: campo con etiqueta encima ───────────────────────────────────
@@ -960,20 +1399,25 @@ public class FrmDetalleExpediente extends JDialog {
         if (expediente == null || expediente.getId() == null)
             return;
         modeloFamilia.setRowCount(0);
+        listaMiembros.clear();
         for (MiembroFamiliar m : expedienteController.findMiembrosByExpediente(expediente.getId())) {
+            listaMiembros.add(m);
             String nombre = "—";
+            String cedula = "—";
             try {
-                if (m.getPersona() != null)
+                if (m.getPersona() != null) {
                     nombre = nvl(m.getPersona().getNombres()) + " " + nvl(m.getPersona().getApellidos());
-            } catch (Exception ignored) {
-                /* LazyInitializationException en entidad detached */ }
-            modeloFamilia.addRow(new Object[] {
+                    cedula = nvl(m.getPersona().getNumeroDocumento());
+                }
+            } catch (Exception ignored) { /* LazyInitializationException en entidad detached */ }
+            modeloFamilia.addRow(new Object[]{
                     nombre,
+                    cedula,
                     nvl(m.getRelacionTitular()),
+                    Boolean.TRUE.equals(m.getEsJefatura()) ? "Sí" : "No",
                     nvl(m.getOcupacion()),
-                    Boolean.TRUE.equals(m.getTrabaja()) ? "Sí" : "No",
                     m.getIngresoMensual() != null ? m.getIngresoMensual().toPlainString() : "0.00",
-                    Boolean.TRUE.equals(m.getEsJefatura()) ? "Sí" : "No"
+                    ""
             });
         }
     }
