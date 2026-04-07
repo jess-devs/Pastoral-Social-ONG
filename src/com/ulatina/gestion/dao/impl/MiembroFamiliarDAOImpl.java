@@ -17,11 +17,9 @@ public class MiembroFamiliarDAOImpl extends GenericDAOImpl<MiembroFamiliar, Long
     public List<MiembroFamiliar> findByExpediente(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT m FROM MiembroFamiliar m JOIN FETCH m.persona WHERE m.expediente.id = :expedienteId",
-                    MiembroFamiliar.class)
-                     .setParameter("expedienteId", expedienteId)
-                     .getResultList();
+            return em.createNamedQuery("MiembroFamiliar.findByExpediente", MiembroFamiliar.class)
+                    .setParameter("expedienteId", expedienteId)
+                    .getResultList();
         } finally {
             em.close();
         }
@@ -31,9 +29,9 @@ public class MiembroFamiliarDAOImpl extends GenericDAOImpl<MiembroFamiliar, Long
     public List<MiembroFamiliar> findByPersona(Long personaId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT m FROM MiembroFamiliar m WHERE m.persona.id = :personaId", MiembroFamiliar.class)
-                     .setParameter("personaId", personaId)
-                     .getResultList();
+            return em.createNamedQuery("MiembroFamiliar.findByPersona", MiembroFamiliar.class)
+                    .setParameter("personaId", personaId)
+                    .getResultList();
         } finally {
             em.close();
         }
@@ -43,11 +41,9 @@ public class MiembroFamiliarDAOImpl extends GenericDAOImpl<MiembroFamiliar, Long
     public List<MiembroFamiliar> findJefaturasByExpediente(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT m FROM MiembroFamiliar m WHERE m.expediente.id = :expedienteId AND m.esJefatura = true",
-                    MiembroFamiliar.class)
-                     .setParameter("expedienteId", expedienteId)
-                     .getResultList();
+            return em.createNamedQuery("MiembroFamiliar.findJefaturasByExpediente", MiembroFamiliar.class)
+                    .setParameter("expedienteId", expedienteId)
+                    .getResultList();
         } finally {
             em.close();
         }

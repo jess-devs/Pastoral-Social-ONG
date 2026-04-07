@@ -19,9 +19,9 @@ public class UsuarioDAOImpl extends GenericDAOImpl<Usuario, Long> implements IUs
     public Usuario findByEmail(String email) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT u FROM Usuario u WHERE u.email = :email", Usuario.class)
-                     .setParameter("email", email)
-                     .getSingleResult();
+            return em.createNamedQuery("Usuario.findByEmail", Usuario.class)
+                    .setParameter("email", email)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } finally {
@@ -33,9 +33,9 @@ public class UsuarioDAOImpl extends GenericDAOImpl<Usuario, Long> implements IUs
     public List<Usuario> findByParroquia(Long parroquiaId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT u FROM Usuario u WHERE u.parroquia.id = :parroquiaId", Usuario.class)
-                     .setParameter("parroquiaId", parroquiaId)
-                     .getResultList();
+            return em.createNamedQuery("Usuario.findByParroquia", Usuario.class)
+                    .setParameter("parroquiaId", parroquiaId)
+                    .getResultList();
         } finally {
             em.close();
         }
@@ -45,9 +45,9 @@ public class UsuarioDAOImpl extends GenericDAOImpl<Usuario, Long> implements IUs
     public List<Usuario> findByRol(RolUsuario rol) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT u FROM Usuario u WHERE u.rol = :rol", Usuario.class)
-                     .setParameter("rol", rol)
-                     .getResultList();
+            return em.createNamedQuery("Usuario.findByRol", Usuario.class)
+                    .setParameter("rol", rol)
+                    .getResultList();
         } finally {
             em.close();
         }
@@ -57,8 +57,8 @@ public class UsuarioDAOImpl extends GenericDAOImpl<Usuario, Long> implements IUs
     public List<Usuario> findActivos() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT u FROM Usuario u WHERE u.activo = true", Usuario.class)
-                     .getResultList();
+            return em.createNamedQuery("Usuario.findActivos", Usuario.class)
+                    .getResultList();
         } finally {
             em.close();
         }

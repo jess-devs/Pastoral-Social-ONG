@@ -7,6 +7,24 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "usuario")
+@NamedQueries({
+        @NamedQuery(
+                name = "Usuario.findByEmail",
+                query = "SELECT u FROM Usuario u WHERE u.email = :email"
+        ),
+        @NamedQuery(
+                name = "Usuario.findByParroquia",
+                query = "SELECT u FROM Usuario u WHERE u.parroquia.id = :parroquiaId"
+        ),
+        @NamedQuery(
+                name = "Usuario.findByRol",
+                query = "SELECT u FROM Usuario u WHERE u.rol = :rol"
+        ),
+        @NamedQuery(
+                name = "Usuario.findActivos",
+                query = "SELECT u FROM Usuario u WHERE u.activo = true"
+        )
+})
 public class Usuario implements Serializable {
 
     private static final long serialVersionUID = 1L;

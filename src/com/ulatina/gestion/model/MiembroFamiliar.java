@@ -6,6 +6,20 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "miembro_familiar")
+@NamedQueries({
+        @NamedQuery(
+                name = "MiembroFamiliar.findByExpediente",
+                query = "SELECT m FROM MiembroFamiliar m WHERE m.expediente.id = :expedienteId"
+        ),
+        @NamedQuery(
+                name = "MiembroFamiliar.findByPersona",
+                query = "SELECT m FROM MiembroFamiliar m WHERE m.persona.id = :personaId"
+        ),
+        @NamedQuery(
+                name = "MiembroFamiliar.findJefaturasByExpediente",
+                query = "SELECT m FROM MiembroFamiliar m WHERE m.expediente.id = :expedienteId AND m.esJefatura = true"
+        )
+})
 public class MiembroFamiliar implements Serializable {
 
     private static final long serialVersionUID = 1L;
