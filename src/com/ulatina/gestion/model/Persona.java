@@ -12,6 +12,39 @@ import java.util.List;
 
 @Entity
 @Table(name = "persona")
+// Named Queries (JPQL) — para búsquedas simples sobre atributos de entidad
+@NamedQueries({
+        @NamedQuery(
+                name = "Persona.findByNumeroDocumento",
+                query = "SELECT p FROM Persona p WHERE p.numeroDocumento = :num"
+        ),
+        @NamedQuery(
+                name = "Persona.findByPaisOrigen",
+                query = "SELECT p FROM Persona p WHERE p.paisOrigen = :pais"
+        )
+})
+// Named Native Queries (SQL puro) — para búsquedas con LOWER/LIKE que aprovechan funciones de MySQL
+@NamedNativeQueries({
+        @NamedNativeQuery(
+                name = "Persona.findByNombre",
+                query = "SELECT * FROM persona " +
+                        "WHERE LOWER(nombres) LIKE LOWER(:nombres) " +
+                        "AND LOWER(apellidos) LIKE LOWER(:apellidos)",
+                resultClass = Persona.class
+        ),
+        @NamedNativeQuery(
+                name = "Persona.findByDireccion",
+                query = "SELECT * FROM persona " +
+                        "WHERE LOWER(direccion) LIKE LOWER(:direccion)",
+                resultClass = Persona.class
+        ),
+        @NamedNativeQuery(
+                name = "Persona.findByCondicionSalud",
+                query = "SELECT * FROM persona " +
+                        "WHERE LOWER(condicion_salud) LIKE LOWER(:condicion)",
+                resultClass = Persona.class
+        )
+})
 public class Persona implements Serializable {
 
     private static final long serialVersionUID = 1L;

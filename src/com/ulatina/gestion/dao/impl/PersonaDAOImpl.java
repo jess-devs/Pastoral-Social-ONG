@@ -18,9 +18,9 @@ public class PersonaDAOImpl extends GenericDAOImpl<Persona, Long> implements IPe
     public Persona findByNumeroDocumento(String numeroDocumento) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT p FROM Persona p WHERE p.numeroDocumento = :num", Persona.class)
-                     .setParameter("num", numeroDocumento)
-                     .getSingleResult();
+            return em.createNamedQuery("Persona.findByNumeroDocumento", Persona.class)
+                    .setParameter("num", numeroDocumento)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } finally {
@@ -28,56 +28,57 @@ public class PersonaDAOImpl extends GenericDAOImpl<Persona, Long> implements IPe
         }
     }
 
+    // Native Query (SQL) — búsqueda con LOWER/LIKE, específica de MySQL
     @Override
+    @SuppressWarnings("unchecked")
     public List<Persona> findByNombre(String nombres, String apellidos) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT p FROM Persona p WHERE LOWER(p.nombres) LIKE LOWER(:nombres) AND LOWER(p.apellidos) LIKE LOWER(:apellidos)",
-                    Persona.class)
-                     .setParameter("nombres", "%" + nombres + "%")
-                     .setParameter("apellidos", "%" + apellidos + "%")
-                     .getResultList();
+            return em.createNamedQuery("Persona.findByNombre", Persona.class)
+                    .setParameter("nombres", "%" + nombres + "%")
+                    .setParameter("apellidos", "%" + apellidos + "%")
+                    .getResultList();
         } finally {
             em.close();
         }
     }
 
+    // Native Query (SQL) — búsqueda parcial de dirección con LOWER/LIKE
     @Override
+    @SuppressWarnings("unchecked")
     public List<Persona> findByDireccion(String direccion) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT p FROM Persona p WHERE LOWER(p.direccion) LIKE LOWER(:direccion)",
-                    Persona.class)
-                     .setParameter("direccion", "%" + direccion + "%")
-                     .getResultList();
+            return em.createNamedQuery("Persona.findByDireccion", Persona.class)
+                    .setParameter("direccion", "%" + direccion + "%")
+                    .getResultList();
         } finally {
             em.close();
         }
     }
 
+    // Native Query (SQL) — búsqueda parcial de condición de salud con LOWER/LIKE
     @Override
+    @SuppressWarnings("unchecked")
     public List<Persona> findByCondicionSalud(String condicionSalud) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT p FROM Persona p WHERE LOWER(p.condicionSalud) LIKE LOWER(:condicion)",
-                    Persona.class)
-                     .setParameter("condicion", "%" + condicionSalud + "%")
-                     .getResultList();
+            return em.createNamedQuery("Persona.findByCondicionSalud", Persona.class)
+                    .setParameter("condicion", "%" + condicionSalud + "%")
+                    .getResultList();
         } finally {
             em.close();
         }
     }
 
+    // Named Query (JPQL) — búsqueda exacta por país de origen
     @Override
     public List<Persona> findByPaisOrigen(String paisOrigen) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT p FROM Persona p WHERE p.paisOrigen = :pais", Persona.class)
-                     .setParameter("pais", paisOrigen)
-                     .getResultList();
+            return em.createNamedQuery("Persona.findByPaisOrigen", Persona.class)
+                    .setParameter("pais", paisOrigen)
+                    .getResultList();
         } finally {
             em.close();
         }

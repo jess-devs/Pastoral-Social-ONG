@@ -18,9 +18,9 @@ public class GastoMensualDAOImpl extends GenericDAOImpl<GastoMensual, Long> impl
     public List<GastoMensual> findByAdendum(Long adendumId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT g FROM GastoMensual g WHERE g.adendum.id = :adendumId", GastoMensual.class)
-                     .setParameter("adendumId", adendumId)
-                     .getResultList();
+            return em.createNamedQuery("GastoMensual.findByAdendum", GastoMensual.class)
+                    .setParameter("adendumId", adendumId)
+                    .getResultList();
         } finally {
             em.close();
         }
@@ -30,11 +30,12 @@ public class GastoMensualDAOImpl extends GenericDAOImpl<GastoMensual, Long> impl
     public List<GastoMensual> findByCategoria(CategoriaGasto categoria) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT g FROM GastoMensual g WHERE g.categoria = :categoria", GastoMensual.class)
-                     .setParameter("categoria", categoria)
-                     .getResultList();
+            return em.createNamedQuery("GastoMensual.findByCategoria", GastoMensual.class)
+                    .setParameter("categoria", categoria)
+                    .getResultList();
         } finally {
             em.close();
         }
     }
 }
+

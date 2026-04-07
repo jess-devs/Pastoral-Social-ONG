@@ -7,6 +7,16 @@ import java.util.List;
 
 @Entity
 @Table(name = "parroquia")
+@NamedQueries({
+        @NamedQuery(
+                name = "Parroquia.findByNombre",
+                query = "SELECT p FROM Parroquia p WHERE p.nombre = :nombre"
+        ),
+        @NamedQuery(
+                name = "Parroquia.findActivas",
+                query = "SELECT p FROM Parroquia p WHERE p.activa = true"
+        )
+})
 public class Parroquia implements Serializable {
 
     private static final long serialVersionUID = 1L;

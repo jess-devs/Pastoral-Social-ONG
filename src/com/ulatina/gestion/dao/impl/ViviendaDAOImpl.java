@@ -20,9 +20,9 @@ public class ViviendaDAOImpl extends GenericDAOImpl<Vivienda, Long> implements I
     public Vivienda findByExpediente(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT v FROM Vivienda v WHERE v.expediente.id = :expedienteId", Vivienda.class)
-                     .setParameter("expedienteId", expedienteId)
-                     .getSingleResult();
+            return em.createNamedQuery("Vivienda.findByExpediente", Vivienda.class)
+                    .setParameter("expedienteId", expedienteId)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } finally {
@@ -34,9 +34,9 @@ public class ViviendaDAOImpl extends GenericDAOImpl<Vivienda, Long> implements I
     public List<Vivienda> findByTipo(TipoVivienda tipo) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT v FROM Vivienda v WHERE v.tipo = :tipo", Vivienda.class)
-                     .setParameter("tipo", tipo)
-                     .getResultList();
+            return em.createNamedQuery("Vivienda.findByTipo", Vivienda.class)
+                    .setParameter("tipo", tipo)
+                    .getResultList();
         } finally {
             em.close();
         }
@@ -46,9 +46,9 @@ public class ViviendaDAOImpl extends GenericDAOImpl<Vivienda, Long> implements I
     public List<Vivienda> findByCondicion(CondicionVivienda condicion) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT v FROM Vivienda v WHERE v.condicion = :condicion", Vivienda.class)
-                     .setParameter("condicion", condicion)
-                     .getResultList();
+            return em.createNamedQuery("Vivienda.findByCondicion", Vivienda.class)
+                    .setParameter("condicion", condicion)
+                    .getResultList();
         } finally {
             em.close();
         }

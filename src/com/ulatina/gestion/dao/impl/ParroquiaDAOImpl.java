@@ -18,8 +18,8 @@ public class ParroquiaDAOImpl extends GenericDAOImpl<Parroquia, Long> implements
     public Parroquia findByNombre(String nombre) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT p FROM Parroquia p WHERE p.nombre = :nombre", Parroquia.class)
-                     .setParameter("nombre", nombre)
+            return em.createNamedQuery("Parroquia.FindByNombre", Parroquia.class)
+                    .setParameter("nombre", nombre)
                      .getSingleResult();
         } catch (NoResultException e) {
             return null;
@@ -32,8 +32,8 @@ public class ParroquiaDAOImpl extends GenericDAOImpl<Parroquia, Long> implements
     public List<Parroquia> findActivas() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT p FROM Parroquia p WHERE p.activa = true", Parroquia.class)
-                     .getResultList();
+            return em.createNamedQuery("Parroquia.findActivas", Parroquia.class)
+                    .getResultList();
         } finally {
             em.close();
         }

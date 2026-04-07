@@ -11,6 +11,51 @@ import java.util.List;
 
 @Entity
 @Table(name = "expediente")
+@NamedQueries({
+        @NamedQuery(
+                name = "Expediente.findAll",
+                query = "SELECT DISTINCT e FROM Expediente e " +
+                        "LEFT JOIN FETCH e.titular " +
+                        "LEFT JOIN FETCH e.parroquia"
+        ),
+        @NamedQuery(
+                name = "Expediente.findByNumeroFicha",
+                query = "SELECT e FROM Expediente e " +
+                        "LEFT JOIN FETCH e.titular " +
+                        "LEFT JOIN FETCH e.parroquia " +
+                        "WHERE e.numeroFicha = :ficha"
+        ),
+        @NamedQuery(
+                name = "Expediente.findByParroquia",
+                query = "SELECT e FROM Expediente e " +
+                        "LEFT JOIN FETCH e.titular " +
+                        "WHERE e.parroquia.id = :parroquiaId"
+        ),
+        @NamedQuery(
+                name = "Expediente.findByTitular",
+                query = "SELECT e FROM Expediente e " +
+                        "LEFT JOIN FETCH e.titular " +
+                        "WHERE e.titular.id = :titularId"
+        ),
+        @NamedQuery(
+                name = "Expediente.findByEstado",
+                query = "SELECT e FROM Expediente e " +
+                        "LEFT JOIN FETCH e.titular " +
+                        "WHERE e.estado = :estado"
+        ),
+        @NamedQuery(
+                name = "Expediente.findByEtapa",
+                query = "SELECT e FROM Expediente e " +
+                        "LEFT JOIN FETCH e.titular " +
+                        "WHERE e.etapaActual = :etapa"
+        ),
+        @NamedQuery(
+                name = "Expediente.findByColorMarcador",
+                query = "SELECT e FROM Expediente e " +
+                        "LEFT JOIN FETCH e.titular " +
+                        "WHERE e.colorMarcador = :color"
+        )
+})
 public class Expediente implements Serializable {
 
     private static final long serialVersionUID = 1L;
