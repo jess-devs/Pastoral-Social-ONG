@@ -424,7 +424,7 @@ public class FrmDetalleExpediente extends JDialog {
         lblTitGrupo.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblTitGrupo.setForeground(AppColors.TEXTO);
 
-        JButton btnAgregarMiembro = UIFactory.crearBotonSmall("+ Agregar", AppColors.PRIMARIO, Color.WHITE,
+        JButton btnAgregarMiembro = UIFactory.crearBotonSmall("Agregar", AppColors.PRIMARIO, Color.WHITE,
                 e -> mostrarFormFamilia(true));
 
         barraTop.add(lblTitGrupo, BorderLayout.WEST);
@@ -903,11 +903,11 @@ public class FrmDetalleExpediente extends JDialog {
         Persona p = expedienteController.findPersonaByNumeroDocumento(cedula);
         if (p != null) {
             personaSeleccionada = p;
-            lblPersonaSeleccionada.setText("\u2713 " + nvl(p.getNombres()) + " " + nvl(p.getApellidos()));
+            lblPersonaSeleccionada.setText(nvl(p.getNombres()) + " " + nvl(p.getApellidos()));
             lblPersonaSeleccionada.setForeground(new Color(0x166534));
         } else {
             personaSeleccionada = null;
-            lblPersonaSeleccionada.setText("No encontrada — use 'Crear nueva'");
+            lblPersonaSeleccionada.setText("Persona no encontrada.");
             lblPersonaSeleccionada.setForeground(AppColors.ROJO);
             JOptionPane.showMessageDialog(this,
                     "No se encontró persona con cédula \"" + cedula + "\".\nUse 'Crear nueva' para registrarla.",
