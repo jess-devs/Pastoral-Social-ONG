@@ -10,4 +10,5 @@ public interface IDocumentoAdjuntoDAO extends IGenericDAO<DocumentoAdjunto, Long
     List<DocumentoAdjunto> findByTipo(TipoDocumentoAdjunto tipo);
     List<DocumentoAdjunto> findDocumentosFirmados(Long expedienteId);
     List<DocumentoAdjunto> findBySubidoPor(Long usuarioId);
+    List<DocumentoAdjunto> buscarPorDescripcion(Long expedienteId, String texto);
 }
