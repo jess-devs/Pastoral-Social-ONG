@@ -6,6 +6,7 @@ import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.*;
 import com.ulatina.gestion.model.enums.*;
+import com.ulatina.gestion.util.SessionContext;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -1338,7 +1339,17 @@ public class FrmDetalleExpediente extends JDialog {
         }
 
         // Campos de Expediente
-        txtEntrevistador.setText(nvl(expediente.getEntrevistador()));
+
+        // Validacion para agregar automaticamente el usuario de entrevistador
+        if (esNuevo) {
+            Usuario actual = SessionContext.getUsuarioActual();
+            if (actual != null) {
+                txtEntrevistador.setText(actual.getNombre());
+            }
+        } else {
+            txtEntrevistador.setText(nvl(expediente.getEntrevistador()));
+        }
+
         if (expediente.getEstado() != null)
             cmbEstado.setSelectedItem(expediente.getEstado());
         if (expediente.getFechaInicio() != null)
