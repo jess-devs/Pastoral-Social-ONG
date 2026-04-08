@@ -4,12 +4,12 @@ import com.ulatina.gestion.controller.ExpedienteController;
 import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.model.Usuario;
 import com.ulatina.gestion.util.JPAUtil;
+import com.ulatina.gestion.util.SessionContext;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D;
 
 /**
  * FrmDashboard — Pantalla principal del sistema Pastoral Social.
@@ -128,8 +128,26 @@ public class FrmDashboard extends JFrame {
             mostrarProximamente("Administración");
         });
         sb.add(bAdmin);
+        sb.add(sep());
+
+        JButton bCerrar = navBtn("  Cerrar sesión");
+        bCerrar.setForeground(new Color(0xFCA5A5));
+        bCerrar.addActionListener(e -> cerrarSesion());
+        sb.add(bCerrar);
         sb.add(Box.createVerticalStrut(16));
         return sb;
+    }
+
+    private void cerrarSesion() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Desea cerrar la sesión?", "Cerrar sesión",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        SessionContext.cerrarSesion();
+        SwingUtilities.invokeLater(() -> {
+            new FrmLogin().setVisible(true);
+            dispose();
+        });
     }
 
     private Component sep() {
@@ -284,22 +302,13 @@ public class FrmDashboard extends JFrame {
 
     // ─── Tarjeta métrica ──────────────────────────────────────────────────────
     private JPanel tarjeta(String num, String etq, Color bg, Color fg) {
-        JPanel c = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(bg);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
-                g2.dispose();
-            }
-        };
+        JPanel c = new JPanel();
         c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
-        c.setOpaque(false);
-        c.setBorder(new EmptyBorder(14, 20, 14, 20));
+        c.setBackground(bg);
+        c.setBorder(new EmptyBorder(16, 20, 16, 20));
 
         JLabel lNum = new JLabel(num);
-        lNum.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        lNum.setFont(new Font("Segoe UI", Font.BOLD, 32));
         lNum.setForeground(fg);
         lNum.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -318,95 +327,68 @@ public class FrmDashboard extends JFrame {
 
     // ─── Módulo clickeable ────────────────────────────────────────────────────
     private JPanel modulo(String titulo, String desc, Color bg, Color fg, Runnable accion) {
-        JPanel c = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getBackground());
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 14, 14));
-                g2.dispose();
-            }
-        };
+        JPanel c = new JPanel();
         c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
         c.setBackground(AppColors.PANEL);
-        c.setOpaque(false);
-        c.setBorder(new EmptyBorder(18, 20, 18, 20));
+        c.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(AppColors.BORDE, 1),
+                new EmptyBorder(18, 20, 18, 20)));
         c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Círculo inicial
-        JPanel circ = new JPanel(new GridBagLayout()) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(bg);
-                g2.fillOval(0, 0, getWidth(), getHeight());
-                g2.dispose();
-            }
-        };
-        circ.setOpaque(false);
-        circ.setPreferredSize(new Dimension(40, 40));
-        circ.setMaximumSize(new Dimension(40, 40));
-        circ.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Cuadro de color con inicial
+        JPanel icono = new JPanel(new GridBagLayout());
+        icono.setBackground(bg);
+        icono.setPreferredSize(new Dimension(36, 36));
+        icono.setMaximumSize(new Dimension(36, 36));
+        icono.setAlignmentX(Component.LEFT_ALIGNMENT);
         JLabel ini = new JLabel(String.valueOf(titulo.charAt(0)));
-        ini.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        ini.setFont(new Font("Segoe UI", Font.BOLD, 15));
         ini.setForeground(fg);
-        circ.add(ini);
+        icono.add(ini);
 
         JLabel lTit = new JLabel(titulo);
         lTit.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lTit.setForeground(AppColors.TEXTO);
         lTit.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lDesc = new JLabel("<html><p style='width:140px'>" + desc + "</p></html>");
+        JLabel lDesc = new JLabel(desc);
         lDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lDesc.setForeground(AppColors.TEXTO_GRIS);
         lDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Botón "Abrir →"
-        JButton btnAbr = new JButton("Abrir →") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getBackground());
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        btnAbr.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnAbr.setBackground(bg);
-        btnAbr.setForeground(fg);
-        btnAbr.setOpaque(false);
-        btnAbr.setContentAreaFilled(false);
+        JButton btnAbr = new JButton("Abrir →");
+        btnAbr.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnAbr.setForeground(AppColors.AZUL);
+        btnAbr.setBackground(null);
         btnAbr.setBorderPainted(false);
+        btnAbr.setContentAreaFilled(false);
         btnAbr.setFocusPainted(false);
-        btnAbr.setBorder(new EmptyBorder(5, 14, 5, 14));
         btnAbr.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnAbr.setAlignmentX(Component.LEFT_ALIGNMENT);
         btnAbr.addActionListener(e -> accion.run());
 
-        c.add(circ);
+        c.add(icono);
         c.add(Box.createVerticalStrut(10));
         c.add(lTit);
         c.add(Box.createVerticalStrut(4));
         c.add(lDesc);
+        c.add(Box.createVerticalGlue());
         c.add(Box.createVerticalStrut(12));
         c.add(btnAbr);
 
         c.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                c.setBackground(new Color(248, 250, 252));
-                c.repaint();
+                c.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(AppColors.AZUL_BORDE, 1),
+                        new EmptyBorder(18, 20, 18, 20)));
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                c.setBackground(AppColors.PANEL);
-                c.repaint();
+                c.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(AppColors.BORDE, 1),
+                        new EmptyBorder(18, 20, 18, 20)));
             }
 
             @Override
