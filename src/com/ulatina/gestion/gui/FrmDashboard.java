@@ -82,7 +82,6 @@ public class FrmDashboard extends JFrame {
         brand.add(l1);
         brand.add(l2);
         sb.add(brand);
-        sb.add(sep());
 
         // Botones de navegación
         JButton bDash = navBtn("  Dashboard");
@@ -120,7 +119,6 @@ public class FrmDashboard extends JFrame {
         sb.add(bRep);
         sb.add(bCons);
         sb.add(Box.createVerticalGlue());
-        sb.add(sep());
 
         JButton bAdmin = navBtn("  Panel de Administrador");
         bAdmin.addActionListener(e -> {
@@ -128,7 +126,6 @@ public class FrmDashboard extends JFrame {
             mostrarProximamente("Administración");
         });
         sb.add(bAdmin);
-        sb.add(sep());
 
         JButton bCerrar = navBtn("  Cerrar sesión");
         bCerrar.setForeground(new Color(0xFCA5A5));
