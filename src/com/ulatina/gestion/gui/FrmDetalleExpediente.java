@@ -94,8 +94,17 @@ public class FrmDetalleExpediente extends JDialog {
 
     // ─── Tablas read-only ─────────────────────────────────────────────────────
     private DefaultTableModel modeloFamilia;
-    private DefaultTableModel modeloAsistencia;
     private DefaultTableModel modeloEntrevistas;
+
+    // ─── Tab 5: Asistencia Solicitada ─────────────────────────────────────────
+    private JPanel panelListaAsistencias;
+    private JComboBox<TipoAsistencia> cmbTipoAsistencia;
+    private JTextField txtModalidadAsist;
+    private JTextField txtFrecuenciaAsist;
+    private JTextField txtDuracionAsist;
+    private JTextField txtValorAsist;
+    private AsistenciaSolicitada asistenciaEnEdicion = null;
+    private JButton btnConfirmarAsist;
 
     // ─── Tab 4: Docs — componentes del formulario ─────────────────────────────
     private File archivoSeleccionado;
@@ -179,7 +188,7 @@ public class FrmDetalleExpediente extends JDialog {
             }
         };
         lblMarcadorBadge.setOpaque(false);
-        lblMarcadorBadge.setForeground(Color.WHITE);
+        lblMarcadorBadge.setForeground(AppColors.PANEL);
         lblMarcadorBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblMarcadorBadge.setVisible(false);
 
@@ -456,7 +465,7 @@ public class FrmDetalleExpediente extends JDialog {
         tablaFamilia.setRowHeight(38);
         tablaFamilia.setShowVerticalLines(false);
         tablaFamilia.setShowHorizontalLines(true);
-        tablaFamilia.setGridColor(new Color(243, 244, 246));
+        tablaFamilia.setGridColor(AppColors.GRID_TBL);
         tablaFamilia.setSelectionBackground(AppColors.FILA_SEL);
         tablaFamilia.setFocusable(false);
         tablaFamilia.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -487,7 +496,7 @@ public class FrmDetalleExpediente extends JDialog {
             badge.setForeground(fg);
             badge.setBorder(new EmptyBorder(3, 10, 3, 10));
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
-            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : AppColors.PANEL);
             cell.add(badge);
             return cell;
         });
@@ -496,7 +505,7 @@ public class FrmDetalleExpediente extends JDialog {
         tablaFamilia.getColumnModel().getColumn(6).setCellRenderer((tbl, val, sel, foc, row, col) -> {
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
             cell.setOpaque(true);
-            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : AppColors.PANEL);
             JLabel editar = new JLabel("Editar");
             editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             editar.setForeground(AppColors.AZUL);
@@ -527,7 +536,7 @@ public class FrmDetalleExpediente extends JDialog {
 
         JScrollPane scrollTabla = new JScrollPane(tablaFamilia);
         scrollTabla.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollTabla.getViewport().setBackground(Color.WHITE);
+        scrollTabla.getViewport().setBackground(AppColors.PANEL);
 
         // ── Formulario inline ─────────────────────────────────────────────────
         panelFormFamilia = crearPanelFormFamilia();
@@ -550,13 +559,13 @@ public class FrmDetalleExpediente extends JDialog {
         header.setBorder(new EmptyBorder(8, 14, 8, 14));
         lblHeaderFormFamilia = new JLabel("Agregar miembro familiar");
         lblHeaderFormFamilia.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lblHeaderFormFamilia.setForeground(Color.WHITE);
+        lblHeaderFormFamilia.setForeground(AppColors.PANEL);
         header.add(lblHeaderFormFamilia, BorderLayout.WEST);
 
         // Body
         JPanel body = new JPanel();
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBackground(Color.WHITE);
+        body.setBackground(AppColors.PANEL);
         body.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(AppColors.BORDE, 1),
                 new EmptyBorder(12, 14, 12, 14)));
@@ -656,13 +665,13 @@ public class FrmDetalleExpediente extends JDialog {
         JButton btn = UIFactory.crearBotonSmall(
                 estado[0] ? "Sí" : "No",
                 estado[0] ? AppColors.PRIMARIO : AppColors.GRIS_BTN,
-                estado[0] ? Color.WHITE : AppColors.TEXTO);
+                estado[0] ? AppColors.PANEL : AppColors.TEXTO);
         btn.setPreferredSize(new Dimension(52, 30));
         btn.addActionListener(e -> {
             estado[0] = !estado[0];
             btn.setText(estado[0] ? "Sí" : "No");
             btn.setBackground(estado[0] ? AppColors.PRIMARIO : AppColors.GRIS_BTN);
-            btn.setForeground(estado[0] ? Color.WHITE : AppColors.TEXTO);
+            btn.setForeground(estado[0] ? AppColors.PANEL : AppColors.TEXTO);
             btn.repaint();
         });
         return btn;
@@ -800,7 +809,7 @@ public class FrmDetalleExpediente extends JDialog {
         tablaGastos.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tablaGastos.setRowHeight(34);
         tablaGastos.setShowVerticalLines(false);
-        tablaGastos.setGridColor(new Color(243, 244, 246));
+        tablaGastos.setGridColor(AppColors.GRID_TBL);
         tablaGastos.setFocusable(false);
         tablaGastos.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tablaGastos.getTableHeader().setBackground(AppColors.HEADER_TBL);
@@ -810,7 +819,7 @@ public class FrmDetalleExpediente extends JDialog {
         tablaGastos.getColumnModel().getColumn(4).setCellRenderer((tbl, val, sel, foc, row, col) -> {
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
             cell.setOpaque(true);
-            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : AppColors.PANEL);
             JLabel editar = new JLabel("Editar");
             editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             editar.setForeground(AppColors.AZUL);
@@ -846,7 +855,7 @@ public class FrmDetalleExpediente extends JDialog {
 
         JScrollPane scrollGastos = new JScrollPane(tablaGastos);
         scrollGastos.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollGastos.getViewport().setBackground(Color.WHITE);
+        scrollGastos.getViewport().setBackground(AppColors.PANEL);
 
         JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
         totalPanel.setBackground(AppColors.HEADER_TBL);
@@ -907,7 +916,7 @@ public class FrmDetalleExpediente extends JDialog {
     private void resetearToggle(JButton btn, boolean estadoSi) {
         btn.setText(estadoSi ? "Sí" : "No");
         btn.setBackground(estadoSi ? AppColors.PRIMARIO : AppColors.GRIS_BTN);
-        btn.setForeground(estadoSi ? Color.WHITE : AppColors.TEXTO);
+        btn.setForeground(estadoSi ? AppColors.PANEL : AppColors.TEXTO);
         btn.repaint();
     }
 
@@ -918,7 +927,7 @@ public class FrmDetalleExpediente extends JDialog {
         if (p != null) {
             personaSeleccionada = p;
             lblPersonaSeleccionada.setText(nvl(p.getNombres()) + " " + nvl(p.getApellidos()));
-            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+            lblPersonaSeleccionada.setForeground(AppColors.VERDE_FG);
         } else {
             personaSeleccionada = null;
             lblPersonaSeleccionada.setText("Persona no encontrada.");
@@ -983,7 +992,7 @@ public class FrmDetalleExpediente extends JDialog {
             personaSeleccionada = nueva;
             txtBuscarCedula.setText(doc);
             lblPersonaSeleccionada.setText(nom + " " + ape);
-            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+            lblPersonaSeleccionada.setForeground(AppColors.VERDE_FG);
             dlg.dispose();
         }));
         btns.add(UIFactory.crearBotonDialog("Cancelar", AppColors.GRIS_BTN, AppColors.TEXTO, e -> dlg.dispose()));
@@ -1048,7 +1057,7 @@ public class FrmDetalleExpediente extends JDialog {
         if (personaSeleccionada != null) {
             txtBuscarCedula.setText(nvl(personaSeleccionada.getNumeroDocumento()));
             lblPersonaSeleccionada.setText(nvl(personaSeleccionada.getNombres()) + " " + nvl(personaSeleccionada.getApellidos()));
-            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+            lblPersonaSeleccionada.setForeground(AppColors.VERDE_FG);
         }
         if (m.getRelacionTitular() != null) {
             cmbRelacion.setSelectedItem(m.getRelacionTitular());
@@ -1208,6 +1217,79 @@ public class FrmDetalleExpediente extends JDialog {
             });
         }
         lblTotalGastos.setText(String.format("%,.0f colones", total));
+    }
+
+    // ─── Tab 5: Asistencia Solicitada — lógica ───────────────────────────────
+
+    private void confirmarAsistencia() {
+        String modalidad = txtModalidadAsist.getText().trim();
+        if (modalidad.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La modalidad es obligatoria.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (expediente == null || expediente.getId() == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Guarde el expediente primero antes de agregar asistencias.",
+                    "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        BigDecimal valor = BigDecimal.ZERO;
+        String valorStr = txtValorAsist.getText().trim();
+        if (!valorStr.isEmpty()) {
+            try {
+                valor = new BigDecimal(valorStr.replace(",", "."));
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "El valor debe ser un número válido.",
+                        "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
+        try {
+            AsistenciaSolicitada a = (asistenciaEnEdicion != null) ? asistenciaEnEdicion : new AsistenciaSolicitada();
+            a.setTipoAsistencia((TipoAsistencia) cmbTipoAsistencia.getSelectedItem());
+            a.setModalidad(modalidad);
+            a.setFrecuencia(txtFrecuenciaAsist.getText().trim());
+            a.setDuracion(txtDuracionAsist.getText().trim());
+            a.setValor(valor);
+            a.setExpediente(expediente);
+            expedienteController.guardarAsistencia(a);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al guardar la asistencia:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        limpiarFormularioAsistencia();
+        recargarListaAsistencias();
+    }
+
+    private void limpiarFormularioAsistencia() {
+        asistenciaEnEdicion = null;
+        cmbTipoAsistencia.setSelectedIndex(0);
+        txtModalidadAsist.setText("");
+        txtFrecuenciaAsist.setText("");
+        txtDuracionAsist.setText("");
+        txtValorAsist.setText("");
+        btnConfirmarAsist.setText("+ Agregar asistencia");
+        btnConfirmarAsist.setBackground(AppColors.PRIMARIO);
+    }
+
+    private void recargarListaAsistencias() {
+        panelListaAsistencias.removeAll();
+        if (expediente == null || expediente.getId() == null) {
+            panelListaAsistencias.revalidate();
+            panelListaAsistencias.repaint();
+            return;
+        }
+        for (AsistenciaSolicitada a : expedienteController.findAsistenciasByExpediente(expediente.getId())) {
+            panelListaAsistencias.add(crearFilaAsistencia(a));
+        }
+        panelListaAsistencias.revalidate();
+        panelListaAsistencias.repaint();
     }
 
     // ─── Tab 4: Docs ──────────────────────────────────────────────────────────
@@ -1530,16 +1612,162 @@ public class FrmDetalleExpediente extends JDialog {
         return badge;
     }
 
-    // ─── Tab 5: Asistencia ────────────────────────────────────────────────────
-    private JPanel crearTabAsistencia() {
-        modeloAsistencia = new DefaultTableModel(
-                new String[] { "Tipo Asistencia", "Modalidad", "Frecuencia", "Duración", "Valor" }, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
+    private JPanel crearFilaAsistencia(AsistenciaSolicitada a) {
+        JPanel fila = new JPanel(new BorderLayout(8, 0));
+        fila.setBackground(AppColors.PANEL);
+        fila.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 0, 1, 0, AppColors.BORDE),
+                new EmptyBorder(10, 12, 10, 12)));
+        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+
+        JPanel izq = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        izq.setBackground(AppColors.PANEL);
+        izq.add(crearBadgeAsistencia(a.getTipoAsistencia()));
+
+        JLabel lblModalidad = new JLabel(nvl(a.getModalidad()));
+        lblModalidad.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblModalidad.setForeground(AppColors.TEXTO);
+        izq.add(lblModalidad);
+
+        String valorStr = a.getValor() != null ? String.format("₡ %,.0f", a.getValor()) : "";
+        String frecStr  = nvl(a.getFrecuencia());
+        String durStr   = nvl(a.getDuracion());
+        StringBuilder meta = new StringBuilder();
+        if (!frecStr.equals("—")) meta.append(frecStr);
+        if (!durStr.equals("—"))  { if (meta.length() > 0) meta.append("  ·  "); meta.append(durStr); }
+        if (!valorStr.isEmpty())  { if (meta.length() > 0) meta.append("  ·  "); meta.append(valorStr); }
+
+        JLabel lblMeta = new JLabel(meta.toString());
+        lblMeta.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblMeta.setForeground(AppColors.TEXTO_GRIS);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 2));
+        centro.setBackground(AppColors.PANEL);
+        centro.add(izq, BorderLayout.NORTH);
+        centro.add(lblMeta, BorderLayout.SOUTH);
+
+        JPanel der = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        der.setBackground(AppColors.PANEL);
+
+        JButton btnEditar = UIFactory.crearBotonSmall("Editar", AppColors.AZUL_PANEL, AppColors.AZUL, e -> {
+            asistenciaEnEdicion = a;
+            cmbTipoAsistencia.setSelectedItem(a.getTipoAsistencia());
+            txtModalidadAsist.setText(nvl(a.getModalidad()).equals("—") ? "" : nvl(a.getModalidad()));
+            txtFrecuenciaAsist.setText(nvl(a.getFrecuencia()).equals("—") ? "" : nvl(a.getFrecuencia()));
+            txtDuracionAsist.setText(nvl(a.getDuracion()).equals("—") ? "" : nvl(a.getDuracion()));
+            txtValorAsist.setText(a.getValor() != null ? a.getValor().toPlainString() : "");
+            btnConfirmarAsist.setText("Guardar cambios");
+            btnConfirmarAsist.setBackground(AppColors.AZUL);
+        });
+
+        JButton btnEliminar = UIFactory.crearBotonSmall("X", AppColors.ROJO_CARD_BG, AppColors.ROJO, e -> {
+            int conf = JOptionPane.showConfirmDialog(this,
+                    "¿Eliminar esta asistencia?", "Confirmar eliminación",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (conf == JOptionPane.YES_OPTION) {
+                try {
+                    if (a.getId() != null) expedienteController.eliminarAsistencia(a.getId());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                recargarListaAsistencias();
             }
-        };
-        return crearTabTabla(modeloAsistencia, "Asistencias solicitadas");
+        });
+
+        der.add(btnEditar);
+        der.add(btnEliminar);
+
+        fila.add(centro, BorderLayout.CENTER);
+        fila.add(der, BorderLayout.EAST);
+        return fila;
+    }
+
+    private JLabel crearBadgeAsistencia(TipoAsistencia tipo) {
+        Color bg, fg;
+        switch (tipo != null ? tipo : TipoAsistencia.OTRO) {
+            case ALIMENTOS:            bg = AppColors.VERDE_BG;      fg = AppColors.VERDE_FG;     break;
+            case MEDICAMENTOS:         bg = AppColors.PURP_BG;       fg = AppColors.PURPURA;      break;
+            case HIGIENE_LIMPIEZA:     bg = AppColors.AZUL_CARD_BG;  fg = AppColors.AZUL_CARD_FG; break;
+            case INDUMENTARIA:         bg = AppColors.AMBAR_BG;      fg = AppColors.AMBAR_FG;     break;
+            case ALQUILER:             bg = AppColors.ALQUILER_BG;   fg = AppColors.AMBAR_FG;     break;
+            case SERVICIOS:            bg = AppColors.SERVICIOS_BG;  fg = AppColors.SERVICIOS_FG; break;
+            case APARATOS_ORTOPEDICOS: bg = AppColors.ROJO_CARD_BG;  fg = AppColors.ROJO_CARD_FG; break;
+            default:                   bg = AppColors.GRIS_BTN;      fg = AppColors.TEXTO_GRIS;   break;
+        }
+        String texto = tipo != null ? tipo.name().replace("_", " ") : "OTRO";
+        return crearBadge(texto, bg, fg);
+    }
+
+    // ─── Tab 5: Asistencia Solicitada ────────────────────────────────────────
+    private JPanel crearTabAsistencia() {
+        JPanel p = new JPanel(new BorderLayout(0, 12));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(new EmptyBorder(16, 24, 16, 24));
+
+        p.add(crearPanelFormAsistencia(), BorderLayout.NORTH);
+
+        panelListaAsistencias = new JPanel();
+        panelListaAsistencias.setLayout(new BoxLayout(panelListaAsistencias, BoxLayout.Y_AXIS));
+        panelListaAsistencias.setBackground(AppColors.PANEL);
+
+        JScrollPane scroll = new JScrollPane(panelListaAsistencias);
+        scroll.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        scroll.getViewport().setBackground(AppColors.PANEL);
+
+        JLabel lblLista = new JLabel("Asistencias registradas");
+        lblLista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblLista.setForeground(AppColors.TEXTO_GRIS);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 6));
+        centro.setBackground(AppColors.PANEL);
+        centro.add(lblLista, BorderLayout.NORTH);
+        centro.add(scroll, BorderLayout.CENTER);
+
+        p.add(centro, BorderLayout.CENTER);
+        return p;
+    }
+
+    private JPanel crearPanelFormAsistencia() {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true),
+                new EmptyBorder(12, 16, 12, 16)));
+
+        cmbTipoAsistencia = new JComboBox<>(TipoAsistencia.values());
+        txtModalidadAsist = new JTextField();
+        txtModalidadAsist.putClientProperty("JTextField.placeholderText", "Ej: Entrega directa");
+        txtFrecuenciaAsist = new JTextField();
+        txtFrecuenciaAsist.putClientProperty("JTextField.placeholderText", "Ej: Quincenal");
+        txtDuracionAsist = new JTextField();
+        txtDuracionAsist.putClientProperty("JTextField.placeholderText", "Ej: 6 meses");
+        txtValorAsist = new JTextField();
+        txtValorAsist.putClientProperty("JTextField.placeholderText", "Ej: 25000");
+
+        JPanel fila = new JPanel(new GridLayout(1, 5, 12, 0));
+        fila.setBackground(AppColors.PANEL);
+        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+
+        fila.add(campoConEtiqueta("Tipo", cmbTipoAsistencia));
+        fila.add(campoConEtiqueta("Modalidad *", txtModalidadAsist));
+        fila.add(campoConEtiqueta("Frecuencia", txtFrecuenciaAsist));
+        fila.add(campoConEtiqueta("Duración", txtDuracionAsist));
+        fila.add(campoConEtiqueta("Valor (₡)", txtValorAsist));
+
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        btnRow.setBackground(AppColors.PANEL);
+        btnConfirmarAsist = UIFactory.crearBoton("+ Agregar asistencia", AppColors.PRIMARIO, Color.WHITE,
+                e -> confirmarAsistencia());
+        JButton btnLimpiar = UIFactory.crearBoton("Limpiar", AppColors.GRIS_BTN, AppColors.TEXTO,
+                e -> limpiarFormularioAsistencia());
+        btnRow.add(btnConfirmarAsist);
+        btnRow.add(btnLimpiar);
+
+        p.add(fila);
+        p.add(Box.createVerticalStrut(10));
+        p.add(btnRow);
+        return p;
     }
 
     // ─── Tab 6: Entrevistas ───────────────────────────────────────────────────
@@ -1568,7 +1796,7 @@ public class FrmDetalleExpediente extends JDialog {
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(34);
         tabla.setShowVerticalLines(false);
-        tabla.setGridColor(new Color(243, 244, 246));
+        tabla.setGridColor(AppColors.GRID_TBL);
         tabla.setFocusable(false);
         tabla.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tabla.getTableHeader().setBackground(AppColors.HEADER_TBL);
@@ -1765,18 +1993,7 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void cargarTablaAsistencia() {
-        if (expediente == null || expediente.getId() == null)
-            return;
-        modeloAsistencia.setRowCount(0);
-        for (AsistenciaSolicitada a : expedienteController.findAsistenciasByExpediente(expediente.getId())) {
-            modeloAsistencia.addRow(new Object[] {
-                    a.getTipoAsistencia() != null ? a.getTipoAsistencia().name().replace("_", " ") : "—",
-                    nvl(a.getModalidad()),
-                    nvl(a.getFrecuencia()),
-                    nvl(a.getDuracion()),
-                    a.getValor() != null ? a.getValor().toPlainString() : "—"
-            });
-        }
+        recargarListaAsistencias();
     }
 
     private void cargarTablaEntrevistas() {

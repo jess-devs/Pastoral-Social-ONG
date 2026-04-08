@@ -196,6 +196,15 @@ public class ExpedienteController {
         documentoDAO.delete(id);
     }
 
+    public void guardarAsistencia(AsistenciaSolicitada a) {
+        if (a.getId() == null) asistenciaDAO.save(a);
+        else asistenciaDAO.update(a);
+    }
+
+    public void eliminarAsistencia(Long id) {
+        asistenciaDAO.delete(id);
+    }
+
     // ═════════════════════════════════════════════════════════════════════════
     // UTILITARIO
     // ═════════════════════════════════════════════════════════════════════════

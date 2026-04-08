@@ -6,6 +6,19 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+@NamedQueries({
+    @NamedQuery(
+        name = "AsistenciaSolicitada.findByExpediente",
+        query = "SELECT a FROM AsistenciaSolicitada a " +
+                "WHERE a.expediente.id = :expedienteId " +
+                "ORDER BY a.tipoAsistencia"
+    ),
+    @NamedQuery(
+        name = "AsistenciaSolicitada.findByTipo",
+        query = "SELECT a FROM AsistenciaSolicitada a " +
+                "WHERE a.tipoAsistencia = :tipo"
+    )
+})
 @Entity
 @Table(name = "asistencia_solicitada")
 public class AsistenciaSolicitada implements Serializable {

@@ -128,7 +128,7 @@ public class FrmDashboard extends JFrame {
         sb.add(bAdmin);
 
         JButton bCerrar = navBtn("  Cerrar sesión");
-        bCerrar.setForeground(new Color(0xFCA5A5));
+        bCerrar.setForeground(AppColors.ROJO_LIGHT);
         bCerrar.addActionListener(e -> cerrarSesion());
         sb.add(bCerrar);
         sb.add(Box.createVerticalStrut(16));

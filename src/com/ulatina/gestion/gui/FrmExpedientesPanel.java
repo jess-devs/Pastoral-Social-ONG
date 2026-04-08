@@ -76,7 +76,7 @@ public class FrmExpedientesPanel extends JPanel {
 
         lblInfoSeleccion = new JLabel("Expediente seleccionado");
         lblInfoSeleccion.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblInfoSeleccion.setForeground(new Color(30, 64, 175));
+        lblInfoSeleccion.setForeground(AppColors.AZUL_DEEP);
         p.add(lblInfoSeleccion, BorderLayout.CENTER);
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -165,7 +165,7 @@ public class FrmExpedientesPanel extends JPanel {
         tabla.setRowHeight(38);
         tabla.setShowVerticalLines(false);
         tabla.setShowHorizontalLines(true);
-        tabla.setGridColor(new Color(243, 244, 246));
+        tabla.setGridColor(AppColors.GRID_TBL);
         tabla.setSelectionBackground(AppColors.FILA_SEL);
         tabla.setSelectionForeground(AppColors.TEXTO);
         tabla.setIntercellSpacing(new Dimension(0, 0));
