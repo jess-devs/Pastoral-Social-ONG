@@ -2,6 +2,7 @@ package com.ulatina.gestion.gui;
 
 import com.ulatina.gestion.controller.ExpedienteController;
 import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.model.Usuario;
 import com.ulatina.gestion.util.JPAUtil;
 
 import javax.swing.*;
@@ -23,9 +24,11 @@ public class FrmDashboard extends JFrame {
     private JPanel sidebar;
 
     private final ExpedienteController expedienteController = new ExpedienteController();
+    private final Usuario usuario;
 
     // ─── Constructor ─────────────────────────────────────────────────────────
-    public FrmDashboard() {
+    public FrmDashboard(Usuario usuario) {
+        this.usuario = usuario;
         setTitle("Pastoral Social");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(960, 620));
@@ -218,7 +221,7 @@ public class FrmDashboard extends JFrame {
         lblTopbarTitulo.setForeground(AppColors.TEXTO);
         top.add(lblTopbarTitulo, BorderLayout.WEST);
 
-        JLabel lblUser = new JLabel("Juan  (Voluntario)");
+        JLabel lblUser = new JLabel(usuario.getNombre() + "  (" + usuario.getRol().name() + ")");
         lblUser.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblUser.setForeground(AppColors.TEXTO_GRIS);
         top.add(lblUser, BorderLayout.EAST);
@@ -466,8 +469,7 @@ public class FrmDashboard extends JFrame {
         }
 
         SwingUtilities.invokeLater(() -> {
-            FrmDashboard dashboard = new FrmDashboard();
-            dashboard.setVisible(true);
+            new com.ulatina.gestion.gui.FrmLogin().setVisible(true);
         });
     }
 }
