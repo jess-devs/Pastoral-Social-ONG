@@ -1,6 +1,6 @@
 package com.ulatina.gestion;
 
-import com.ulatina.gestion.gui.FrmDashboard;
+import com.ulatina.gestion.gui.FrmLogin;
 import javax.swing.*;
 
 public class Main {
@@ -13,8 +13,8 @@ public class Main {
                 JOptionPane.showMessageDialog(null, "Error en Clase " + e.getMessage());
             }
             try {
-                FrmDashboard frmDashboard = new FrmDashboard();
-                frmDashboard.setVisible(true);
+                FrmLogin frmLogin = new FrmLogin();
+                frmLogin.setVisible(true);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, e.getMessage());
             }
