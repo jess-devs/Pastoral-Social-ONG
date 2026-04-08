@@ -12,7 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "persona")
-// Named Queries (JPQL) — para búsquedas simples sobre atributos de entidad
+// Named Queries (JPQL)
 @NamedQueries({
         @NamedQuery(
                 name = "Persona.findByNumeroDocumento",
@@ -23,7 +23,7 @@ import java.util.List;
                 query = "SELECT p FROM Persona p WHERE p.paisOrigen = :pais"
         )
 })
-// Named Native Queries (SQL puro) — para búsquedas con LOWER/LIKE que aprovechan funciones de MySQL
+// Named Native Queries
 @NamedNativeQueries({
         @NamedNativeQuery(
                 name = "Persona.findByNombre",

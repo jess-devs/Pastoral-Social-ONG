@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @NamedQueries({
         @NamedQuery(
                 name = "MiembroFamiliar.findByExpediente",
-                query = "SELECT m FROM MiembroFamiliar m WHERE m.expediente.id = :expedienteId"
+                query = "SELECT m FROM MiembroFamiliar m JOIN FETCH m.persona WHERE m.expediente.id = :expedienteId"
         ),
         @NamedQuery(
                 name = "MiembroFamiliar.findByPersona",

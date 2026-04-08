@@ -4,6 +4,7 @@
                                  http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
              version="2.0">
 
+    <!--Una Unidad de persistencia(en caso de requerir otras se genera el mismo espacio de "persistence-unit"-->
     <persistence-unit name="PastoralSocialJPA">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
 
@@ -37,4 +38,6 @@
             <property name="hibernate.format_sql"     value="true"/>
         </properties>
     </persistence-unit>
+    <!--Una Unidad de persistencia(en caso de requerir otras se genera el mismo espacio de "persistence-unit"-->
+
 </persistence>
