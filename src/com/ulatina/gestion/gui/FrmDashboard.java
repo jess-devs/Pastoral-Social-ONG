@@ -87,6 +87,7 @@ public class FrmDashboard extends JFrame {
         JButton bEven = navBtn("  Eventos");
         JButton bRep = navBtn("  Reportes");
         JButton bCons = navBtn("  Consulta Vicarial");
+        JButton bAdmin = navBtn("  Panel de Administrador");
 
         activar(bDash);
 
@@ -119,10 +120,10 @@ public class FrmDashboard extends JFrame {
         sb.add(Box.createVerticalGlue());
         sb.add(sep());
 
-        JButton bAdmin = navBtn("  Panel de Administrador");
+
         bAdmin.addActionListener(e -> {
             activar(bAdmin);
-            mostrarProximamente("Administración");
+            mostrarPanelAdministrativo();
         });
         sb.add(bAdmin);
         sb.add(Box.createVerticalStrut(16));
@@ -274,7 +275,10 @@ public class FrmDashboard extends JFrame {
         grid.add(modulo("Familias", "Miembros y núcleo familiar", AppColors.VERDE_BG, AppColors.VERDE_FG,
                 () -> mostrarProximamente("Familias")));
         grid.add(modulo("Administración", "Usuarios, roles y parroquias", AppColors.ROJO_CARD_BG,
-                AppColors.ROJO_CARD_FG, () -> mostrarProximamente("Administración")));
+                AppColors.ROJO_CARD_FG, () -> {
+                    activarNav("Administración");
+                    mostrarPanelAdministrativo();
+                }));
         p.add(grid);
         return p;
     }
@@ -431,6 +435,10 @@ public class FrmDashboard extends JFrame {
 
     private void mostrarExpedientes() {
         cambiarVista(new FrmExpedientesPanel(), "Expedientes");
+    }
+
+    private void mostrarPanelAdministrativo(){
+        cambiarVista(new FrmPanelAdministrativo(), "Panel Administrativo");
     }
 
     private void mostrarProximamente(String nombre) {
