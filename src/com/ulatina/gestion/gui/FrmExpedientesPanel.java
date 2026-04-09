@@ -93,44 +93,7 @@ public class FrmExpedientesPanel extends JPanel {
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
-        txtBuscar = new JTextField();
-        txtBuscar.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-        txtBuscar.setText("Buscar por nombre, cédula, ficha...");
-        txtBuscar.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(AppColors.BORDE, 1, true),
-                new EmptyBorder(0, 12, 0, 12)));
-        txtBuscar.setPreferredSize(new Dimension(0, 36));
-        txtBuscar.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (txtBuscar.getText().startsWith("Buscar")) {
-                    txtBuscar.setText("");
-                    txtBuscar.setForeground(AppColors.TEXTO);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (txtBuscar.getText().isEmpty()) {
-                    txtBuscar.setText("Buscar por nombre, cédula, ficha...");
-                    txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-                }
-            }
-        });
-        txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filtrarTexto();
-            }
-
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filtrarTexto();
-            }
-
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filtrarTexto();
-            }
-        });
+        txtBuscar = UIFactory.crearCampoBusqueda("Buscar por nombre, cédula, ficha...", this::filtrarTexto);
 
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         derecha.setOpaque(false);
@@ -161,52 +124,8 @@ public class FrmExpedientesPanel extends JPanel {
         };
 
         tabla = new JTable(modeloTabla);
-        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabla.setRowHeight(38);
-        tabla.setShowVerticalLines(false);
-        tabla.setShowHorizontalLines(true);
-        tabla.setGridColor(AppColors.GRID_TBL);
-        tabla.setSelectionBackground(AppColors.FILA_SEL);
-        tabla.setSelectionForeground(AppColors.TEXTO);
-        tabla.setIntercellSpacing(new Dimension(0, 0));
-        tabla.setFocusable(false);
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tabla.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tabla.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
-        tabla.getTableHeader().setReorderingAllowed(false);
-
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(70);
-        tabla.getColumnModel().getColumn(1).setPreferredWidth(200);
-        tabla.getColumnModel().getColumn(2).setPreferredWidth(110);
-        tabla.getColumnModel().getColumn(3).setPreferredWidth(100);
-        tabla.getColumnModel().getColumn(4).setPreferredWidth(120);
-        tabla.getColumnModel().getColumn(5).setPreferredWidth(90);
-
-        DefaultTableCellRenderer centrado = new DefaultTableCellRenderer();
-        centrado.setHorizontalAlignment(SwingConstants.CENTER);
-        tabla.getColumnModel().getColumn(0).setCellRenderer(centrado);
-        tabla.getColumnModel().getColumn(5).setCellRenderer(centrado);
-        tabla.getColumnModel().getColumn(3).setCellRenderer(new BadgeRenderer());
-
-        DefaultTableCellRenderer etapaRender = new DefaultTableCellRenderer();
-        etapaRender.setHorizontalAlignment(SwingConstants.CENTER);
-        tabla.getColumnModel().getColumn(4).setCellRenderer(etapaRender);
-
-        DefaultTableCellRenderer izqPad = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(
-                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
-                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
-                setBorder(new EmptyBorder(0, 12, 0, 4));
-                return this;
-            }
-        };
-        tabla.getColumnModel().getColumn(1).setCellRenderer(izqPad);
-        tabla.getColumnModel().getColumn(2).setCellRenderer(izqPad);
-
         sorter = new TableRowSorter<>(modeloTabla);
-        tabla.setRowSorter(sorter);
+        UIFactory.configurarTablaExpedientes(tabla, sorter);
 
         tabla.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting())
