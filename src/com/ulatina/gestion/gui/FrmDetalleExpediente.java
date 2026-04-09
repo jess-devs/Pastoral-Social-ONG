@@ -1506,6 +1506,16 @@ public class FrmDetalleExpediente extends JDialog {
                     "Archivo muy grande", JOptionPane.WARNING_MESSAGE);
             return;
         }
+        // RF-2: Evitar duplicidad de documentos — mismo nombre de archivo
+        String nombreNuevo = archivoSeleccionado.getName();
+        boolean yaExiste = expedienteController.findDocsByExpediente(expediente.getId()).stream()
+                .anyMatch(d -> d.getArchivoUrl() != null && d.getArchivoUrl().endsWith(nombreNuevo));
+        if (yaExiste) {
+            JOptionPane.showMessageDialog(this,
+                    "Ya existe un documento con el nombre \"" + nombreNuevo + "\" en este expediente.",
+                    "Documento duplicado", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         try {
             File copiado = FileStorageUtil.copiarArchivo(archivoSeleccionado, expediente.getNumeroFicha());
             String rutaRel = FileStorageUtil.rutaRelativa(expediente.getNumeroFicha(), copiado.getName());
@@ -2414,6 +2424,19 @@ public class FrmDetalleExpediente extends JDialog {
         try {
             // 2. Buscar o crear Persona
             String numDoc = txtNumeroDoc.getText().trim();
+
+            // RF-1: Validar duplicidad — solo al crear un expediente nuevo
+            if (esNuevo) {
+                Expediente existente = expedienteController.findByNumeroFicha(
+                        expedienteController.generarNumeroFicha(numDoc));
+                if (existente != null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Ya existe un expediente registrado para este número de documento.\nFicha: " + existente.getNumeroFicha(),
+                            "Duplicado detectado", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+
             Persona titular = expedienteController.findPersonaByNumeroDocumento(numDoc);
             if (titular == null)
                 titular = new Persona();
