@@ -165,7 +165,7 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    //  Panel con la tabla
+    // Panel con la tabla
     private JPanel crearPanelTabla() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(AppColors.PANEL);
@@ -205,7 +205,7 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    //  Panel de Filtros
+    // Panel de Filtros
     private JPanel crearPanelFiltros() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -255,7 +255,7 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    //  Carga de datos
+    // Carga de datos
     private void cargarTabla() {
         modeloTabla.setRowCount(0);
         expedienteSeleccionado = null;
@@ -291,7 +291,7 @@ public class FrmExpedientes extends JFrame {
         }
     }
 
-    //  Filtrar por texto
+    // Filtrar por texto
     private void filtrarTexto() {
         String texto = txtBuscar.getText().trim();
         if (texto.startsWith("Buscar") || texto.isEmpty()) {

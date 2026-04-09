@@ -121,7 +121,6 @@ public class FrmDashboard extends JFrame {
         sb.add(bCons);
         sb.add(Box.createVerticalGlue());
 
-
         bAdmin.addActionListener(e -> {
             activar(bAdmin);
             mostrarPanelAdministrativo();
@@ -140,7 +139,8 @@ public class FrmDashboard extends JFrame {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "¿Desea cerrar la sesión?", "Cerrar sesión",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (confirm != JOptionPane.YES_OPTION) return;
+        if (confirm != JOptionPane.YES_OPTION)
+            return;
         SessionContext.cerrarSesion();
         SwingUtilities.invokeLater(() -> {
             new FrmLogin().setVisible(true);
@@ -419,7 +419,7 @@ public class FrmDashboard extends JFrame {
         cambiarVista(new FrmExpedientesPanel(), "Expedientes");
     }
 
-    private void mostrarPanelAdministrativo(){
+    private void mostrarPanelAdministrativo() {
         cambiarVista(new FrmPanelAdministrativo(), "Panel Administrativo");
     }
 

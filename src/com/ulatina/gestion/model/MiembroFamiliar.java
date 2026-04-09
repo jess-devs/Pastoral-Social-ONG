@@ -7,74 +7,106 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "miembro_familiar")
 @NamedQueries({
-        @NamedQuery(
-                name = "MiembroFamiliar.findByExpediente",
-                query = "SELECT m FROM MiembroFamiliar m JOIN FETCH m.persona WHERE m.expediente.id = :expedienteId"
-        ),
-        @NamedQuery(
-                name = "MiembroFamiliar.findByPersona",
-                query = "SELECT m FROM MiembroFamiliar m WHERE m.persona.id = :personaId"
-        ),
-        @NamedQuery(
-                name = "MiembroFamiliar.findJefaturasByExpediente",
-                query = "SELECT m FROM MiembroFamiliar m WHERE m.expediente.id = :expedienteId AND m.esJefatura = true"
-        )
+                @NamedQuery(name = "MiembroFamiliar.findByExpediente", query = "SELECT m FROM MiembroFamiliar m JOIN FETCH m.persona WHERE m.expediente.id = :expedienteId"),
+                @NamedQuery(name = "MiembroFamiliar.findByPersona", query = "SELECT m FROM MiembroFamiliar m WHERE m.persona.id = :personaId"),
+                @NamedQuery(name = "MiembroFamiliar.findJefaturasByExpediente", query = "SELECT m FROM MiembroFamiliar m WHERE m.expediente.id = :expedienteId AND m.esJefatura = true")
 })
 public class MiembroFamiliar implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "id")
+        private Long id;
 
-    @Column(name = "es_jefatura")
-    private Boolean esJefatura;
+        @Column(name = "es_jefatura")
+        private Boolean esJefatura;
 
-    @Column(name = "relacion_titular")
-    private String relacionTitular;
+        @Column(name = "relacion_titular")
+        private String relacionTitular;
 
-    @Column(name = "ocupacion")
-    private String ocupacion;
+        @Column(name = "ocupacion")
+        private String ocupacion;
 
-    @Column(name = "trabaja")
-    private Boolean trabaja;
+        @Column(name = "trabaja")
+        private Boolean trabaja;
 
-    @Column(name = "ingreso_mensual", precision = 10, scale = 2)
-    private BigDecimal ingresoMensual;
+        @Column(name = "ingreso_mensual", precision = 10, scale = 2)
+        private BigDecimal ingresoMensual;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "expediente_id", nullable = false)
-    private Expediente expediente;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "expediente_id", nullable = false)
+        private Expediente expediente;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "persona_id", nullable = false)
-    private Persona persona;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "persona_id", nullable = false)
+        private Persona persona;
 
-    public MiembroFamiliar() {}
+        public MiembroFamiliar() {
+        }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+        public Long getId() {
+                return id;
+        }
 
-    public Boolean getEsJefatura() { return esJefatura; }
-    public void setEsJefatura(Boolean esJefatura) { this.esJefatura = esJefatura; }
+        public void setId(Long id) {
+                this.id = id;
+        }
 
-    public String getRelacionTitular() { return relacionTitular; }
-    public void setRelacionTitular(String relacionTitular) { this.relacionTitular = relacionTitular; }
+        public Boolean getEsJefatura() {
+                return esJefatura;
+        }
 
-    public String getOcupacion() { return ocupacion; }
-    public void setOcupacion(String ocupacion) { this.ocupacion = ocupacion; }
+        public void setEsJefatura(Boolean esJefatura) {
+                this.esJefatura = esJefatura;
+        }
 
-    public Boolean getTrabaja() { return trabaja; }
-    public void setTrabaja(Boolean trabaja) { this.trabaja = trabaja; }
+        public String getRelacionTitular() {
+                return relacionTitular;
+        }
 
-    public BigDecimal getIngresoMensual() { return ingresoMensual; }
-    public void setIngresoMensual(BigDecimal ingresoMensual) { this.ingresoMensual = ingresoMensual; }
+        public void setRelacionTitular(String relacionTitular) {
+                this.relacionTitular = relacionTitular;
+        }
 
-    public Expediente getExpediente() { return expediente; }
-    public void setExpediente(Expediente expediente) { this.expediente = expediente; }
+        public String getOcupacion() {
+                return ocupacion;
+        }
 
-    public Persona getPersona() { return persona; }
-    public void setPersona(Persona persona) { this.persona = persona; }
+        public void setOcupacion(String ocupacion) {
+                this.ocupacion = ocupacion;
+        }
+
+        public Boolean getTrabaja() {
+                return trabaja;
+        }
+
+        public void setTrabaja(Boolean trabaja) {
+                this.trabaja = trabaja;
+        }
+
+        public BigDecimal getIngresoMensual() {
+                return ingresoMensual;
+        }
+
+        public void setIngresoMensual(BigDecimal ingresoMensual) {
+                this.ingresoMensual = ingresoMensual;
+        }
+
+        public Expediente getExpediente() {
+                return expediente;
+        }
+
+        public void setExpediente(Expediente expediente) {
+                this.expediente = expediente;
+        }
+
+        public Persona getPersona() {
+                return persona;
+        }
+
+        public void setPersona(Persona persona) {
+                this.persona = persona;
+        }
 }

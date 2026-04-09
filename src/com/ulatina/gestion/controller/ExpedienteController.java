@@ -24,6 +24,7 @@ public class ExpedienteController {
     private final IDocumentoAdjuntoDAO documentoDAO = new DocumentoAdjuntoDAOImpl();
     private final IAsistenciaSolicitadaDAO asistenciaDAO = new AsistenciaSolicitadaDAOImpl();
     private final IEntrevistaDAO entrevistaDAO = new EntrevistaDAOImpl();
+    private final IProlongacionAyudaDAO prolongacionDAO = new ProlongacionAyudaDAOImpl();
 
     // ═════════════════════════════════════════════════════════════════════════
     // CONSULTAS — Expediente
@@ -108,6 +109,15 @@ public class ExpedienteController {
     public List<Entrevista> findEntrevistasByExpediente(Long expedienteId) {
         try {
             return entrevistaDAO.findByExpediente(expedienteId);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public List<ProlongacionAyuda> findProlongacionesByExpediente(Long expedienteId) {
+        try {
+            return prolongacionDAO.findByExpediente(expedienteId);
         } catch (Exception ex) {
             ex.printStackTrace();
             return Collections.emptyList();
@@ -203,6 +213,16 @@ public class ExpedienteController {
 
     public void eliminarAsistencia(Long id) {
         asistenciaDAO.delete(id);
+    }
+
+    public void guardarEntrevista(Entrevista e) {
+        if (e.getId() == null) entrevistaDAO.save(e);
+        else entrevistaDAO.update(e);
+    }
+
+    public void guardarProlongacion(ProlongacionAyuda p) {
+        if (p.getId() == null) prolongacionDAO.save(p);
+        else prolongacionDAO.update(p);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
