@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -107,6 +108,20 @@ public class FrmDetalleExpediente extends JDialog {
     private JFormattedTextField txtFechaProlongacion;
     private JTextField txtObsProlongacion;
     private BarraProgresoPanel panelBarraProgreso;
+
+    // ─── RF-14: Paginadores (máx 20 registros por página) ────────────────────
+    private final Paginador<MiembroFamiliar>      pagFamilia       = new Paginador<>();
+    private final Paginador<GastoMensual>         pagGastos        = new Paginador<>();
+    private final Paginador<DocumentoAdjunto>     pagDocs          = new Paginador<>();
+    private final Paginador<AsistenciaSolicitada> pagAsistencias   = new Paginador<>();
+    private final Paginador<Entrevista>           pagEntrevistas   = new Paginador<>();
+    private final Paginador<ProlongacionAyuda>    pagProlongaciones = new Paginador<>();
+    private final JPanel panelPagFamilia       = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagGastos        = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagDocs          = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagAsistencias   = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagEntrevistas   = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagProlongaciones = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
 
     // ─── Tab 5: Asistencia Solicitada ─────────────────────────────────────────
     private JPanel panelListaAsistencias;
@@ -488,17 +503,9 @@ public class FrmDetalleExpediente extends JDialog {
         };
 
         tablaFamilia = new JTable(modeloFamilia);
-        tablaFamilia.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tablaFamilia.setRowHeight(38);
-        tablaFamilia.setShowVerticalLines(false);
+        configurarTabla(tablaFamilia, 38);
         tablaFamilia.setShowHorizontalLines(true);
-        tablaFamilia.setGridColor(AppColors.GRID_TBL);
         tablaFamilia.setSelectionBackground(AppColors.FILA_SEL);
-        tablaFamilia.setFocusable(false);
-        tablaFamilia.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaFamilia.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tablaFamilia.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tablaFamilia.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
 
         // Anchos de columnas
         tablaFamilia.getColumnModel().getColumn(0).setPreferredWidth(160);
@@ -564,16 +571,20 @@ public class FrmDetalleExpediente extends JDialog {
             }
         });
 
-        JScrollPane scrollTabla = new JScrollPane(tablaFamilia);
-        scrollTabla.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollTabla.getViewport().setBackground(AppColors.PANEL);
+        JScrollPane scrollTabla = crearScrollTabla(tablaFamilia);
+
+        panelPagFamilia.setOpaque(false);
+        JPanel tablaConPag = new JPanel(new BorderLayout(0, 0));
+        tablaConPag.setOpaque(false);
+        tablaConPag.add(scrollTabla, BorderLayout.CENTER);
+        tablaConPag.add(panelPagFamilia, BorderLayout.SOUTH);
 
         // ── Formulario inline ─────────────────────────────────────────────────
         panelFormFamilia = crearPanelFormFamilia();
         panelFormFamilia.setVisible(false);
 
         p.add(barraTop, BorderLayout.NORTH);
-        p.add(scrollTabla, BorderLayout.CENTER);
+        p.add(tablaConPag, BorderLayout.CENTER);
         p.add(panelFormFamilia, BorderLayout.SOUTH);
         return p;
     }
@@ -837,15 +848,7 @@ public class FrmDetalleExpediente extends JDialog {
         };
 
         tablaGastos = new JTable(modeloGastos);
-        tablaGastos.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tablaGastos.setRowHeight(34);
-        tablaGastos.setShowVerticalLines(false);
-        tablaGastos.setGridColor(AppColors.GRID_TBL);
-        tablaGastos.setFocusable(false);
-        tablaGastos.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaGastos.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tablaGastos.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tablaGastos.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
+        configurarTabla(tablaGastos);
 
         tablaGastos.getColumnModel().getColumn(4).setCellRenderer((tbl, val, sel, foc, row, col) -> {
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
@@ -884,9 +887,7 @@ public class FrmDetalleExpediente extends JDialog {
             }
         });
 
-        JScrollPane scrollGastos = new JScrollPane(tablaGastos);
-        scrollGastos.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollGastos.getViewport().setBackground(AppColors.PANEL);
+        JScrollPane scrollGastos = crearScrollTabla(tablaGastos);
 
         JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
         totalPanel.setBackground(AppColors.HEADER_TBL);
@@ -902,10 +903,16 @@ public class FrmDetalleExpediente extends JDialog {
         totalPanel.add(lTotal);
         totalPanel.add(lblTotalGastos);
 
+        panelPagGastos.setOpaque(false);
+        JPanel gastosBottom = new JPanel(new BorderLayout(0, 0));
+        gastosBottom.setOpaque(false);
+        gastosBottom.add(totalPanel, BorderLayout.NORTH);
+        gastosBottom.add(panelPagGastos, BorderLayout.SOUTH);
+
         JPanel gastosConTotal = new JPanel(new BorderLayout());
         gastosConTotal.setOpaque(false);
         gastosConTotal.add(scrollGastos, BorderLayout.CENTER);
-        gastosConTotal.add(totalPanel, BorderLayout.SOUTH);
+        gastosConTotal.add(gastosBottom, BorderLayout.SOUTH);
 
         JPanel norte = new JPanel(new BorderLayout(0, 8));
         norte.setOpaque(false);
@@ -1242,29 +1249,34 @@ public class FrmDetalleExpediente extends JDialog {
 
     // ─── Recargar tabla de gastos ─────────────────────────────────────────────
     private void recargarTablaGastos() {
+        if (adendumActual == null || adendumActual.getId() == null) return;
+        pagGastos.cargar(expedienteController.findGastosByAdendum(adendumActual.getId()));
+        refrescarTablaGastos();
+    }
+
+    private void refrescarTablaGastos() {
         modeloGastos.setRowCount(0);
         gastosActuales.clear();
-        if (adendumActual == null || adendumActual.getId() == null)
-            return;
-        List<GastoMensual> gastos = expedienteController.findGastosByAdendum(adendumActual.getId());
-        BigDecimal total = BigDecimal.ZERO;
-        for (GastoMensual g : gastos) {
+        // Total sobre TODOS los gastos, no solo la página actual
+        BigDecimal total = pagGastos.getTodos().stream()
+                .map(g -> g.getMonto() != null ? g.getMonto() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        lblTotalGastos.setText(String.format("%,.0f colones", total));
+        for (GastoMensual g : pagGastos.getPagina()) {
             gastosActuales.add(g);
             BigDecimal m = g.getMonto() != null ? g.getMonto() : BigDecimal.ZERO;
-            total = total.add(m);
             String catDisplay = g.getCategoria() != null
                     ? g.getCategoria().name().replace("_", " ").substring(0, 1).toUpperCase()
                             + g.getCategoria().name().replace("_", " ").substring(1).toLowerCase()
                     : "—";
             modeloGastos.addRow(new Object[] {
-                    catDisplay,
-                    nvl(g.getConcepto()),
+                    catDisplay, nvl(g.getConcepto()),
                     String.format("%,.0f", m),
                     g.getFecha() != null ? sdf.format(g.getFecha()) : "—",
                     ""
             });
         }
-        lblTotalGastos.setText(String.format("%,.0f colones", total));
+        actualizarPanelPaginacion(panelPagGastos, pagGastos, this::refrescarTablaGastos);
     }
 
     // ─── Tab 5: Asistencia Solicitada — lógica ───────────────────────────────
@@ -1327,17 +1339,23 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void recargarListaAsistencias() {
-        panelListaAsistencias.removeAll();
         if (expediente == null || expediente.getId() == null) {
+            panelListaAsistencias.removeAll();
             panelListaAsistencias.revalidate();
             panelListaAsistencias.repaint();
             return;
         }
-        for (AsistenciaSolicitada a : expedienteController.findAsistenciasByExpediente(expediente.getId())) {
+        pagAsistencias.cargar(expedienteController.findAsistenciasByExpediente(expediente.getId()));
+        refrescarListaAsistencias();
+    }
+
+    private void refrescarListaAsistencias() {
+        panelListaAsistencias.removeAll();
+        for (AsistenciaSolicitada a : pagAsistencias.getPagina())
             panelListaAsistencias.add(crearFilaAsistencia(a));
-        }
         panelListaAsistencias.revalidate();
         panelListaAsistencias.repaint();
+        actualizarPanelPaginacion(panelPagAsistencias, pagAsistencias, this::refrescarListaAsistencias);
     }
 
     // ─── Tab 4: Docs ──────────────────────────────────────────────────────────
@@ -1360,10 +1378,16 @@ public class FrmDetalleExpediente extends JDialog {
         lblDocs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblDocs.setForeground(AppColors.TEXTO_GRIS);
 
+        panelPagDocs.setOpaque(false);
+        JPanel scrollConPag = new JPanel(new BorderLayout(0, 0));
+        scrollConPag.setOpaque(false);
+        scrollConPag.add(scroll, BorderLayout.CENTER);
+        scrollConPag.add(panelPagDocs, BorderLayout.SOUTH);
+
         JPanel centro = new JPanel(new BorderLayout(0, 6));
         centro.setBackground(AppColors.PANEL);
         centro.add(lblDocs, BorderLayout.NORTH);
-        centro.add(scroll, BorderLayout.CENTER);
+        centro.add(scrollConPag, BorderLayout.CENTER);
 
         p.add(centro, BorderLayout.CENTER);
         return p;
@@ -1826,10 +1850,16 @@ public class FrmDetalleExpediente extends JDialog {
         lblLista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblLista.setForeground(AppColors.TEXTO_GRIS);
 
+        panelPagAsistencias.setOpaque(false);
+        JPanel scrollConPag = new JPanel(new BorderLayout(0, 0));
+        scrollConPag.setOpaque(false);
+        scrollConPag.add(scroll, BorderLayout.CENTER);
+        scrollConPag.add(panelPagAsistencias, BorderLayout.SOUTH);
+
         JPanel centro = new JPanel(new BorderLayout(0, 6));
         centro.setBackground(AppColors.PANEL);
         centro.add(lblLista, BorderLayout.NORTH);
-        centro.add(scroll, BorderLayout.CENTER);
+        centro.add(scrollConPag, BorderLayout.CENTER);
 
         p.add(centro, BorderLayout.CENTER);
         return p;
@@ -1955,29 +1985,19 @@ public class FrmDetalleExpediente extends JDialog {
             }
         };
         JTable tablaEntrevistas = new JTable(modeloEntrevistas);
-        tablaEntrevistas.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tablaEntrevistas.setRowHeight(34);
-        tablaEntrevistas.setShowVerticalLines(false);
-        tablaEntrevistas.setGridColor(AppColors.GRID_TBL);
-        tablaEntrevistas.setFocusable(false);
-        tablaEntrevistas.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaEntrevistas.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tablaEntrevistas.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tablaEntrevistas.getTableHeader().setBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
-
-        JScrollPane scrollTabla = new JScrollPane(tablaEntrevistas);
-        scrollTabla.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollTabla.getViewport().setBackground(AppColors.PANEL);
+        configurarTabla(tablaEntrevistas);
+        JScrollPane scrollTabla = crearScrollTabla(tablaEntrevistas);
 
         JLabel lblLista = new JLabel("Entrevistas realizadas");
         lblLista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblLista.setForeground(AppColors.TEXTO_GRIS);
 
+        panelPagEntrevistas.setOpaque(false);
         JPanel centroPanel = new JPanel(new BorderLayout(0, 6));
         centroPanel.setBackground(AppColors.PANEL);
         centroPanel.add(lblLista, BorderLayout.NORTH);
         centroPanel.add(scrollTabla, BorderLayout.CENTER);
+        centroPanel.add(panelPagEntrevistas, BorderLayout.SOUTH);
 
         p.add(formPanel, BorderLayout.NORTH);
         p.add(centroPanel, BorderLayout.CENTER);
@@ -2072,29 +2092,19 @@ public class FrmDetalleExpediente extends JDialog {
             }
         };
         JTable tablaProlongaciones = new JTable(modeloProlongaciones);
-        tablaProlongaciones.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tablaProlongaciones.setRowHeight(34);
-        tablaProlongaciones.setShowVerticalLines(false);
-        tablaProlongaciones.setGridColor(AppColors.GRID_TBL);
-        tablaProlongaciones.setFocusable(false);
-        tablaProlongaciones.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaProlongaciones.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tablaProlongaciones.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tablaProlongaciones.getTableHeader().setBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
-
-        JScrollPane scrollTabla = new JScrollPane(tablaProlongaciones);
-        scrollTabla.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollTabla.getViewport().setBackground(AppColors.PANEL);
+        configurarTabla(tablaProlongaciones);
+        JScrollPane scrollTabla = crearScrollTabla(tablaProlongaciones);
 
         JLabel lblLista = new JLabel("Prolongaciones registradas");
         lblLista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblLista.setForeground(AppColors.TEXTO_GRIS);
 
+        panelPagProlongaciones.setOpaque(false);
         JPanel centroPanel = new JPanel(new BorderLayout(0, 6));
         centroPanel.setBackground(AppColors.PANEL);
         centroPanel.add(lblLista, BorderLayout.NORTH);
         centroPanel.add(scrollTabla, BorderLayout.CENTER);
+        centroPanel.add(panelPagProlongaciones, BorderLayout.SOUTH);
 
         p.add(formPanel, BorderLayout.NORTH);
         p.add(centroPanel, BorderLayout.CENTER);
@@ -2136,22 +2146,26 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void cargarTablaProlongaciones() {
-        if (modeloProlongaciones == null || expediente == null || expediente.getId() == null)
-            return;
+        if (modeloProlongaciones == null || expediente == null || expediente.getId() == null) return;
+        pagProlongaciones.cargar(expedienteController.findProlongacionesByExpediente(expediente.getId()));
+        refrescarTablaProlongaciones();
+    }
+
+    private void refrescarTablaProlongaciones() {
         modeloProlongaciones.setRowCount(0);
-        for (ProlongacionAyuda pr : expedienteController.findProlongacionesByExpediente(expediente.getId())) {
+        for (ProlongacionAyuda pr : pagProlongaciones.getPagina()) {
             String registradoPor = "—";
             try {
                 if (pr.getRegistradoPor() != null)
                     registradoPor = nvl(pr.getRegistradoPor().getNombre());
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
             modeloProlongaciones.addRow(new Object[] {
                     pr.getFechaProlongacion() != null ? sdf.format(pr.getFechaProlongacion()) : "—",
                     nvl(pr.getObservaciones()),
                     registradoPor
             });
         }
+        actualizarPanelPaginacion(panelPagProlongaciones, pagProlongaciones, this::refrescarTablaProlongaciones);
     }
 
     // ─── Helper: panel tabla genérico (read-only) ─────────────────────────────
@@ -2182,6 +2196,28 @@ public class FrmDetalleExpediente extends JDialog {
         p.add(lbl, BorderLayout.NORTH);
         p.add(scroll, BorderLayout.CENTER);
         return p;
+    }
+
+    // ─── Helpers: estilo uniforme de tablas ───────────────────────────────────
+    private void configurarTabla(JTable tabla, int rowHeight) {
+        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tabla.setRowHeight(rowHeight);
+        tabla.setShowVerticalLines(false);
+        tabla.setGridColor(AppColors.GRID_TBL);
+        tabla.setFocusable(false);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabla.getTableHeader().setBackground(AppColors.HEADER_TBL);
+        tabla.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
+        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
+    }
+
+    private void configurarTabla(JTable tabla) { configurarTabla(tabla, 34); }
+
+    private JScrollPane crearScrollTabla(JTable tabla) {
+        JScrollPane s = new JScrollPane(tabla);
+        s.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        s.getViewport().setBackground(AppColors.PANEL);
+        return s;
     }
 
     // ─── Barra inferior ───────────────────────────────────────────────────────
@@ -2332,51 +2368,56 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void cargarTablaFamilia() {
-        if (expediente == null || expediente.getId() == null)
-            return;
+        if (expediente == null || expediente.getId() == null) return;
+        pagFamilia.cargar(expedienteController.findMiembrosByExpediente(expediente.getId()));
+        refrescarTablaFamilia();
+    }
+
+    private void refrescarTablaFamilia() {
         modeloFamilia.setRowCount(0);
         listaMiembros.clear();
-        for (MiembroFamiliar m : expedienteController.findMiembrosByExpediente(expediente.getId())) {
+        for (MiembroFamiliar m : pagFamilia.getPagina()) {
             listaMiembros.add(m);
-            String nombre = "—";
-            String cedula = "—";
+            String nombre = "—", cedula = "—";
             try {
                 if (m.getPersona() != null) {
                     nombre = nvl(m.getPersona().getNombres()) + " " + nvl(m.getPersona().getApellidos());
                     cedula = nvl(m.getPersona().getNumeroDocumento());
                 }
-            } catch (Exception ignored) {
-                /* LazyInitializationException en entidad detached */ }
+            } catch (Exception ignored) { /* LazyInitializationException */ }
             modeloFamilia.addRow(new Object[] {
-                    nombre,
-                    cedula,
-                    nvl(m.getRelacionTitular()),
+                    nombre, cedula, nvl(m.getRelacionTitular()),
                     Boolean.TRUE.equals(m.getEsJefatura()) ? "Sí" : "No",
                     nvl(m.getOcupacion()),
                     m.getIngresoMensual() != null ? m.getIngresoMensual().toPlainString() : "0.00",
                     ""
             });
         }
+        actualizarPanelPaginacion(panelPagFamilia, pagFamilia, this::refrescarTablaFamilia);
     }
 
     private void cargarTablaDocs() {
-        if (panelListaDocs == null || expediente == null || expediente.getId() == null)
-            return;
+        if (panelListaDocs == null || expediente == null || expediente.getId() == null) return;
+        pagDocs.cargar(expedienteController.findDocsByExpediente(expediente.getId()));
+        refrescarListaDocs();
+    }
+
+    private void refrescarListaDocs() {
         panelListaDocs.removeAll();
-        List<DocumentoAdjunto> docs = expedienteController.findDocsByExpediente(expediente.getId());
-        if (docs.isEmpty()) {
+        List<DocumentoAdjunto> pagina = pagDocs.getPagina();
+        if (pagina.isEmpty() && pagDocs.getTodos().isEmpty()) {
             JLabel lblVacio = new JLabel("No hay documentos adjuntos.");
             lblVacio.setFont(new Font("Segoe UI", Font.PLAIN, 13));
             lblVacio.setForeground(AppColors.TEXTO_GRIS);
             lblVacio.setBorder(new EmptyBorder(16, 12, 16, 12));
             panelListaDocs.add(lblVacio);
         } else {
-            for (DocumentoAdjunto d : docs) {
+            for (DocumentoAdjunto d : pagina)
                 panelListaDocs.add(crearFilaDoc(d));
-            }
         }
         panelListaDocs.revalidate();
         panelListaDocs.repaint();
+        actualizarPanelPaginacion(panelPagDocs, pagDocs, this::refrescarListaDocs);
     }
 
     private void cargarTablaAsistencia() {
@@ -2384,13 +2425,16 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void cargarTablaEntrevistas() {
-        if (expediente == null || expediente.getId() == null)
-            return;
+        if (expediente == null || expediente.getId() == null) return;
+        pagEntrevistas.cargar(expedienteController.findEntrevistasByExpediente(expediente.getId()));
+        refrescarTablaEntrevistas();
+    }
+
+    private void refrescarTablaEntrevistas() {
         modeloEntrevistas.setRowCount(0);
-        for (Entrevista e : expedienteController.findEntrevistasByExpediente(expediente.getId())) {
+        for (Entrevista e : pagEntrevistas.getPagina()) {
             String obs = nvl(e.getObservaciones());
-            if (obs.length() > 60)
-                obs = obs.substring(0, 57) + "...";
+            if (obs.length() > 60) obs = obs.substring(0, 57) + "...";
             modeloEntrevistas.addRow(new Object[] {
                     e.getFecha() != null ? sdf.format(e.getFecha()) : "—",
                     nvl(e.getEntrevistador()),
@@ -2398,6 +2442,7 @@ public class FrmDetalleExpediente extends JDialog {
                     obs
             });
         }
+        actualizarPanelPaginacion(panelPagEntrevistas, pagEntrevistas, this::refrescarTablaEntrevistas);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -2457,8 +2502,6 @@ public class FrmDetalleExpediente extends JDialog {
             titular.setTieneSeguro(chkTieneSeguro.isSelected());
             titular.setCondicionMigratoria(txtCondicionMigratoria.getText().trim());
             titular.setFechaNacimiento(parseFecha(txtFechaNac.getText()));
-            expedienteController.guardarPersona(titular);
-
             // 3. Crear o actualizar Expediente
             boolean wasNuevo = esNuevo || (expediente == null);
             if (wasNuevo) {
@@ -2467,7 +2510,6 @@ public class FrmDetalleExpediente extends JDialog {
                 expediente.setEtapaActual(EtapaExpediente.REGISTRO);
             }
 
-            expediente.setTitular(titular);
             expediente.setParroquia((Parroquia) cmbParroquia.getSelectedItem());
             expediente.setEstado((EstadoExpediente) cmbEstado.getSelectedItem());
             expediente.setEntrevistador(txtEntrevistador.getText().trim());
@@ -2476,7 +2518,9 @@ public class FrmDetalleExpediente extends JDialog {
             expediente.setObservaciones(txtObservaciones.getText().trim());
             String marcador = (String) cmbColorMarcador.getSelectedItem();
             expediente.setColorMarcador("NINGUNO".equals(marcador) ? null : marcador);
-            expedienteController.guardarExpediente(expediente);
+
+            // RF-13: Persona + Expediente en una sola transacción atómica
+            expedienteController.guardarTitularYExpediente(titular, expediente);
             EtapaExpediente etapaAntes = expediente.getEtapaActual();
             actualizarEtapaActual();
             if (expediente.getEtapaActual() != etapaAntes)
@@ -2623,6 +2667,49 @@ public class FrmDetalleExpediente extends JDialog {
         } catch (ParseException e) {
             return null;
         }
+    }
+
+    // ─── RF-14: Paginador genérico ────────────────────────────────────────────
+    private static class Paginador<T> {
+        private static final int TAMANO = 20;
+        private List<T> datos = Collections.emptyList();
+        private int pagina = 0;
+
+        void cargar(List<T> todos) { datos = todos != null ? todos : Collections.emptyList(); pagina = 0; }
+        List<T> getPagina() {
+            int desde = pagina * TAMANO;
+            int hasta = Math.min(desde + TAMANO, datos.size());
+            return desde < datos.size() ? datos.subList(desde, hasta) : Collections.emptyList();
+        }
+        List<T> getTodos() { return Collections.unmodifiableList(datos); }
+        boolean hayAnterior()   { return pagina > 0; }
+        boolean haySiguiente()  { return (pagina + 1) * TAMANO < datos.size(); }
+        void anterior()         { if (hayAnterior()) pagina--; }
+        void siguiente()        { if (haySiguiente()) pagina++; }
+        boolean necesitaPaginacion() { return datos.size() > TAMANO; }
+        String etiqueta() {
+            int total = Math.max(1, (int) Math.ceil(datos.size() / (double) TAMANO));
+            return "Página " + (pagina + 1) + " de " + total;
+        }
+    }
+
+    private void actualizarPanelPaginacion(JPanel panel, Paginador<?> pag, Runnable refresh) {
+        panel.removeAll();
+        if (pag.necesitaPaginacion()) {
+            JButton btnAnt = new JButton("< Anterior");
+            JButton btnSig = new JButton("Siguiente >");
+            JLabel lblPag  = new JLabel(pag.etiqueta());
+            Font f = new Font("Segoe UI", Font.PLAIN, 11);
+            btnAnt.setFont(f); btnSig.setFont(f);
+            lblPag.setFont(f); lblPag.setForeground(AppColors.TEXTO_GRIS);
+            btnAnt.setEnabled(pag.hayAnterior());
+            btnSig.setEnabled(pag.haySiguiente());
+            btnAnt.addActionListener(e -> { pag.anterior(); refresh.run(); });
+            btnSig.addActionListener(e -> { pag.siguiente(); refresh.run(); });
+            panel.add(btnAnt); panel.add(lblPag); panel.add(btnSig);
+        }
+        panel.revalidate();
+        panel.repaint();
     }
 
     // ─── Barra de progreso visual ─────────────────────────────────────────────

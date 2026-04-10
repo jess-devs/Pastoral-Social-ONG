@@ -4,7 +4,9 @@ import com.ulatina.gestion.dao.*;
 import com.ulatina.gestion.dao.impl.*;
 import com.ulatina.gestion.model.*;
 import com.ulatina.gestion.model.enums.EstadoExpediente;
+import com.ulatina.gestion.util.JPAUtil;
 
+import javax.persistence.EntityManager;
 import java.util.Collections;
 import java.util.List;
 
@@ -157,6 +159,36 @@ public class ExpedienteController {
             expedienteDAO.save(exp);
         else
             expedienteDAO.update(exp);
+    }
+
+    /**
+     * RF-13: Guarda Persona y Expediente en una sola transacción JPA.
+     * Si cualquiera de las dos falla, se hace rollback completo.
+     */
+    public void guardarTitularYExpediente(Persona titular, Expediente expediente) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            if (titular.getId() == null)
+                em.persist(titular);
+            else
+                em.merge(titular);
+            em.flush(); // asegura que titular.id esté disponible antes de continuar
+
+            expediente.setTitular(titular);
+            if (expediente.getId() == null)
+                em.persist(expediente);
+            else
+                em.merge(expediente);
+
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive())
+                em.getTransaction().rollback();
+            throw new RuntimeException("Error al guardar titular y expediente: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
     }
 
     public void guardarVivienda(Vivienda v) {
