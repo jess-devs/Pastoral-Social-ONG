@@ -187,6 +187,15 @@ public class ExpedienteController {
         miembroDAO.delete(id);
     }
 
+    public void guardarDocumento(DocumentoAdjunto d) {
+        if (d.getId() == null) documentoDAO.save(d);
+        else documentoDAO.update(d);
+    }
+
+    public void eliminarDocumento(Long id) {
+        documentoDAO.delete(id);
+    }
+
     // ═════════════════════════════════════════════════════════════════════════
     // UTILITARIO
     // ═════════════════════════════════════════════════════════════════════════

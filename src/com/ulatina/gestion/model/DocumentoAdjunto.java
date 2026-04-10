@@ -6,6 +6,27 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
+@NamedQueries({
+    @NamedQuery(
+        name = "DocumentoAdjunto.findByExpediente",
+        query = "SELECT d FROM DocumentoAdjunto d LEFT JOIN FETCH d.subidoPor WHERE d.expediente.id = :expedienteId ORDER BY d.fechaSubida DESC"
+    ),
+    @NamedQuery(
+        name = "DocumentoAdjunto.findFirmadosByExpediente",
+        query = "SELECT d FROM DocumentoAdjunto d WHERE d.expediente.id = :expedienteId AND d.esDocFirmado = true"
+    ),
+    @NamedQuery(
+        name = "DocumentoAdjunto.findByTipo",
+        query = "SELECT d FROM DocumentoAdjunto d WHERE d.tipo = :tipo"
+    )
+})
+@NamedNativeQueries({
+    @NamedNativeQuery(
+        name = "DocumentoAdjunto.buscarPorDescripcion",
+        query = "SELECT * FROM documento_adjunto WHERE expediente_id = :expedienteId AND LOWER(descripcion) LIKE LOWER(CONCAT('%', :texto, '%')) ORDER BY fecha_subida DESC",
+        resultClass = DocumentoAdjunto.class
+    )
+})
 @Entity
 @Table(name = "documento_adjunto")
 public class DocumentoAdjunto implements Serializable {

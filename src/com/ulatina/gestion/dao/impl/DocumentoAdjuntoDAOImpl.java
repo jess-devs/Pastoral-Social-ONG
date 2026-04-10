@@ -18,7 +18,7 @@ public class DocumentoAdjuntoDAOImpl extends GenericDAOImpl<DocumentoAdjunto, Lo
     public List<DocumentoAdjunto> findByExpediente(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT d FROM DocumentoAdjunto d WHERE d.expediente.id = :expedienteId", DocumentoAdjunto.class)
+            return em.createNamedQuery("DocumentoAdjunto.findByExpediente", DocumentoAdjunto.class)
                      .setParameter("expedienteId", expedienteId)
                      .getResultList();
         } finally {
@@ -30,7 +30,7 @@ public class DocumentoAdjuntoDAOImpl extends GenericDAOImpl<DocumentoAdjunto, Lo
     public List<DocumentoAdjunto> findByTipo(TipoDocumentoAdjunto tipo) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT d FROM DocumentoAdjunto d WHERE d.tipo = :tipo", DocumentoAdjunto.class)
+            return em.createNamedQuery("DocumentoAdjunto.findByTipo", DocumentoAdjunto.class)
                      .setParameter("tipo", tipo)
                      .getResultList();
         } finally {
@@ -42,9 +42,7 @@ public class DocumentoAdjuntoDAOImpl extends GenericDAOImpl<DocumentoAdjunto, Lo
     public List<DocumentoAdjunto> findDocumentosFirmados(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT d FROM DocumentoAdjunto d WHERE d.expediente.id = :expedienteId AND d.esDocFirmado = true",
-                    DocumentoAdjunto.class)
+            return em.createNamedQuery("DocumentoAdjunto.findFirmadosByExpediente", DocumentoAdjunto.class)
                      .setParameter("expedienteId", expedienteId)
                      .getResultList();
         } finally {
@@ -58,6 +56,20 @@ public class DocumentoAdjuntoDAOImpl extends GenericDAOImpl<DocumentoAdjunto, Lo
         try {
             return em.createQuery("SELECT d FROM DocumentoAdjunto d WHERE d.subidoPor.id = :usuarioId", DocumentoAdjunto.class)
                      .setParameter("usuarioId", usuarioId)
+                     .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<DocumentoAdjunto> buscarPorDescripcion(Long expedienteId, String texto) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createNamedQuery("DocumentoAdjunto.buscarPorDescripcion", DocumentoAdjunto.class)
+                     .setParameter("expedienteId", expedienteId)
+                     .setParameter("texto", texto)
                      .getResultList();
         } finally {
             em.close();
