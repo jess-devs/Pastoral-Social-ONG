@@ -103,7 +103,7 @@ public class FrmDashboard extends JFrame {
         });
         bEven.addActionListener(e -> {
             activar(bEven);
-            mostrarProximamente("Eventos");
+            mostrarEventos();
         });
         bRep.addActionListener(e -> {
             activar(bRep);
@@ -285,7 +285,7 @@ public class FrmDashboard extends JFrame {
                     mostrarExpedientes();
                 }));
         grid.add(modulo("Eventos", "Registro y asistencia", AppColors.VERDE_BG, AppColors.VERDE_FG,
-                () -> mostrarProximamente("Eventos")));
+                () -> mostrarEventos()));
         grid.add(modulo("Reportes", "Estadísticas y análisis", AppColors.AMBAR_BG, AppColors.AMBAR_FG,
                 () -> mostrarProximamente("Reportes")));
         grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector", AppColors.PURP_BG, AppColors.PURPURA,
@@ -417,6 +417,10 @@ public class FrmDashboard extends JFrame {
 
     private void mostrarExpedientes() {
         cambiarVista(new FrmExpedientesPanel(), "Expedientes");
+    }
+
+    private void mostrarEventos() {
+        cambiarVista(new FrmEvento(), "Eventos");
     }
 
     private void mostrarPanelAdministrativo(){
