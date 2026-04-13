@@ -220,7 +220,7 @@ public class FrmLogin extends JFrame {
         p.add(vspace(14));
         p.add(separador());
         p.add(vspace(12));
-        p.add(linkBtn("Volver al inicio de sesion", e -> mostrar(VISTA_LOGIN)));
+        p.add(linkBtn("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
 
         return p;
     }
@@ -228,10 +228,10 @@ public class FrmLogin extends JFrame {
     private JPanel crearPanelRecuperar() {
         JPanel p = panelBase();
 
-        p.add(subtitulo("Recuperar contrasena"));
+        p.add(subtitulo("Recuperar contraseña"));
         p.add(vspace(8));
 
-        JLabel info = new JLabel("Ingrese su correo y defina una nueva contrasena.");
+        JLabel info = new JLabel("Ingrese su correo y defina una nueva contraseña.");
         info.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         info.setForeground(AppColors.TEXTO_GRIS);
         info.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -266,7 +266,7 @@ public class FrmLogin extends JFrame {
         p.add(vspace(14));
         p.add(separador());
         p.add(vspace(12));
-        p.add(linkBtn("Volver al inicio de sesion", e -> mostrar(VISTA_LOGIN)));
+        p.add(linkBtn("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
 
         return p;
     }
@@ -287,7 +287,7 @@ public class FrmLogin extends JFrame {
 
         Usuario u = usuarioCtrl.login(email, pass);
         if (u == null) {
-            error("Correo o contrasena incorrectos, o usuario inactivo.");
+            error("Correo o contraseña incorrectos, o usuario inactivo.");
             txtLoginPassword.setText("");
             return;
         }
@@ -333,7 +333,7 @@ public class FrmLogin extends JFrame {
         try {
             usuarioCtrl.registrar(nombre, email, pass, rol, parroquia);
             JOptionPane.showMessageDialog(this,
-                    "Cuenta creada correctamente. Ya puede iniciar sesion.",
+                    "Cuenta creada correctamente. Ya puede iniciar sesión.",
                     "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
             limpiarRegistro();
             mostrar(VISTA_LOGIN);
@@ -368,13 +368,13 @@ public class FrmLogin extends JFrame {
 
         boolean ok = usuarioCtrl.cambiarPassword(email, pass);
         if (!ok) {
-            error("No se encontro ningun usuario con ese correo.");
+            error("No se encontró ningún usuario con ese correo.");
             return;
         }
 
         JOptionPane.showMessageDialog(this,
                 "Contraseña restablecida correctamente.",
-                "Exito", JOptionPane.INFORMATION_MESSAGE);
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
         limpiarRecuperar();
         mostrar(VISTA_LOGIN);
     }
