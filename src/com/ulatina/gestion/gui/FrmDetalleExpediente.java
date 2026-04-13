@@ -25,29 +25,32 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * FrmDetalleExpediente — Dialog de creación/edición de expedientes.
- * Modo nuevo: expediente == null. Modo editar: expediente != null.
+ * Diálogo modal para crear o editar un expediente.
+ * En modo nuevo (expediente == null) las pestañas 1 a 7 están bloqueadas hasta
+ * que el registro se guarda por primera vez.
+ * En modo edición precarga todos los datos asociados al expediente recibido.
  */
 public class FrmDetalleExpediente extends JDialog {
 
-    // ─── Estado ───────────────────────────────────────────────────────────────
     private Expediente expediente;
+
+    /** true cuando el diálogo se abrió sin expediente existente.
+     *  Afecta el título, las validaciones de guardar() y el estado inicial de las pestañas. */
     private final boolean esNuevo;
+
+    /** Callback ejecutado después de cada guardado exitoso.
+     *  Normalmente es FrmExpedientes::cargarTabla para refrescar la lista padre. */
     private final Runnable onGuardado;
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
-    // ─── Controllers ──────────────────────────────────────────────────────────
     private final ExpedienteController expedienteController = new ExpedienteController();
     private final ParroquiaController parroquiaController = new ParroquiaController();
 
-    // ─── Componentes — título ────────────────────────────────────────────────
     private JLabel lblTituloPrincipal;
     private JLabel lblMarcadorBadge;
 
-    // ─── Tab pane ─────────────────────────────────────────────────────────────
     private JTabbedPane tabbedPane;
 
-    // ─── Tab 0: Datos — Persona ───────────────────────────────────────────────
     private JTextField txtNombres;
     private JTextField txtApellidos;
     private JComboBox<TipoDocumentoPersona> cmbTipoDoc;
@@ -64,7 +67,6 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextArea txtCondicionSalud;
     private JCheckBox chkTieneSeguro;
     private JTextField txtCondicionMigratoria;
-    // Tab 0: Datos — Expediente
     private JTextField txtEntrevistador;
     private JComboBox<EstadoExpediente> cmbEstado;
     private JComboBox<Parroquia> cmbParroquia;
@@ -73,14 +75,14 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextArea txtObservaciones;
     private JComboBox<String> cmbColorMarcador;
 
-    // ─── Tab 2: Vivienda ──────────────────────────────────────────────────────
     private JTextField txtDirVivienda;
     private JComboBox<TipoVivienda> cmbTipoVivienda;
     private JComboBox<TenenciaVivienda> cmbTenencia;
     private JComboBox<CondicionVivienda> cmbCondicion;
+
+    /** Vivienda vinculada al expediente. Null si aún no se ha registrado. */
     private Vivienda viviendaActual;
 
-    // ─── Tab 3: Adendum ───────────────────────────────────────────────────────
     private JTextArea txtAdendumObs;
     private DefaultTableModel modeloGastos;
     private JTable tablaGastos;
@@ -89,27 +91,34 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextField txtConceptoGasto;
     private JTextField txtMontoGasto;
     private JFormattedTextField txtFechaGasto;
+
+    /** Gasto mensual que se está editando en este momento.
+     *  Null cuando el formulario de gastos está en modo agregar. */
     private GastoMensual gastoEnEdicion = null;
     private final java.util.List<GastoMensual> gastosActuales = new java.util.ArrayList<>();
+
+    /** Adendum vinculado al expediente; contiene los gastos mensuales.
+     *  Puede ser null hasta el primer guardado. */
     private Adendum adendumActual;
 
-    // ─── Tablas read-only ─────────────────────────────────────────────────────
     private DefaultTableModel modeloFamilia;
     private DefaultTableModel modeloEntrevistas;
 
-    // ─── Tab 6: Entrevistas — formulario inline ───────────────────────────────
     private JFormattedTextField txtFechaEntrevista;
     private JTextField txtEntrevistadorEntrev;
     private JTextArea txtObsEntrevista;
     private JCheckBox chkRecomiendaAyuda;
 
-    // ─── Tab 7: Prolongaciones ────────────────────────────────────────────────
     private DefaultTableModel modeloProlongaciones;
     private JFormattedTextField txtFechaProlongacion;
     private JTextField txtObsProlongacion;
     private BarraProgresoPanel panelBarraProgreso;
 
-    // ─── RF-14: Paginadores (máx 20 registros por página) ────────────────────
+    /**
+     * Paginadores en memoria para cada lista del formulario.
+     * Cada paginador guarda la lista completa y un índice de página; devuelve 20 ítems
+     * por página. Deben recargarse con pag.cargar(lista) antes de redibujar el panel.
+     */
     private final Paginador<MiembroFamiliar>      pagFamilia       = new Paginador<>();
     private final Paginador<GastoMensual>         pagGastos        = new Paginador<>();
     private final Paginador<DocumentoAdjunto>     pagDocs          = new Paginador<>();
@@ -123,28 +132,29 @@ public class FrmDetalleExpediente extends JDialog {
     private final JPanel panelPagEntrevistas   = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
     private final JPanel panelPagProlongaciones = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
 
-    // ─── Tab 5: Asistencia Solicitada ─────────────────────────────────────────
     private JPanel panelListaAsistencias;
     private JComboBox<TipoAsistencia> cmbTipoAsistencia;
     private JTextField txtModalidadAsist;
     private JTextField txtFrecuenciaAsist;
     private JTextField txtDuracionAsist;
     private JTextField txtValorAsist;
+
+    /** Asistencia que se está editando. Null en modo agregar. */
     private AsistenciaSolicitada asistenciaEnEdicion = null;
     private JButton btnConfirmarAsist;
 
-    // ─── Tab 4: Docs — componentes del formulario ─────────────────────────────
     private File archivoSeleccionado;
     private JLabel lblArchivoNombre;
     private JComboBox<TipoDocumentoAdjunto> cmbTipoDocAdjunto;
     private JTextField txtDescripcionDoc;
     private JCheckBox chkEsFirmado;
+
+    /** Panel de datos del firmante; solo visible cuando chkEsFirmado está marcado. */
     private JPanel panelFirmante;
     private JTextField txtNombreFirmante;
     private JFormattedTextField txtFechaFirmaDoc;
     private JPanel panelListaDocs;
 
-    // ─── Tab 1: Familia — formulario inline ───────────────────────────────────
     private JPanel panelFormFamilia;
     private JLabel lblHeaderFormFamilia;
     private JLabel lblPersonaSeleccionada;
@@ -154,12 +164,24 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextField txtOcupacion;
     private JButton btnTrabaja;
     private JTextField txtIngreso;
+
+    /** Miembro familiar en edición. Null en modo agregar. */
     private MiembroFamiliar miembroEnEdicion;
+
+    /** Persona encontrada por cédula; se asigna al miembro en confirmarMiembro().
+     *  Null si la persona aún no existe en el sistema. */
     private Persona personaSeleccionada;
+
+    /** Lista local de miembros cuando el expediente aún no está persistido.
+     *  En modo edición los miembros se leen directo de la BD. */
     private final java.util.List<MiembroFamiliar> listaMiembros = new java.util.ArrayList<>();
     private JTable tablaFamilia;
 
-    // ─── Constructor ──────────────────────────────────────────────────────────
+    /**
+     * @param owner      ventana propietaria del diálogo.
+     * @param expediente expediente a editar, o null para crear uno nuevo.
+     * @param onGuardado callback ejecutado tras cada guardado exitoso.
+     */
     public FrmDetalleExpediente(Window owner, Expediente expediente, Runnable onGuardado) {
         super(owner, ModalityType.APPLICATION_MODAL);
         this.expediente = expediente;
@@ -177,9 +199,6 @@ public class FrmDetalleExpediente extends JDialog {
         setResizable(true);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // CONSTRUCCIÓN UI
-    // ═════════════════════════════════════════════════════════════════════════
     private void initComponents() {
         setTitle(esNuevo ? "Nuevo Expediente" : "Expediente #" + expediente.getNumeroFicha());
         getContentPane().setBackground(AppColors.FONDO);
@@ -193,7 +212,6 @@ public class FrmDetalleExpediente extends JDialog {
         add(crearBarraInferior(), BorderLayout.SOUTH);
     }
 
-    // ─── Panel título ─────────────────────────────────────────────────────────
     private JPanel crearPanelTitulo() {
         JPanel p = new JPanel(new BorderLayout(12, 6));
         p.setBackground(AppColors.PANEL);
@@ -240,7 +258,6 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ─── TabbedPane ───────────────────────────────────────────────────────────
     private JTabbedPane crearTabbedPane() {
         JTabbedPane tp = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
         tp.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -257,7 +274,6 @@ public class FrmDetalleExpediente extends JDialog {
         return tp;
     }
 
-    // ─── Tab 0: Datos ─────────────────────────────────────────────────────────
     private JScrollPane crearTabDatos() {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBackground(AppColors.PANEL);
@@ -472,13 +488,12 @@ public class FrmDetalleExpediente extends JDialog {
         return l;
     }
 
-    // ─── Tab 1: Familia ───────────────────────────────────────────────────────
     private JPanel crearTabFamilia() {
         JPanel p = new JPanel(new BorderLayout(0, 0));
         p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
-        // ── Barra superior ────────────────────────────────────────────────────
+        // Barra superior
         JPanel barraTop = new JPanel(new BorderLayout());
         barraTop.setOpaque(false);
         barraTop.setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -493,7 +508,7 @@ public class FrmDetalleExpediente extends JDialog {
         barraTop.add(lblTitGrupo, BorderLayout.WEST);
         barraTop.add(btnAgregarMiembro, BorderLayout.EAST);
 
-        // ── Tabla ─────────────────────────────────────────────────────────────
+        // Tabla
         modeloFamilia = new DefaultTableModel(
                 new String[] { "Nombre", "Cédula", "Relación", "Jefatura", "Ocupación", "Ingreso", "Acciones" }, 0) {
             @Override
@@ -701,7 +716,11 @@ public class FrmDetalleExpediente extends JDialog {
         return contenedor;
     }
 
-    /** Botón toggle Sí/No con colores verde/gris. */
+    /**
+     * Crea un botón que alterna entre "Sí" (verde) y "No" (gris) al hacer clic.
+     * @param estadoInicial "Sí" o "No".
+     * @return el botón configurado.
+     */
     private JButton crearBtnToggle(String estadoInicial) {
         boolean[] estado = { estadoInicial.equals("Sí") };
         JButton btn = UIFactory.crearBotonSmall(
@@ -719,7 +738,6 @@ public class FrmDetalleExpediente extends JDialog {
         return btn;
     }
 
-    // ─── Tab 2: Vivienda ──────────────────────────────────────────────────────
     private JPanel crearTabVivienda() {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBackground(AppColors.PANEL);
@@ -778,7 +796,6 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ─── Tab 3: Adendum ───────────────────────────────────────────────────────
     private JPanel crearTabAdendum() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setBackground(AppColors.PANEL);
@@ -928,9 +945,6 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // LÓGICA — Tab Familia
-    // ═════════════════════════════════════════════════════════════════════════
 
     private void mostrarFormFamilia(boolean visible) {
         if (!visible) {
@@ -958,6 +972,11 @@ public class FrmDetalleExpediente extends JDialog {
         btn.repaint();
     }
 
+    /**
+     * Busca una Persona por el número de cédula ingresado.
+     * Si la encuentra, rellena el formulario de familia con sus datos.
+     * Si no existe, muestra la opción de crear una persona nueva.
+     */
     private void buscarPersonaPorCedula() {
         String cedula = txtBuscarCedula.getText().trim();
         if (cedula.isEmpty())
@@ -1048,6 +1067,11 @@ public class FrmDetalleExpediente extends JDialog {
         dlg.setVisible(true);
     }
 
+    /**
+     * Agrega o actualiza un MiembroFamiliar.
+     * En modo nuevo comprueba duplicados en listaMiembros (la BD aún no tiene el registro).
+     * En modo edición persiste directamente y recarga la tabla.
+     */
     private void confirmarMiembro() {
         if (expediente == null || expediente.getId() == null) {
             JOptionPane.showMessageDialog(this, "Guarde el expediente antes de agregar miembros familiares.",
@@ -1136,7 +1160,7 @@ public class FrmDetalleExpediente extends JDialog {
         cargarTablaFamilia();
     }
 
-    // ─── Helper: campo con etiqueta encima ───────────────────────────────────
+    // Helper: campo con etiqueta encima
     private JPanel campoConEtiqueta(String texto, JComponent campo) {
         JPanel wrap = new JPanel(new BorderLayout(0, 3));
         wrap.setOpaque(false);
@@ -1148,7 +1172,7 @@ public class FrmDetalleExpediente extends JDialog {
         return wrap;
     }
 
-    // ─── Cargar gasto en formulario para edición ──────────────────────────────
+    // Cargar gasto en formulario para edición
     private void cargarGastoEnFormulario(int row) {
         if (row < 0 || row >= gastosActuales.size())
             return;
@@ -1160,7 +1184,7 @@ public class FrmDetalleExpediente extends JDialog {
             txtFechaGasto.setText(sdf.format(gastoEnEdicion.getFecha()));
     }
 
-    // ─── Confirmar (agregar o actualizar) gasto ───────────────────────────────
+    //  Confirmar (agregar o actualizar) gasto
     private void confirmarGasto() {
         String concepto = txtConceptoGasto.getText().trim();
         String montoStr = txtMontoGasto.getText().trim();
@@ -1218,7 +1242,7 @@ public class FrmDetalleExpediente extends JDialog {
         recargarTablaGastos();
     }
 
-    // ─── Eliminar gasto ───────────────────────────────────────────────────────
+    // Eliminar gasto
     private void eliminarGasto(int row) {
         if (row < 0 || row >= gastosActuales.size())
             return;
@@ -1236,7 +1260,7 @@ public class FrmDetalleExpediente extends JDialog {
         recargarTablaGastos();
     }
 
-    // ─── Limpiar formulario de gasto ──────────────────────────────────────────
+    // Limpiar formulario de gasto
     private void limpiarFormularioGasto() {
         cmbCatGasto.setSelectedIndex(0);
         txtConceptoGasto.setText("");
@@ -1247,7 +1271,7 @@ public class FrmDetalleExpediente extends JDialog {
         }
     }
 
-    // ─── Recargar tabla de gastos ─────────────────────────────────────────────
+    //  Recargar tabla de gastos
     private void recargarTablaGastos() {
         if (adendumActual == null || adendumActual.getId() == null) return;
         pagGastos.cargar(expedienteController.findGastosByAdendum(adendumActual.getId()));
@@ -1279,8 +1303,12 @@ public class FrmDetalleExpediente extends JDialog {
         actualizarPanelPaginacion(panelPagGastos, pagGastos, this::refrescarTablaGastos);
     }
 
-    // ─── Tab 5: Asistencia Solicitada — lógica ───────────────────────────────
 
+    /**
+     * Agrega o actualiza una AsistenciaSolicitada.
+     * Requiere que el campo modalidad no esté vacío.
+     * Distingue modo agregar vs. editar según asistenciaEnEdicion.
+     */
     private void confirmarAsistencia() {
         String modalidad = txtModalidadAsist.getText().trim();
         if (modalidad.isEmpty()) {
@@ -1358,7 +1386,6 @@ public class FrmDetalleExpediente extends JDialog {
         actualizarPanelPaginacion(panelPagAsistencias, pagAsistencias, this::refrescarListaAsistencias);
     }
 
-    // ─── Tab 4: Docs ──────────────────────────────────────────────────────────
     private JPanel crearTabDocs() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setBackground(AppColors.PANEL);
@@ -1518,6 +1545,11 @@ public class FrmDetalleExpediente extends JDialog {
         }
     }
 
+    /**
+     * Valida que el archivo seleccionado no pese más de 5 MB y que no exista ya
+     * un documento con el mismo nombre en el expediente.
+     * Si pasa la validación, copia el archivo y persiste el DocumentoAdjunto.
+     */
     private void subirDocumento() {
         if (archivoSeleccionado == null) {
             JOptionPane.showMessageDialog(this, "Selecciona un archivo primero.",
@@ -1830,7 +1862,6 @@ public class FrmDetalleExpediente extends JDialog {
         return crearBadge(texto, bg, fg);
     }
 
-    // ─── Tab 5: Asistencia Solicitada ────────────────────────────────────────
     private JPanel crearTabAsistencia() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setBackground(AppColors.PANEL);
@@ -1908,7 +1939,6 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ─── Tab 6: Entrevistas ───────────────────────────────────────────────────
     private JPanel crearTabEntrevistas() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setBackground(AppColors.PANEL);
@@ -2049,7 +2079,6 @@ public class FrmDetalleExpediente extends JDialog {
         chkRecomiendaAyuda.setSelected(false);
     }
 
-    // ─── Tab 7: Prolongaciones ────────────────────────────────────────────────
     private JPanel crearTabProlongaciones() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setBackground(AppColors.PANEL);
@@ -2168,7 +2197,7 @@ public class FrmDetalleExpediente extends JDialog {
         actualizarPanelPaginacion(panelPagProlongaciones, pagProlongaciones, this::refrescarTablaProlongaciones);
     }
 
-    // ─── Helper: panel tabla genérico (read-only) ─────────────────────────────
+    // Helper: panel tabla genérico (read-only)
     private JPanel crearTabTabla(DefaultTableModel modelo, String descripcion) {
         JPanel p = new JPanel(new BorderLayout(0, 8));
         p.setBackground(AppColors.PANEL);
@@ -2198,7 +2227,7 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ─── Helpers: estilo uniforme de tablas ───────────────────────────────────
+    //  Helpers: estilo uniforme de tablas
     private void configurarTabla(JTable tabla, int rowHeight) {
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(rowHeight);
@@ -2220,7 +2249,7 @@ public class FrmDetalleExpediente extends JDialog {
         return s;
     }
 
-    // ─── Barra inferior ───────────────────────────────────────────────────────
+    //  Barra inferior
     private JPanel crearBarraInferior() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(AppColors.PANEL);
@@ -2248,9 +2277,11 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // CARGA DE DATOS
-    // ═════════════════════════════════════════════════════════════════════════
+    /**
+     * Precarga combos (parroquias, enums) y, si el expediente no es null,
+     * llama a todos los métodos cargarTabla*() para llenar cada pestaña.
+     * Es seguro llamarlo con expediente null (modo nuevo).
+     */
     private void cargarDatos() {
         // Poblar parroquias via controller
         for (Parroquia par : parroquiaController.findParroquiasDisponibles())
@@ -2445,9 +2476,12 @@ public class FrmDetalleExpediente extends JDialog {
         actualizarPanelPaginacion(panelPagEntrevistas, pagEntrevistas, this::refrescarTablaEntrevistas);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // GUARDAR
-    // ═════════════════════════════════════════════════════════════════════════
+    /**
+     * Guarda el expediente.
+     * Pasos: valida campos obligatorios, verifica en modo nuevo que no exista otro
+     * expediente con el mismo número de documento, crea o actualiza Persona y Expediente
+     * en una sola transacción, recalcula la etapa, desbloquea las pestañas y llama onGuardado.
+     */
     private void guardar() {
         // 1. Validación básica
         if (txtNombres.getText().trim().isEmpty() || txtApellidos.getText().trim().isEmpty()) {
@@ -2573,9 +2607,6 @@ public class FrmDetalleExpediente extends JDialog {
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // HELPERS
-    // ═════════════════════════════════════════════════════════════════════════
     private void actualizarTitulo() {
         if (expediente == null)
             return;
@@ -2585,6 +2616,10 @@ public class FrmDetalleExpediente extends JDialog {
             lblTituloPrincipal.setText(titulo);
     }
 
+    /**
+     * Guarda la etapa calculada en expediente.etapaActual y refresca la barra de progreso.
+     * No hace nada si el expediente es null.
+     */
     private void actualizarEtapaActual() {
         if (expediente == null)
             return;
@@ -2598,6 +2633,12 @@ public class FrmDetalleExpediente extends JDialog {
             expediente.setEtapaActual(calculada);
     }
 
+    /**
+     * Determina la etapa más avanzada alcanzada por el expediente inspeccionando
+     * qué secciones tienen datos, de mayor a menor:
+     * entrevistas > doc CONSENTIMIENTO > cualquier doc > gastos > vivienda > familia > REGISTRO.
+     * @return la etapa calculada; nunca null.
+     */
     private EtapaExpediente calcularEtapa() {
         if (expediente == null || expediente.getId() == null)
             return EtapaExpediente.REGISTRO;
@@ -2638,6 +2679,10 @@ public class FrmDetalleExpediente extends JDialog {
         panelBarraProgreso.setIdx(etapaActual.ordinal());
     }
 
+    /**
+     * Bloquea las pestañas 1 a 7 mientras el expediente no tenga ID (aún no persistido).
+     * Pone un tooltip en cada pestaña bloqueada explicando por qué no está disponible.
+     */
     private void aplicarModoAcceso() {
         if (tabbedPane == null)
             return;
@@ -2659,6 +2704,13 @@ public class FrmDetalleExpediente extends JDialog {
         return s != null ? s : "";
     }
 
+    /**
+     * Intenta parsear el texto como fecha con formato dd/MM/yyyy.
+     * Devuelve null si el texto está vacío, contiene guiones bajos del enmascaramiento
+     * o no es una fecha válida. No lanza excepción.
+     * @param texto texto a parsear.
+     * @return la fecha parseada o null.
+     */
     private Date parseFecha(String texto) {
         if (texto == null || texto.trim().isEmpty() || texto.contains("_"))
             return null;
@@ -2669,7 +2721,12 @@ public class FrmDetalleExpediente extends JDialog {
         }
     }
 
-    // ─── RF-14: Paginador genérico ────────────────────────────────────────────
+    /**
+     * Paginador genérico en memoria.
+     * Mantiene la lista completa y un índice de página.
+     * getPagina() devuelve los 20 ítems de la página actual.
+     * Los datos se cargan con cargar(List) y no se consulta la BD directamente.
+     */
     private static class Paginador<T> {
         private static final int TAMANO = 20;
         private List<T> datos = Collections.emptyList();
@@ -2712,7 +2769,11 @@ public class FrmDetalleExpediente extends JDialog {
         panel.repaint();
     }
 
-    // ─── Barra de progreso visual ─────────────────────────────────────────────
+    /**
+     * Panel que dibuja el progreso de etapas del expediente.
+     * Un círculo por etapa: verde = completada, azul (más grande) = actual, gris = pendiente.
+     * La etapa actual muestra su nombre debajo del círculo.
+     */
     private static class BarraProgresoPanel extends JPanel {
         private int idx;
 
