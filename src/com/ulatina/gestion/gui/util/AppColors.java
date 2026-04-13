@@ -60,7 +60,7 @@ public final class AppColors {
         // --- Azul profundo (etiquetas informativas) --------------------------------
         public static final Color AZUL_DEEP = new Color(0x1E40AF);
 
-        // --- Rojo claro (boton cerrar sesion) --------------------------------------
+        // --- Rojo claro (botón cerrar sesión) --------------------------------------
         public static final Color ROJO_LIGHT = new Color(0xFCA5A5);
 
         // --- Dashboard - sidebar ---------------------------------------------------
