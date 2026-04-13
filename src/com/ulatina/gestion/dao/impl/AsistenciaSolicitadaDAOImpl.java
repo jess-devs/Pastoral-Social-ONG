@@ -18,7 +18,7 @@ public class AsistenciaSolicitadaDAOImpl extends GenericDAOImpl<AsistenciaSolici
     public List<AsistenciaSolicitada> findByExpediente(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT a FROM AsistenciaSolicitada a WHERE a.expediente.id = :expedienteId", AsistenciaSolicitada.class)
+            return em.createNamedQuery("AsistenciaSolicitada.findByExpediente", AsistenciaSolicitada.class)
                      .setParameter("expedienteId", expedienteId)
                      .getResultList();
         } finally {
@@ -30,7 +30,7 @@ public class AsistenciaSolicitadaDAOImpl extends GenericDAOImpl<AsistenciaSolici
     public List<AsistenciaSolicitada> findByTipoAsistencia(TipoAsistencia tipo) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT a FROM AsistenciaSolicitada a WHERE a.tipoAsistencia = :tipo", AsistenciaSolicitada.class)
+            return em.createNamedQuery("AsistenciaSolicitada.findByTipo", AsistenciaSolicitada.class)
                      .setParameter("tipo", tipo)
                      .getResultList();
         } finally {

@@ -3,18 +3,16 @@ package com.ulatina.gestion.controller;
 import com.ulatina.gestion.dao.*;
 import com.ulatina.gestion.dao.impl.*;
 import com.ulatina.gestion.model.*;
-import com.ulatina.gestion.model.enums.EstadoExpediente;
-
 import java.util.Collections;
 import java.util.List;
 
 public class AdministradorController {
     private final IUsuarioDAO usuarioDAO = new UsuarioDAOImpl();
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // CONSULTAS — Usuario
-    // ═════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Consulta al Usuario
+     * @return
+     */
     public List<Usuario> findAll() {
         try {
             return usuarioDAO.findAll();
@@ -24,6 +22,11 @@ public class AdministradorController {
         }
     }
 
+    /**
+     * Busca el usuario mediante el correo
+     * @param email
+     * @return
+     */
     public Usuario findByCorreo(String email) {
         try {
             return usuarioDAO.findByEmail(email);
@@ -33,10 +36,10 @@ public class AdministradorController {
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // ESCRITURA
-    // ═════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Guarda el usuario
+     * @param u
+     */
     public void guardarUsuario(Usuario u) {
         if (u.getId() == null)
             usuarioDAO.save(u);

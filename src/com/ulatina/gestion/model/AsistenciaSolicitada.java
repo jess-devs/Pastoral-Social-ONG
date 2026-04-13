@@ -6,6 +6,13 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+@NamedQueries({
+        @NamedQuery(name = "AsistenciaSolicitada.findByExpediente", query = "SELECT a FROM AsistenciaSolicitada a " +
+                "WHERE a.expediente.id = :expedienteId " +
+                "ORDER BY a.tipoAsistencia"),
+        @NamedQuery(name = "AsistenciaSolicitada.findByTipo", query = "SELECT a FROM AsistenciaSolicitada a " +
+                "WHERE a.tipoAsistencia = :tipo")
+})
 @Entity
 @Table(name = "asistencia_solicitada")
 public class AsistenciaSolicitada implements Serializable {
@@ -37,26 +44,62 @@ public class AsistenciaSolicitada implements Serializable {
     @JoinColumn(name = "expediente_id", nullable = false)
     private Expediente expediente;
 
-    public AsistenciaSolicitada() {}
+    public AsistenciaSolicitada() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public TipoAsistencia getTipoAsistencia() { return tipoAsistencia; }
-    public void setTipoAsistencia(TipoAsistencia tipoAsistencia) { this.tipoAsistencia = tipoAsistencia; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getModalidad() { return modalidad; }
-    public void setModalidad(String modalidad) { this.modalidad = modalidad; }
+    public TipoAsistencia getTipoAsistencia() {
+        return tipoAsistencia;
+    }
 
-    public String getFrecuencia() { return frecuencia; }
-    public void setFrecuencia(String frecuencia) { this.frecuencia = frecuencia; }
+    public void setTipoAsistencia(TipoAsistencia tipoAsistencia) {
+        this.tipoAsistencia = tipoAsistencia;
+    }
 
-    public String getDuracion() { return duracion; }
-    public void setDuracion(String duracion) { this.duracion = duracion; }
+    public String getModalidad() {
+        return modalidad;
+    }
 
-    public BigDecimal getValor() { return valor; }
-    public void setValor(BigDecimal valor) { this.valor = valor; }
+    public void setModalidad(String modalidad) {
+        this.modalidad = modalidad;
+    }
 
-    public Expediente getExpediente() { return expediente; }
-    public void setExpediente(Expediente expediente) { this.expediente = expediente; }
+    public String getFrecuencia() {
+        return frecuencia;
+    }
+
+    public void setFrecuencia(String frecuencia) {
+        this.frecuencia = frecuencia;
+    }
+
+    public String getDuracion() {
+        return duracion;
+    }
+
+    public void setDuracion(String duracion) {
+        this.duracion = duracion;
+    }
+
+    public BigDecimal getValor() {
+        return valor;
+    }
+
+    public void setValor(BigDecimal valor) {
+        this.valor = valor;
+    }
+
+    public Expediente getExpediente() {
+        return expediente;
+    }
+
+    public void setExpediente(Expediente expediente) {
+        this.expediente = expediente;
+    }
 }

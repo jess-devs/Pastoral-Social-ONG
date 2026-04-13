@@ -19,18 +19,18 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 
 /**
- * FrmExpedientes - Pantalla principal de gestión de expedientes.
+ * Ventana principal de expedientes.
+ * Muestra la tabla completa, permite filtrar por texto o por combos de estado/etapa,
+ * y da acceso a crear, editar y eliminar expedientes.
+ * El panel de información azul aparece solo cuando hay una fila seleccionada.
  */
 public class FrmExpedientes extends JFrame {
 
-    // ─── Requerido por el .form de IntelliJ (binding) ───────────────────────
     private JPanel mainPanel;
 
-    // ─── Controller ─────────────────────────────────────────────────────────
     private final ExpedienteController expedienteController = new ExpedienteController();
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
 
-    // ─── Componentes UI ─────────────────────────────────────────────────────
     private JTextField txtBuscar;
     private JTable tabla;
     private DefaultTableModel modeloTabla;
@@ -43,10 +43,10 @@ public class FrmExpedientes extends JFrame {
     private JComboBox<String> cmbEstado;
     private JComboBox<String> cmbEtapa;
 
-    // Expediente actualmente seleccionado
+    /** Expediente cuya fila está actualmente seleccionada en la tabla.
+     *  Null cuando no hay selección; controla visibilidad de panelInfoBar. */
     private Expediente expedienteSeleccionado = null;
 
-    // ─── Constructor ────────────────────────────────────────────────────────
     public FrmExpedientes() {
         setTitle("Expedientes — Pastoral Social");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -69,7 +69,6 @@ public class FrmExpedientes extends JFrame {
         cargarTabla();
     }
 
-    // ─── Encabezado con título ───────────────────────────────────────────────
     private JPanel crearEncabezado() {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         p.setOpaque(false);
@@ -82,7 +81,6 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    // ─── Panel central ───────────────────────────────────────────────────────
     private JPanel crearPanelCentral() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -106,7 +104,11 @@ public class FrmExpedientes extends JFrame {
         return panel;
     }
 
-    // ─── Barra de información al seleccionar fila ────────────────────────────
+    /**
+     * Crea el panel azul de información que aparece al seleccionar una fila.
+     * Contiene el nombre y número de ficha del expediente seleccionado,
+     * y los botones Ver/Editar y Eliminar.
+     */
     private JPanel crearPanelInfoBar() {
         JPanel p = new JPanel(new BorderLayout(10, 0));
         p.setBackground(AppColors.AZUL_PANEL);
@@ -117,7 +119,7 @@ public class FrmExpedientes extends JFrame {
 
         lblInfoSeleccion = new JLabel("Expediente seleccionado");
         lblInfoSeleccion.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblInfoSeleccion.setForeground(new Color(30, 64, 175));
+        lblInfoSeleccion.setForeground(AppColors.AZUL_DEEP);
         p.add(lblInfoSeleccion, BorderLayout.CENTER);
 
         JPanel botonesInfo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -136,50 +138,12 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    // ─── Barra búsqueda + Filtros + Nuevo ────────────────────────────────────
     private JPanel crearBarraBusqueda() {
         JPanel p = new JPanel(new BorderLayout(8, 0));
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
-        txtBuscar = new JTextField();
-        txtBuscar.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-        txtBuscar.setText("Buscar por nombre, cédula, ficha...");
-        txtBuscar.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(AppColors.BORDE, 1, true),
-                new EmptyBorder(0, 12, 0, 12)));
-        txtBuscar.setPreferredSize(new Dimension(0, 36));
-        txtBuscar.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (txtBuscar.getText().startsWith("Buscar")) {
-                    txtBuscar.setText("");
-                    txtBuscar.setForeground(AppColors.TEXTO);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (txtBuscar.getText().isEmpty()) {
-                    txtBuscar.setText("Buscar por nombre, cédula, ficha...");
-                    txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-                }
-            }
-        });
-        txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filtrarTexto();
-            }
-
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filtrarTexto();
-            }
-
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filtrarTexto();
-            }
-        });
+        txtBuscar = UIFactory.crearCampoBusqueda("Buscar por nombre, cédula, ficha...", this::filtrarTexto);
 
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         derecha.setOpaque(false);
@@ -202,7 +166,6 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    // ─── Panel con la tabla ──────────────────────────────────────────────────
     private JPanel crearPanelTabla() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(AppColors.PANEL);
@@ -217,53 +180,8 @@ public class FrmExpedientes extends JFrame {
         };
 
         tabla = new JTable(modeloTabla);
-        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabla.setRowHeight(38);
-        tabla.setShowVerticalLines(false);
-        tabla.setShowHorizontalLines(true);
-        tabla.setGridColor(new Color(243, 244, 246));
-        tabla.setSelectionBackground(AppColors.FILA_SEL);
-        tabla.setSelectionForeground(AppColors.TEXTO);
-        tabla.setIntercellSpacing(new Dimension(0, 0));
-        tabla.setFocusable(false);
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tabla.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tabla.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
-        tabla.getTableHeader().setReorderingAllowed(false);
-
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(70);
-        tabla.getColumnModel().getColumn(1).setPreferredWidth(200);
-        tabla.getColumnModel().getColumn(2).setPreferredWidth(110);
-        tabla.getColumnModel().getColumn(3).setPreferredWidth(100);
-        tabla.getColumnModel().getColumn(4).setPreferredWidth(120);
-        tabla.getColumnModel().getColumn(5).setPreferredWidth(90);
-
-        DefaultTableCellRenderer centrado = new DefaultTableCellRenderer();
-        centrado.setHorizontalAlignment(SwingConstants.CENTER);
-        tabla.getColumnModel().getColumn(0).setCellRenderer(centrado);
-        tabla.getColumnModel().getColumn(5).setCellRenderer(centrado);
-
-        tabla.getColumnModel().getColumn(3).setCellRenderer(new BadgeRenderer());
-
-        DefaultTableCellRenderer etapaRender = new DefaultTableCellRenderer();
-        etapaRender.setHorizontalAlignment(SwingConstants.CENTER);
-        tabla.getColumnModel().getColumn(4).setCellRenderer(etapaRender);
-
-        DefaultTableCellRenderer izqPad = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(
-                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
-                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
-                setBorder(new EmptyBorder(0, 12, 0, 4));
-                return this;
-            }
-        };
-        tabla.getColumnModel().getColumn(1).setCellRenderer(izqPad);
-        tabla.getColumnModel().getColumn(2).setCellRenderer(izqPad);
-
         sorter = new TableRowSorter<>(modeloTabla);
-        tabla.setRowSorter(sorter);
+        UIFactory.configurarTablaExpedientes(tabla, sorter);
 
         tabla.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting())
@@ -287,7 +205,6 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    // ─── Panel de Filtros ─────────────────────────────────────────────────────
     private JPanel crearPanelFiltros() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -337,7 +254,11 @@ public class FrmExpedientes extends JFrame {
         return p;
     }
 
-    // ─── Carga de datos ──────────────────────────────────────────────────────
+    /**
+     * Recarga la tabla desde la base de datos.
+     * Resetea expedienteSeleccionado a null y oculta panelInfoBar.
+     * Se usa como callback de FrmDetalleExpediente tras guardar.
+     */
     private void cargarTabla() {
         modeloTabla.setRowCount(0);
         expedienteSeleccionado = null;
@@ -373,7 +294,11 @@ public class FrmExpedientes extends JFrame {
         }
     }
 
-    // ─── Filtrar por texto ────────────────────────────────────────────────────
+    /**
+     * Filtra la tabla por el texto del campo de búsqueda.
+     * Busca coincidencias en columnas 0 (ficha), 1 (nombre) y 2 (cédula).
+     * Ignora el texto placeholder y entradas vacías.
+     */
     private void filtrarTexto() {
         String texto = txtBuscar.getText().trim();
         if (texto.startsWith("Buscar") || texto.isEmpty()) {
@@ -383,7 +308,10 @@ public class FrmExpedientes extends JFrame {
         sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 0, 1, 2));
     }
 
-    // ─── Aplicar filtros combo ────────────────────────────────────────────────
+    /**
+     * Aplica los filtros de los combos Estado y Etapa combinándolos con AND.
+     * Si ambos combos están en "Todos", limpia el filtro activo.
+     */
     private void aplicarFiltros() {
         String estado = (String) cmbEstado.getSelectedItem();
         String etapa = (String) cmbEtapa.getSelectedItem();
@@ -395,7 +323,10 @@ public class FrmExpedientes extends JFrame {
         sorter.setRowFilter(filtros.isEmpty() ? null : RowFilter.andFilter(filtros));
     }
 
-    // ─── Limpiar filtros ─────────────────────────────────────────────────────
+    /**
+     * Devuelve los combos y el campo de búsqueda a su estado inicial.
+     * No recarga datos desde la base de datos.
+     */
     private void limpiarFiltros() {
         cmbEstado.setSelectedIndex(0);
         cmbEtapa.setSelectedIndex(0);
@@ -404,7 +335,11 @@ public class FrmExpedientes extends JFrame {
         txtBuscar.setForeground(AppColors.TEXTO_GRIS);
     }
 
-    // ─── Actualiza barra info al seleccionar fila ─────────────────────────────
+    /**
+     * Actualiza expedienteSeleccionado cuando cambia la fila seleccionada en la tabla.
+     * Convierte el índice de vista a modelo para que funcione con el sorter activo.
+     * Si no hay fila seleccionada, oculta panelInfoBar.
+     */
     private void actualizarSeleccion() {
         int fila = tabla.getSelectedRow();
         if (fila < 0) {
@@ -423,7 +358,11 @@ public class FrmExpedientes extends JFrame {
         revalidate();
     }
 
-    // ─── Abre FrmDetalleExpediente ────────────────────────────────────────────
+    /**
+     * Abre FrmDetalleExpediente.
+     * @param esNuevo true para crear un expediente nuevo (pasa null al diálogo),
+     *                false para editar el expediente actualmente seleccionado.
+     */
     private void abrirFormulario(boolean esNuevo) {
         Expediente exp = esNuevo ? null : expedienteSeleccionado;
         if (!esNuevo && exp == null) {
@@ -436,7 +375,11 @@ public class FrmExpedientes extends JFrame {
         dlg.setVisible(true);
     }
 
-    // ─── Eliminar expediente seleccionado ────────────────────────────────────
+    /**
+     * Elimina el expediente seleccionado y todos sus datos asociados
+     * (familia, vivienda, documentos, asistencias, entrevistas, prolongaciones).
+     * Muestra una confirmación antes de ejecutar el borrado.
+     */
     private void eliminarExpediente() {
         if (expedienteSeleccionado == null) {
             JOptionPane.showMessageDialog(this, "Seleccione un expediente primero.",
@@ -464,7 +407,6 @@ public class FrmExpedientes extends JFrame {
         }
     }
 
-    // ─── main para prueba standalone ────────────────────────────────────────
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

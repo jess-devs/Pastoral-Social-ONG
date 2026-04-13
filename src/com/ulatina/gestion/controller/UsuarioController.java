@@ -11,14 +11,17 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Controlador para autenticación, registro y cambio de contraseña de usuarios.
+ * Controlador para autenticación
+ * Registro y cambio de contraseña de usuarios.
  */
 public class UsuarioController {
 
     private final IUsuarioDAO usuarioDAO = new UsuarioDAOImpl();
 
     /**
-     * Autentica un usuario por email y contraseña.
+     * Auténtica un usuario por email y contraseña.
+     * @param email
+     * @param password
      * @return el Usuario si las credenciales son correctas y está activo, null en caso contrario.
      */
     public Usuario login(String email, String password) {
@@ -32,7 +35,13 @@ public class UsuarioController {
     }
 
     /**
-     * Registra un nuevo usuario. Lanza IllegalArgumentException si el email ya existe.
+     * Registra un nuevo usuario.
+     * Lanza IllegalArgumentException si el email ya existe.
+     * @param nombre
+     * @param email
+     * @param password
+     * @param rol
+     * @param parroquia
      */
     public void registrar(String nombre, String email, String password, RolUsuario rol, Parroquia parroquia) {
         String emailNorm = email.trim().toLowerCase();
@@ -51,6 +60,8 @@ public class UsuarioController {
 
     /**
      * Cambia la contraseña de un usuario identificado por email.
+     * @param email
+     * @param nuevaPassword
      * @return true si el usuario fue encontrado y la contraseña actualizada, false si no existe.
      */
     public boolean cambiarPassword(String email, String nuevaPassword) {
@@ -62,10 +73,11 @@ public class UsuarioController {
         return true;
     }
 
-    // ─── Hashing ─────────────────────────────────────────────────────────────
-
     /**
-     * SHA-256(email:password) — el email actúa como salt por usuario.
+     * SHA-256
+     * @param email
+     * @param rawPassword
+     * @return
      */
     private String hashPassword(String email, String rawPassword) {
         try {
