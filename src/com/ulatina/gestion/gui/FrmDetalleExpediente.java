@@ -33,6 +33,7 @@ public class FrmDetalleExpediente extends JDialog {
     private Expediente expediente;
     private final boolean esNuevo;
     private final Runnable onGuardado;
+    private boolean readOnly = false;
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
     // ─── Controllers ──────────────────────────────────────────────────────────
@@ -1937,6 +1938,39 @@ public class FrmDetalleExpediente extends JDialog {
         for (int i = 1; i < tabbedPane.getTabCount(); i++) {
             tabbedPane.setEnabledAt(i, tieneId);
             tabbedPane.setToolTipTextAt(i, tooltip);
+        }
+    }
+
+    /**
+     * Activa el modo solo lectura: deshabilita campos y oculta botones de acción.
+     * Llamar antes de setVisible(true).
+     */
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+        if (!readOnly) return;
+        setTitle("Consulta Expediente #" + (expediente != null ? expediente.getNumeroFicha() : ""));
+        aplicarReadOnly(getContentPane());
+    }
+
+    private void aplicarReadOnly(Container container) {
+        for (Component c : container.getComponents()) {
+            if (c instanceof JTextField)              ((JTextField) c).setEditable(false);
+            else if (c instanceof JFormattedTextField) ((JFormattedTextField) c).setEditable(false);
+            else if (c instanceof JTextArea)           ((JTextArea) c).setEditable(false);
+            else if (c instanceof JComboBox)           ((JComboBox<?>) c).setEnabled(false);
+            else if (c instanceof JCheckBox)           ((JCheckBox) c).setEnabled(false);
+            else if (c instanceof JButton) {
+                JButton btn = (JButton) c;
+                String txt = btn.getText() != null ? btn.getText() : "";
+                if (txt.equals("Guardar") || txt.startsWith("+ Prolong") ||
+                        txt.startsWith("Agregar") || txt.startsWith("Eliminar") ||
+                        txt.startsWith("Subir")   || txt.startsWith("Buscar")) {
+                    btn.setVisible(false);
+                } else if (txt.equals("Cancelar")) {
+                    btn.setText("Cerrar");
+                }
+            }
+            if (c instanceof Container) aplicarReadOnly((Container) c);
         }
     }
 
