@@ -3,6 +3,7 @@ package com.ulatina.gestion.gui;
 import com.ulatina.gestion.controller.ExpedienteController;
 import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.model.Usuario;
+import com.ulatina.gestion.model.enums.RolUsuario;
 import com.ulatina.gestion.util.JPAUtil;
 import com.ulatina.gestion.util.SessionContext;
 
@@ -113,6 +114,9 @@ public class FrmDashboard extends JFrame {
             activar(bCons);
             mostrarProximamente("Consulta Vicarial");
         });
+
+        boolean esConsultaVicarial = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL;
+        bCons.setVisible(!esConsultaVicarial);
 
         sb.add(bDash);
         sb.add(bExp);
