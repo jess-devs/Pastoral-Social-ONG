@@ -287,9 +287,13 @@ public class FrmLogin extends JFrame {
             return;
         }
 
-        SessionContext.setUsuarioActual(u);
+
         SwingUtilities.invokeLater(() -> {
-            new FrmDashboard(u).setVisible(true);
+            if (u.getRol() == RolUsuario.CONSULTA_VICARIAL) {
+                new FrmConsultaVicarial(u).setVisible(true);
+            } else {
+                new FrmDashboard(u).setVisible(true);
+            }
             dispose();
         });
     }

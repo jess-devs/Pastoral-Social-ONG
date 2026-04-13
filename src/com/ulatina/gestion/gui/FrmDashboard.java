@@ -3,6 +3,7 @@ package com.ulatina.gestion.gui;
 import com.ulatina.gestion.controller.ExpedienteController;
 import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.model.Usuario;
+import com.ulatina.gestion.model.enums.RolUsuario;
 import com.ulatina.gestion.util.JPAUtil;
 import com.ulatina.gestion.util.SessionContext;
 
@@ -103,7 +104,7 @@ public class FrmDashboard extends JFrame {
         });
         bEven.addActionListener(e -> {
             activar(bEven);
-            mostrarProximamente("Eventos");
+            mostrarEventos();
         });
         bRep.addActionListener(e -> {
             activar(bRep);
@@ -113,6 +114,9 @@ public class FrmDashboard extends JFrame {
             activar(bCons);
             mostrarProximamente("Consulta Vicarial");
         });
+
+        boolean esConsultaVicarial = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL;
+        bCons.setVisible(!esConsultaVicarial);
 
         sb.add(bDash);
         sb.add(bExp);
@@ -285,7 +289,7 @@ public class FrmDashboard extends JFrame {
                     mostrarExpedientes();
                 }));
         grid.add(modulo("Eventos", "Registro y asistencia", AppColors.VERDE_BG, AppColors.VERDE_FG,
-                () -> mostrarProximamente("Eventos")));
+                () -> mostrarEventos()));
         grid.add(modulo("Reportes", "Estadísticas y análisis", AppColors.AMBAR_BG, AppColors.AMBAR_FG,
                 () -> mostrarProximamente("Reportes")));
         grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector", AppColors.PURP_BG, AppColors.PURPURA,
@@ -419,7 +423,11 @@ public class FrmDashboard extends JFrame {
         cambiarVista(new FrmExpedientesPanel(), "Expedientes");
     }
 
-    private void mostrarPanelAdministrativo() {
+    private void mostrarEventos() {
+        cambiarVista(new FrmEvento(), "Eventos");
+    }
+
+    private void mostrarPanelAdministrativo(){
         cambiarVista(new FrmPanelAdministrativo(), "Panel Administrativo");
     }
 

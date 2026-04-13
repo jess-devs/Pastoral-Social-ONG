@@ -10,6 +10,43 @@ import java.util.List;
 
 @Entity
 @Table(name = "evento")
+@NamedQueries({
+        @NamedQuery(
+                name = "Evento.findAll",
+                query = "SELECT DISTINCT e FROM Evento e " +
+                        "LEFT JOIN FETCH e.parroquia"
+        ),
+        @NamedQuery(
+                name = "Evento.findById",
+                query = "SELECT e FROM Evento e " +
+                        "LEFT JOIN FETCH e.parroquia " +
+                        "WHERE e.id = :id"
+        ),
+        @NamedQuery(
+                name = "Evento.findByParroquia",
+                query = "SELECT e FROM Evento e " +
+                        "LEFT JOIN FETCH e.parroquia " +
+                        "WHERE e.parroquia.id = :parroquiaId"
+        ),
+        @NamedQuery(
+                name = "Evento.findByTipo",
+                query = "SELECT e FROM Evento e " +
+                        "LEFT JOIN FETCH e.parroquia " +
+                        "WHERE e.tipo = :tipo"
+        ),
+        @NamedQuery(
+                name = "Evento.findByFecha",
+                query = "SELECT e FROM Evento e " +
+                        "LEFT JOIN FETCH e.parroquia " +
+                        "WHERE e.fecha = :fecha"
+        ),
+        @NamedQuery(
+                name = "Evento.findByNombre",
+                query = "SELECT e FROM Evento e " +
+                        "LEFT JOIN FETCH e.parroquia " +
+                        "WHERE e.nombre = :nombre"
+        )
+})
 public class Evento implements Serializable {
 
     private static final long serialVersionUID = 1L;
