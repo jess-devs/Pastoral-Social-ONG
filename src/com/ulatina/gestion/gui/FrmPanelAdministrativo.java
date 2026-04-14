@@ -141,13 +141,20 @@ public class FrmPanelAdministrativo extends JPanel {
     }
 
     // ─── Acciones ────────────────────────────────────────────────
+    public void volverAlGrid() {
+        panelContenido.removeAll();
+        panelContenido.add(crearGrid(), BorderLayout.CENTER);
+        panelContenido.revalidate();
+        panelContenido.repaint();
+    }
+
     private void abrirGestionParroquias() {
-        cambiarVista(new FrmMantenimientoParroquias(), "Mantenimiento Parroquias");
+        cambiarVista(new FrmMantenimientoParroquias(this), "Mantenimiento Parroquias");
         System.out.println("Entra a la ventana de parroquias");
     }
 
     private void abrirGestionUsuarios() {
-        cambiarVista(new FrmMantenimientoUsuarios(), "Gestión Usuarios");
+        cambiarVista(new FrmMantenimientoUsuarios(this), "Mantenimiento Usuarios");
         System.out.println("Entra a la ventana de Usuarios");
     }
 
