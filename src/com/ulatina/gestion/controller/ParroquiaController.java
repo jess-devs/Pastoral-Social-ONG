@@ -29,4 +29,32 @@ public class ParroquiaController {
             return Collections.emptyList();
         }
     }
+
+    public List<Parroquia> findAll(){
+        try{
+            return parroquiaDAO.findAll();
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
+    public void saveParroquia(String nombre, String sector_filial,String vicaria, String direccion, String telefono, boolean activa){
+        Parroquia p = new Parroquia();
+        p.setNombre(nombre);
+        p.setSectorFilial(sector_filial);
+        p.setVicaria(vicaria);
+        p.setDireccion(direccion);
+        p.setTelefono(telefono);
+        p.setActiva(activa);
+
+        parroquiaDAO.save(p);
+
+    }
+
+    public void editParroquias(Parroquia p){
+        parroquiaDAO.update(p);
+    }
+    //desactivar PARROQUIAS
+
 }

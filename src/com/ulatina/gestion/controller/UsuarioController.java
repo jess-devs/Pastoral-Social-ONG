@@ -9,16 +9,22 @@ import com.ulatina.gestion.model.enums.RolUsuario;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Controlador para autenticación, registro y cambio de contraseña de usuarios.
+ * Controlador para autenticación
+ * Registro y cambio de contraseña de usuarios.
  */
+
 public class UsuarioController {
 
     private final IUsuarioDAO usuarioDAO = new UsuarioDAOImpl();
 
     /**
-     * Autentica un usuario por email y contraseña.
+     * Auténtica un usuario por email y contraseña.
+     * @param email
+     * @param password
      * @return el Usuario si las credenciales son correctas y está activo, null en caso contrario.
      */
     public Usuario login(String email, String password) {
@@ -32,7 +38,13 @@ public class UsuarioController {
     }
 
     /**
-     * Registra un nuevo usuario. Lanza IllegalArgumentException si el email ya existe.
+     * Registra un nuevo usuario.
+     * Lanza IllegalArgumentException si el email ya existe.
+     * @param nombre
+     * @param email
+     * @param password
+     * @param rol
+     * @param parroquia
      */
     public void registrar(String nombre, String email, String password, RolUsuario rol, Parroquia parroquia) {
         String emailNorm = email.trim().toLowerCase();
@@ -51,6 +63,8 @@ public class UsuarioController {
 
     /**
      * Cambia la contraseña de un usuario identificado por email.
+     * @param email
+     * @param nuevaPassword
      * @return true si el usuario fue encontrado y la contraseña actualizada, false si no existe.
      */
     public boolean cambiarPassword(String email, String nuevaPassword) {
@@ -62,10 +76,11 @@ public class UsuarioController {
         return true;
     }
 
-    // ─── Hashing ─────────────────────────────────────────────────────────────
-
     /**
-     * SHA-256(email:password) — el email actúa como salt por usuario.
+     * SHA-256
+     * @param email
+     * @param rawPassword
+     * @return
      */
     private String hashPassword(String email, String rawPassword) {
         try {
@@ -79,5 +94,63 @@ public class UsuarioController {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 no disponible", e);
         }
+    }
+
+    public List<Usuario> findAll() {
+        try {
+            return usuarioDAO.findAll();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public List<Usuario> findActivos() {
+        try {
+            return usuarioDAO.findActivos();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public Usuario findByEmail(String email) {
+        try {
+            return usuarioDAO.findByEmail(email.trim().toLowerCase());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    // ─── Guardar nuevo usuario ────────────────────────────────────────────────
+
+    public void saveUsuario(String nombre, String email, String password,
+                            RolUsuario rol, Parroquia parroquia, boolean activo) {
+        String emailNorm = email.trim().toLowerCase();
+        if (usuarioDAO.findByEmail(emailNorm) != null)
+            throw new IllegalArgumentException("El correo ya está registrado.");
+
+        Usuario u = new Usuario();
+        u.setNombre(nombre.trim());
+        u.setEmail(emailNorm);
+        u.setPasswordHash(hashPassword(emailNorm, password));
+        u.setRol(rol != null ? rol : RolUsuario.VOLUNTARIO);
+        u.setActivo(activo);
+        u.setParroquia(parroquia);
+        usuarioDAO.save(u);
+    }
+
+    // Editar usuario existente ─────────────────────────────────────────────
+
+    public void editUsuario(Usuario u) {
+        usuarioDAO.update(u);
+    }
+
+    // Desactivar ───────────────────────────────────
+
+    public void desactivarUsuario(Usuario u) {
+        u.setActivo(false);
+        usuarioDAO.update(u);
     }
 }
