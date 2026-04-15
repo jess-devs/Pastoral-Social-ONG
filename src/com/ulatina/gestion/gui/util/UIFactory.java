@@ -229,6 +229,32 @@ public final class UIFactory {
         return p;
     }
 
+    /**
+     * Botón de texto plano sin borde ni fondo — estilo enlace.
+     * Color {@link AppColors#AZUL}, fuente 12pt. Sin ActionListener — añadirlo externamente.
+     */
+    public static JButton crearBotonLink(String texto) {
+        return crearBotonLink(texto, null);
+    }
+
+    /**
+     * Botón de texto plano sin borde ni fondo — estilo enlace.
+     * Color {@link AppColors#AZUL}, fuente 12pt, con ActionListener integrado.
+     */
+    public static JButton crearBotonLink(String texto, ActionListener accion) {
+        JButton btn = new JButton(texto);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btn.setForeground(AppColors.AZUL);
+        btn.setBackground(null);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        if (accion != null) btn.addActionListener(accion);
+        return btn;
+    }
+
     // ─── Privado ──────────────────────────────────────────────────────────────
 
     private static Color hoverColor(Color bg) {

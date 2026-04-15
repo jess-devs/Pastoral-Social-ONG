@@ -149,9 +149,9 @@ public class FrmLogin extends JFrame {
         p.add(separador());
         p.add(vspace(14));
 
-        p.add(linkBtn("Crear una cuenta nueva", e -> mostrar(VISTA_REGISTRO)));
+        p.add(UIFactory.crearBotonLink("Crear una cuenta nueva", e -> mostrar(VISTA_REGISTRO)));
         p.add(vspace(6));
-        p.add(linkBtn("Olvidé mi contraseña", e -> mostrar(VISTA_RECUPERAR)));
+        p.add(UIFactory.crearBotonLink("Olvidé mi contraseña", e -> mostrar(VISTA_RECUPERAR)));
 
         return p;
     }
@@ -220,7 +220,7 @@ public class FrmLogin extends JFrame {
         p.add(vspace(14));
         p.add(separador());
         p.add(vspace(12));
-        p.add(linkBtn("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
+        p.add(UIFactory.crearBotonLink("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
 
         return p;
     }
@@ -266,7 +266,7 @@ public class FrmLogin extends JFrame {
         p.add(vspace(14));
         p.add(separador());
         p.add(vspace(12));
-        p.add(linkBtn("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
+        p.add(UIFactory.crearBotonLink("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
 
         return p;
     }
@@ -467,20 +467,6 @@ public class FrmLogin extends JFrame {
         lbl.setForeground(AppColors.TEXTO);
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         return lbl;
-    }
-
-    private JButton linkBtn(String texto, ActionListener accion) {
-        JButton btn = new JButton(texto);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btn.setForeground(AppColors.AZUL);
-        btn.setBackground(null);
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.addActionListener(accion);
-        return btn;
     }
 
     private <T> void estilizarCombo(JComboBox<T> cmb) {

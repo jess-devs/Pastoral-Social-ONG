@@ -69,7 +69,7 @@ public class FrmEvento extends JPanel {
         JPanel p = new JPanel(new BorderLayout(10, 0));
         p.setBackground(AppColors.VERDE_BG);
         p.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(0x86EFAC), 1, true),
+                new LineBorder(AppColors.VERDE_BORDE, 1, true),
                 new EmptyBorder(8, 14, 8, 14)));
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
 
@@ -92,36 +92,8 @@ public class FrmEvento extends JPanel {
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
-        txtBuscar = new JTextField();
-        txtBuscar.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-        txtBuscar.setText("Buscar por nombre, lugar o parroquia...");
-        txtBuscar.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(AppColors.BORDE, 1, true),
-                new EmptyBorder(0, 12, 0, 12)));
-        txtBuscar.setPreferredSize(new Dimension(0, 36));
-        txtBuscar.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (txtBuscar.getText().startsWith("Buscar")) {
-                    txtBuscar.setText("");
-                    txtBuscar.setForeground(AppColors.TEXTO);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (txtBuscar.getText().isEmpty()) {
-                    txtBuscar.setText("Buscar por nombre, lugar o parroquia...");
-                    txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-                }
-            }
-        });
-        txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
-        });
+        txtBuscar = UIFactory.crearCampoBusqueda(
+                "Buscar por nombre, lugar o parroquia...", this::filtrarTexto);
 
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         derecha.setOpaque(false);
@@ -154,7 +126,7 @@ public class FrmEvento extends JPanel {
         tabla.setRowHeight(38);
         tabla.setShowVerticalLines(false);
         tabla.setShowHorizontalLines(true);
-        tabla.setGridColor(new Color(243, 244, 246));
+        tabla.setGridColor(AppColors.GRID_TBL);
         tabla.setSelectionBackground(AppColors.FILA_SEL);
         tabla.setSelectionForeground(AppColors.TEXTO);
         tabla.setIntercellSpacing(new Dimension(0, 0));
@@ -409,15 +381,15 @@ public class FrmEvento extends JPanel {
         private static Color tipoColor(String tipo, boolean foreground) {
             switch (tipo) {
                 case "REUNION":
-                    return foreground ? new Color(0x1E40AF) : new Color(0xDBEAFE);
+                    return foreground ? AppColors.AZUL_DEEP : AppColors.AZUL_CARD_BG;
                 case "CAPACITACION":
-                    return foreground ? new Color(0x166534) : new Color(0xDCFCE7);
+                    return foreground ? AppColors.VERDE_FG : AppColors.VERDE_BG;
                 case "ENTREGA":
-                    return foreground ? new Color(0x92400E) : new Color(0xFEF3C7);
+                    return foreground ? AppColors.AMBAR_FG : AppColors.AMBAR_BG;
                 case "CELEBRACION":
-                    return foreground ? new Color(0x6D28D9) : new Color(0xEDE9FE);
+                    return foreground ? AppColors.PURPURA : AppColors.PURP_BG;
                 default: // OTRO
-                    return foreground ? new Color(0x374151) : new Color(0xF3F4F6);
+                    return foreground ? AppColors.BADGE_FG[3] : AppColors.BADGE_BG[3];
             }
         }
     }

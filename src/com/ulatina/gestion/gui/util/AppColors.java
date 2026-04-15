@@ -75,6 +75,7 @@ public final class AppColors {
         public static final Color AZUL_CARD_FG = new Color(0x2563EB);
         public static final Color VERDE_BG = new Color(0xDCFCE7);
         public static final Color VERDE_FG = new Color(0x166534);
+        public static final Color VERDE_BORDE = new Color(0x86EFAC);
         public static final Color ROJO_CARD_BG = new Color(0xFEE2E2);
         public static final Color ROJO_CARD_FG = new Color(0x991B1B);
         public static final Color PURP_BG = new Color(0xEDE9FE);

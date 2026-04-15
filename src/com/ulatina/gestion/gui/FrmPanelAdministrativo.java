@@ -1,6 +1,7 @@
 package com.ulatina.gestion.gui;
 
 import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.gui.util.UIFactory;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -21,7 +22,8 @@ public class FrmPanelAdministrativo extends JPanel {
         setBackground(AppColors.FONDO);
         setBorder(new EmptyBorder(28, 28, 28, 28));
 
-        add(crearEncabezado(), BorderLayout.NORTH);
+        add(UIFactory.crearEncabezado("Panel Administrativo",
+                "Seleccioná una sección para administrar"), BorderLayout.NORTH);
 
         // Contenedor donde cargarán las vistas
         panelContenido = new JPanel(new BorderLayout());
@@ -31,21 +33,6 @@ public class FrmPanelAdministrativo extends JPanel {
         panelContenido.add(crearGrid(), BorderLayout.CENTER);
 
         add(panelContenido, BorderLayout.CENTER);
-    }
-
-    // ─── Encabezado ───────────────────────────────────────────
-    private JPanel crearEncabezado() {
-        JPanel p = new JPanel(new BorderLayout(0, 4));
-        p.setOpaque(false);
-        p.setBorder(new EmptyBorder(0, 0, 24, 0));
-
-        JLabel subtitulo = new JLabel("Seleccioná una sección para administrar");
-        subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitulo.setForeground(AppColors.TEXTO);
-
-        p.add(subtitulo, BorderLayout.SOUTH);
-
-        return p;
     }
 
     // ─── Grid de tarjetas ─────────────────────────────────────
@@ -92,7 +79,7 @@ public class FrmPanelAdministrativo extends JPanel {
                                 Color bg, Color fg, Runnable accion) {
 
         JPanel card = new JPanel(new GridBagLayout());
-        card.setBackground(new Color(0x1E2130));
+        card.setBackground(AppColors.SIDE_BG);
         card.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(fg, 1, true),
                 new EmptyBorder(24, 18, 24, 18)));
@@ -115,11 +102,11 @@ public class FrmPanelAdministrativo extends JPanel {
 
         card.addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) {
-                card.setBackground(new Color(0x3B82F6));
+                card.setBackground(AppColors.SIDE_ACTV);
             }
 
             @Override public void mouseExited(MouseEvent e) {
-                card.setBackground(new Color(0x1E2130));
+                card.setBackground(AppColors.SIDE_BG);
             }
 
             @Override public void mouseClicked(MouseEvent e) {
