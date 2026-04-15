@@ -84,7 +84,7 @@ public class FrmMantenimientoParroquias extends JPanel {
         barTop.setOpaque(false);
         barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        JButton btnVolver = crearBoton("← Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
+        JButton btnVolver = crearBoton("Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
         btnVolver.addActionListener(e -> frmMain.volverAlGrid());
 
         p.add(titulo,    BorderLayout.NORTH);
@@ -187,7 +187,7 @@ public class FrmMantenimientoParroquias extends JPanel {
         barTop.setOpaque(false);
         barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        JButton btnVolver = crearBoton("← Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
+        JButton btnVolver = crearBoton("Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
         btnVolver.addActionListener(e -> mostrar(VISTA_LISTA));
 
         lblTituloForm = new JLabel("Nueva Parroquia");
