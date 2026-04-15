@@ -216,35 +216,8 @@ public class FrmConsultaVicarial extends JFrame {
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
-        txtBuscar = new JTextField();
-        txtBuscar.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-        txtBuscar.setText("Buscar por nombre, c\u00e9dula, ficha...");
-        txtBuscar.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(AppColors.BORDE, 1, true),
-                new EmptyBorder(0, 12, 0, 12)));
-        txtBuscar.setPreferredSize(new Dimension(0, 36));
-        txtBuscar.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (txtBuscar.getText().startsWith("Buscar")) {
-                    txtBuscar.setText("");
-                    txtBuscar.setForeground(AppColors.TEXTO);
-                }
-            }
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (txtBuscar.getText().isEmpty()) {
-                    txtBuscar.setText("Buscar por nombre, c\u00e9dula, ficha...");
-                    txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-                }
-            }
-        });
-        txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e)  { filtrarTexto(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e)  { filtrarTexto(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
-        });
+        txtBuscar = UIFactory.crearCampoBusqueda(
+                "Buscar por nombre, c\u00e9dula, ficha...", this::filtrarTexto);
 
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         derecha.setOpaque(false);
