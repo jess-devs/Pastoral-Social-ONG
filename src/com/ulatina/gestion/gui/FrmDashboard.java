@@ -3,6 +3,7 @@ package com.ulatina.gestion.gui;
 import com.ulatina.gestion.controller.ExpedienteController;
 import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.model.Usuario;
+import com.ulatina.gestion.model.enums.RolUsuario;
 import com.ulatina.gestion.util.JPAUtil;
 import com.ulatina.gestion.util.SessionContext;
 
@@ -114,13 +115,15 @@ public class FrmDashboard extends JFrame {
             mostrarProximamente("Consulta Vicarial");
         });
 
+        boolean esConsultaVicarial = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL;
+        bCons.setVisible(!esConsultaVicarial);
+
         sb.add(bDash);
         sb.add(bExp);
         sb.add(bEven);
         sb.add(bRep);
         sb.add(bCons);
         sb.add(Box.createVerticalGlue());
-
 
         bAdmin.addActionListener(e -> {
             activar(bAdmin);
@@ -129,7 +132,7 @@ public class FrmDashboard extends JFrame {
         sb.add(bAdmin);
 
         JButton bCerrar = navBtn("  Cerrar sesión");
-        bCerrar.setForeground(new Color(0xFCA5A5));
+        bCerrar.setForeground(AppColors.ROJO_LIGHT);
         bCerrar.addActionListener(e -> cerrarSesion());
         sb.add(bCerrar);
         sb.add(Box.createVerticalStrut(16));
@@ -140,7 +143,8 @@ public class FrmDashboard extends JFrame {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "¿Desea cerrar la sesión?", "Cerrar sesión",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (confirm != JOptionPane.YES_OPTION) return;
+        if (confirm != JOptionPane.YES_OPTION)
+            return;
         SessionContext.cerrarSesion();
         SwingUtilities.invokeLater(() -> {
             new FrmLogin().setVisible(true);

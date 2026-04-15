@@ -4,7 +4,9 @@ import com.ulatina.gestion.dao.*;
 import com.ulatina.gestion.dao.impl.*;
 import com.ulatina.gestion.model.*;
 import com.ulatina.gestion.model.enums.EstadoExpediente;
+import com.ulatina.gestion.util.JPAUtil;
 
+import javax.persistence.EntityManager;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,11 +26,12 @@ public class ExpedienteController {
     private final IDocumentoAdjuntoDAO documentoDAO = new DocumentoAdjuntoDAOImpl();
     private final IAsistenciaSolicitadaDAO asistenciaDAO = new AsistenciaSolicitadaDAOImpl();
     private final IEntrevistaDAO entrevistaDAO = new EntrevistaDAOImpl();
+    private final IProlongacionAyudaDAO prolongacionDAO = new ProlongacionAyudaDAOImpl();
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // CONSULTAS — Expediente
-    // ═════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Consulta los expedientes
+     * @return
+     */
     public List<Expediente> findAll() {
         try {
             return expedienteDAO.findAll();
@@ -38,6 +41,11 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta por numero de Ficha
+     * @param ficha
+     * @return
+     */
     public Expediente findByNumeroFicha(String ficha) {
         try {
             return expedienteDAO.findByNumeroFicha(ficha);
@@ -47,7 +55,10 @@ public class ExpedienteController {
         }
     }
 
-    /** Métricas para el Dashboard. */
+    /**
+     * Métricas para el Dashboard
+     * @return
+     */
     public DashboardMetrics getMetrics() {
         List<Expediente> todos = findAll();
         long activos = todos.stream().filter(e -> EstadoExpediente.ACTIVO.equals(e.getEstado())).count();
@@ -56,10 +67,11 @@ public class ExpedienteController {
         return new DashboardMetrics(todos.size(), activos, enProceso, cerrados);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // CONSULTAS — Sub-entidades
-    // ═════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Consulta Vivienda usando ExpedienteId
+     * @param expedienteId
+     * @return
+     */
     public Vivienda findViviendaByExpediente(Long expedienteId) {
         try {
             return viviendaDAO.findByExpediente(expedienteId);
@@ -69,6 +81,11 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta Adendum usando ExpedienteId
+     * @param expedienteId
+     * @return
+     */
     public Adendum findAdendumByExpediente(Long expedienteId) {
         try {
             return adendumDAO.findByExpediente(expedienteId);
@@ -78,6 +95,11 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta Miembros Familiares usando ExpedienteId
+     * @param expedienteId
+     * @return
+     */
     public List<MiembroFamiliar> findMiembrosByExpediente(Long expedienteId) {
         try {
             return miembroDAO.findByExpediente(expedienteId);
@@ -87,6 +109,11 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta Documentos usando ExpedienteId
+     * @param expedienteId
+     * @return
+     */
     public List<DocumentoAdjunto> findDocsByExpediente(Long expedienteId) {
         try {
             return documentoDAO.findByExpediente(expedienteId);
@@ -96,6 +123,11 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta Asistencias usando ExpedienteId
+     * @param expedienteId
+     * @return
+     */
     public List<AsistenciaSolicitada> findAsistenciasByExpediente(Long expedienteId) {
         try {
             return asistenciaDAO.findByExpediente(expedienteId);
@@ -105,6 +137,11 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta Entrevistas usando ExpedienteId
+     * @param expedienteId
+     * @return
+     */
     public List<Entrevista> findEntrevistasByExpediente(Long expedienteId) {
         try {
             return entrevistaDAO.findByExpediente(expedienteId);
@@ -114,6 +151,25 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta Prolongaciones usando ExpedienteId
+     * @param expedienteId
+     * @return
+     */
+    public List<ProlongacionAyuda> findProlongacionesByExpediente(Long expedienteId) {
+        try {
+            return prolongacionDAO.findByExpediente(expedienteId);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Consulta Gastos usando AdendumId
+     * @param adendumId
+     * @return
+     */
     public List<GastoMensual> findGastosByAdendum(Long adendumId) {
         try {
             return gastoDAO.findByAdendum(adendumId);
@@ -123,6 +179,11 @@ public class ExpedienteController {
         }
     }
 
+    /**
+     * Consulta Persona usando numero de documento (numDoc)
+     * @param numDoc
+     * @return
+     */
     public Persona findPersonaByNumeroDocumento(String numDoc) {
         try {
             return personaDAO.findByNumeroDocumento(numDoc);
@@ -131,10 +192,10 @@ public class ExpedienteController {
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // ESCRITURA
-    // ═════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Guarda Persona
+     * @param p
+     */
     public void guardarPersona(Persona p) {
         if (p.getId() == null)
             personaDAO.save(p);
@@ -142,6 +203,10 @@ public class ExpedienteController {
             personaDAO.update(p);
     }
 
+    /**
+     * Guarda Expediente
+     * @param exp
+     */
     public void guardarExpediente(Expediente exp) {
         if (exp.getId() == null)
             expedienteDAO.save(exp);
@@ -149,6 +214,42 @@ public class ExpedienteController {
             expedienteDAO.update(exp);
     }
 
+    /**
+     * Guarda Persona y Expediente en una sola transacción.
+     * Si cualquiera de las dos falla, se hace rollback completo.
+     * @param titular
+     * @param expediente
+     */
+    public void guardarTitularYExpediente(Persona titular, Expediente expediente) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            if (titular.getId() == null)
+                em.persist(titular);
+            else
+                em.merge(titular);
+            em.flush(); // asegura que titular.id esté disponible antes de continuar
+
+            expediente.setTitular(titular);
+            if (expediente.getId() == null)
+                em.persist(expediente);
+            else
+                em.merge(expediente);
+
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive())
+                em.getTransaction().rollback();
+            throw new RuntimeException("Error al guardar titular y expediente: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+
+    /**
+     * Guarda Vivienda
+     * @param v
+     */
     public void guardarVivienda(Vivienda v) {
         if (v.getId() == null)
             viviendaDAO.save(v);
@@ -156,6 +257,10 @@ public class ExpedienteController {
             viviendaDAO.update(v);
     }
 
+    /**
+     * Guarda Adendum
+     * @param a
+     */
     public void guardarAdendum(Adendum a) {
         if (a.getId() == null)
             adendumDAO.save(a);
@@ -163,6 +268,10 @@ public class ExpedienteController {
             adendumDAO.update(a);
     }
 
+    /**
+     * Guarda Gastos Mensuales
+     * @param g
+     */
     public void guardarGasto(GastoMensual g) {
         if (g.getId() == null)
             gastoDAO.save(g);
@@ -170,44 +279,99 @@ public class ExpedienteController {
             gastoDAO.update(g);
     }
 
+    /**
+     * Elimina expediente
+     * @param id
+     */
     public void eliminarExpediente(Long id) {
         expedienteDAO.delete(id);
     }
 
+    /**
+     * Elimina Gasto
+     * @param id
+     */
     public void eliminarGasto(Long id) {
         gastoDAO.delete(id);
     }
 
+    /**
+     * Guardar Miembro
+     * @param m
+     */
     public void guardarMiembro(MiembroFamiliar m) {
         if (m.getId() == null) miembroDAO.save(m);
         else miembroDAO.update(m);
     }
 
+    /**
+     * Eliminar Miembro
+     * @param id
+     */
     public void eliminarMiembro(Long id) {
         miembroDAO.delete(id);
     }
 
+    /**
+     * Guardar Documento
+     * @param d
+     */
     public void guardarDocumento(DocumentoAdjunto d) {
         if (d.getId() == null) documentoDAO.save(d);
         else documentoDAO.update(d);
     }
 
+    /**
+     * Eliminar Documento
+     * @param id
+     */
     public void eliminarDocumento(Long id) {
         documentoDAO.delete(id);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // UTILITARIO
-    // ═════════════════════════════════════════════════════════════════════════
+    /**
+     * Guardar Asistencia
+     * @param a
+     */
+    public void guardarAsistencia(AsistenciaSolicitada a) {
+        if (a.getId() == null) asistenciaDAO.save(a);
+        else asistenciaDAO.update(a);
+    }
 
-    /** Genera el número de ficha a partir del número de documento del titular. */
+    /**
+     * Eliminar Asistencia
+     * @param id
+     */
+    public void eliminarAsistencia(Long id) {
+        asistenciaDAO.delete(id);
+    }
+
+    /**
+     * Guardar Entrevista
+     * @param e
+     */
+    public void guardarEntrevista(Entrevista e) {
+        if (e.getId() == null) entrevistaDAO.save(e);
+        else entrevistaDAO.update(e);
+    }
+
+    /**
+     * Guardar Prolongación
+     * @param p
+     */
+    public void guardarProlongacion(ProlongacionAyuda p) {
+        if (p.getId() == null) prolongacionDAO.save(p);
+        else prolongacionDAO.update(p);
+    }
+
+    /**
+     * Genera el número de ficha a partir del número de documento
+     * @param numeroDocumento
+     * @return
+     */
     public String generarNumeroFicha(String numeroDocumento) {
         return "EXP-" + numeroDocumento;
     }
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // DTO interno
-    // ═════════════════════════════════════════════════════════════════════════
 
     public static class DashboardMetrics {
         public final int total;

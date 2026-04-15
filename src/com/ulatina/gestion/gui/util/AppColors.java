@@ -46,6 +46,23 @@ public final class AppColors {
         public static final Color AMBAR_BG = new Color(0xFEF3C7);
         public static final Color AMBAR_FG = new Color(0x92400E);
 
+        // --- Badge ALQUILER --------------------------------------------------------
+        public static final Color ALQUILER_BG = new Color(0xFED7AA);
+        // foreground usa AMBAR_FG (0x92400E)
+
+        // --- Badge SERVICIOS -------------------------------------------------------
+        public static final Color SERVICIOS_BG = new Color(0x99F6E4);
+        public static final Color SERVICIOS_FG = new Color(0x065F46);
+
+        // --- Tabla (lineas de grid) ------------------------------------------------
+        public static final Color GRID_TBL = new Color(0xF3F4F6);
+
+        // --- Azul profundo (etiquetas informativas) --------------------------------
+        public static final Color AZUL_DEEP = new Color(0x1E40AF);
+
+        // --- Rojo claro (botón cerrar sesión) --------------------------------------
+        public static final Color ROJO_LIGHT = new Color(0xFCA5A5);
+
         // --- Dashboard - sidebar ---------------------------------------------------
         public static final Color SIDE_BG = new Color(0x1E2130);
         public static final Color SIDE_ACTV = new Color(0x3B82F6);
