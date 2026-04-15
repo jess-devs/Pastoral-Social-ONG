@@ -9,11 +9,14 @@ import com.ulatina.gestion.model.enums.RolUsuario;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Controlador para autenticación
  * Registro y cambio de contraseña de usuarios.
  */
+
 public class UsuarioController {
 
     private final IUsuarioDAO usuarioDAO = new UsuarioDAOImpl();
@@ -91,5 +94,63 @@ public class UsuarioController {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 no disponible", e);
         }
+    }
+
+    public List<Usuario> findAll() {
+        try {
+            return usuarioDAO.findAll();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public List<Usuario> findActivos() {
+        try {
+            return usuarioDAO.findActivos();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    public Usuario findByEmail(String email) {
+        try {
+            return usuarioDAO.findByEmail(email.trim().toLowerCase());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    // ─── Guardar nuevo usuario ────────────────────────────────────────────────
+
+    public void saveUsuario(String nombre, String email, String password,
+                            RolUsuario rol, Parroquia parroquia, boolean activo) {
+        String emailNorm = email.trim().toLowerCase();
+        if (usuarioDAO.findByEmail(emailNorm) != null)
+            throw new IllegalArgumentException("El correo ya está registrado.");
+
+        Usuario u = new Usuario();
+        u.setNombre(nombre.trim());
+        u.setEmail(emailNorm);
+        u.setPasswordHash(hashPassword(emailNorm, password));
+        u.setRol(rol != null ? rol : RolUsuario.VOLUNTARIO);
+        u.setActivo(activo);
+        u.setParroquia(parroquia);
+        usuarioDAO.save(u);
+    }
+
+    // Editar usuario existente ─────────────────────────────────────────────
+
+    public void editUsuario(Usuario u) {
+        usuarioDAO.update(u);
+    }
+
+    // Desactivar ───────────────────────────────────
+
+    public void desactivarUsuario(Usuario u) {
+        u.setActivo(false);
+        usuarioDAO.update(u);
     }
 }
