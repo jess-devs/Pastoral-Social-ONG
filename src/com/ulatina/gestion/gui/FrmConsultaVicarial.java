@@ -109,7 +109,7 @@ public class FrmConsultaVicarial extends JFrame {
         sb.add(lblRol);
 
         JButton bCerrar = navBtn("  Cerrar sesi\u00f3n");
-        bCerrar.setForeground(new Color(0xFCA5A5));
+        bCerrar.setForeground(AppColors.ROJO_LIGHT);
         bCerrar.addActionListener(e -> cerrarSesion());
         sb.add(bCerrar);
         sb.add(Box.createVerticalStrut(16));
@@ -275,7 +275,7 @@ public class FrmConsultaVicarial extends JFrame {
         tabla.setRowHeight(38);
         tabla.setShowVerticalLines(false);
         tabla.setShowHorizontalLines(true);
-        tabla.setGridColor(new Color(243, 244, 246));
+        tabla.setGridColor(AppColors.GRID_TBL);
         tabla.setSelectionBackground(AppColors.FILA_SEL);
         tabla.setSelectionForeground(AppColors.TEXTO);
         tabla.setIntercellSpacing(new Dimension(0, 0));
