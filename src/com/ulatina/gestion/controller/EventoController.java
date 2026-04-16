@@ -9,16 +9,19 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-// Controlador que actúa como intermediario entre la interfaz gráfica y la base de datos.
-// Toda operación sobre eventos pasa por aquí antes de llegar al DAO.
+
 public class EventoController {
 
-    // Se usa la interfaz IEventoDAO para no depender directamente de la implementación concreta.
-    // Esto facilita cambiar la implementación en el futuro sin tocar el resto del código.
+    /**
+     * Se usa la interfaz IEventoDAO para no depender directamente de la implementación concreta.
+     * Esto facilita cambiar la implementación en el futuro sin tocar el resto del código.
+     */
     private final IEventoDAO eventoDAO = new EventoDAOImpl();
 
-    // Retorna la lista completa de eventos registrados en la base de datos.
-    // Si ocurre un error, imprime el detalle y devuelve una lista vacía para no romper la interfaz.
+    /**
+     * Retorna la lista completa de eventos registrados en la base de datos.
+     * Si ocurre un error, imprime el detalle y devuelve una lista vacía para no romper la interfaz.
+     */
     public List<Evento> findAll() {
         try {
             return eventoDAO.findAll();
@@ -28,8 +31,11 @@ public class EventoController {
         }
     }
 
-    // Busca y devuelve un evento por su ID único.
-    // Si no lo encuentra o falla, devuelve null.
+    /**
+     * Busca y devuelve un evento por su ID único.
+     * Si no lo encuentra o falla, devuelve null.
+     * @param id
+     */
     public Evento findById(Long id) {
         try {
             return eventoDAO.findById(id);
@@ -39,8 +45,11 @@ public class EventoController {
         }
     }
 
-    // Devuelve todos los eventos que pertenecen a una parroquia específica,
-    // identificada por su ID.
+    /**
+     * Devuelve todos los eventos que pertenecen a una parroquia específica,
+     * identificada por su ID.
+     * @param parroquiaId
+     */
     public List<Evento> findByParroquia(Long parroquiaId) {
         try {
             return eventoDAO.findByParroquia(parroquiaId);
@@ -50,7 +59,10 @@ public class EventoController {
         }
     }
 
-    // Filtra los eventos según su tipo (REUNION, CAPACITACION, ENTREGA, etc.).
+    /**
+     * Filtra los eventos según su tipo (REUNION, CAPACITACION, ENTREGA, etc.).
+     * @param tipo
+     */
     public List<Evento> findByTipo(TipoEvento tipo) {
         try {
             return eventoDAO.findByTipo(tipo);
@@ -60,7 +72,10 @@ public class EventoController {
         }
     }
 
-    // Devuelve los eventos que coinciden con una fecha específica.
+    /**
+     * Devuelve los eventos que coinciden con una fecha específica.
+     * @param fecha
+     */
     public List<Evento> findByFecha(Date fecha) {
         try {
             return eventoDAO.findByFecha(fecha);
@@ -70,7 +85,10 @@ public class EventoController {
         }
     }
 
-    // Busca eventos cuyo nombre coincida con el texto recibido.
+    /**
+     * Busca eventos cuyo nombre coincida con el texto recibido.
+     * @param nombre
+     */
     public List<Evento> findByNombre(String nombre) {
         try {
             return eventoDAO.findByNombre(nombre);
@@ -80,8 +98,11 @@ public class EventoController {
         }
     }
 
-    // Decide si el evento se debe insertar o actualizar según si ya tiene ID asignado.
-    // Si el ID es null significa que es nuevo, entonces se guarda; si ya tiene ID, se actualiza.
+    /**
+     * Decide si el evento se debe insertar o actualizar según si ya tiene ID asignado.
+     * Si el ID es null significa que es nuevo, entonces se guarda; si ya tiene ID, se actualiza.
+     * @param evento
+     */
     public void guardarEvento(Evento evento) {
         if (evento.getId() == null)
             eventoDAO.save(evento);
@@ -89,7 +110,10 @@ public class EventoController {
             eventoDAO.update(evento);
     }
 
-    // Elimina un evento de la base de datos usando su ID.
+    /**
+     * Elimina un evento de la base de datos usando su ID.
+     * @param id
+     */
     public void eliminarEvento(Long id) {
         eventoDAO.delete(id);
     }
