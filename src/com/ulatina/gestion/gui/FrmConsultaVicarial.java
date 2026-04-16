@@ -21,16 +21,24 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 
 /**
- * FrmConsultaVicarial — Ventana exclusiva para el rol CONSULTA_VICARIAL.
- * Muestra la seccion de expedientes en modo solo lectura:
- * busqueda y visualizacion, sin opciones de crear, editar ni eliminar.
+ * Ventana exclusiva para el rol {@code CONSULTA_VICARIAL}.
+ * <p>
+ * Presenta la sección de expedientes en modo solo lectura: permite buscar
+ * y visualizar registros, pero no crear, editar ni eliminar expedientes.
+ * </p>
  */
 public class FrmConsultaVicarial extends JFrame {
 
+    /** Controlador de expedientes (interfaz con la capa lógica y base de datos). */
     private final ExpedienteController expedienteController = new ExpedienteController();
+
+    /** Formato de fecha para mostrar valores en la tabla (ej: 15/04/26). */
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
+
+    /** Usuario autenticado con rol {@code CONSULTA_VICARIAL}. */
     private final Usuario usuario;
 
+    // Componentes
     private JTextField txtBuscar;
     private JTable tabla;
     private DefaultTableModel modeloTabla;
@@ -39,6 +47,12 @@ public class FrmConsultaVicarial extends JFrame {
     private JComboBox<String> cmbEstado;
     private JComboBox<String> cmbEtapa;
 
+    /**
+     * Construye la ventana de consulta vicarial para el usuario indicado.
+     * Inicializa el sidebar, el área principal y registra el listener de cierre.
+     *
+     * @param usuario usuario autenticado con rol {@code CONSULTA_VICARIAL}
+     */
     public FrmConsultaVicarial(Usuario usuario) {
         this.usuario = usuario;
         setTitle("Pastoral Social \u2014 Consulta Vicarial");
@@ -66,6 +80,16 @@ public class FrmConsultaVicarial extends JFrame {
     // =========================================================================
     // SIDEBAR
     // =========================================================================
+
+    /**
+     * Construye el panel lateral de navegación.
+     * <p>
+     * Incluye la marca de la aplicación, el botón de expedientes
+     * (activo por defecto), la etiqueta de rol y el botón de cierre de sesión.
+     * </p>
+     *
+     * @return panel sidebar configurado
+     */
     private JPanel crearSidebar() {
         JPanel sb = new JPanel();
         sb.setLayout(new BoxLayout(sb, BoxLayout.Y_AXIS));
@@ -117,6 +141,12 @@ public class FrmConsultaVicarial extends JFrame {
         return sb;
     }
 
+    /**
+     * Crea un botón de navegación con el estilo visual del sidebar.
+     *
+     * @param texto etiqueta que mostrará el botón
+     * @return botón estilizado para la barra lateral
+     */
     private JButton navBtn(String texto) {
         JButton btn = new JButton(texto) {
             @Override
@@ -141,6 +171,10 @@ public class FrmConsultaVicarial extends JFrame {
         return btn;
     }
 
+    /**
+     * Solicita confirmación al usuario y, de aceptarse, cierra la sesión
+     * activa y regresa a la pantalla de inicio de sesión.
+     */
     private void cerrarSesion() {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "\u00bfDesea cerrar la sesi\u00f3n?", "Cerrar sesi\u00f3n",
@@ -156,6 +190,13 @@ public class FrmConsultaVicarial extends JFrame {
     // =========================================================================
     // AREA PRINCIPAL
     // =========================================================================
+
+    /**
+     * Construye el área principal que agrupa la barra superior
+     * y el panel de expedientes.
+     *
+     * @return panel principal de contenido
+     */
     private JPanel crearAreaPrincipal() {
         JPanel area = new JPanel(new BorderLayout());
         area.setBackground(AppColors.FONDO);
@@ -164,6 +205,12 @@ public class FrmConsultaVicarial extends JFrame {
         return area;
     }
 
+    /**
+     * Crea la barra superior con el título de la vista y el nombre
+     * e información de rol del usuario autenticado.
+     *
+     * @return panel topbar configurado
+     */
     private JPanel crearTopbar() {
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(AppColors.PANEL);
@@ -188,6 +235,14 @@ public class FrmConsultaVicarial extends JFrame {
     // =========================================================================
     // PANEL EXPEDIENTES (solo lectura)
     // =========================================================================
+
+    /**
+     * Construye el panel de expedientes en modo solo lectura, compuesto
+     * por la barra de búsqueda, la tabla de resultados y el panel de filtros.
+     * Invoca {@link #cargarTabla()} al inicializarse.
+     *
+     * @return panel de expedientes
+     */
     private JPanel crearPanelExpedientes() {
         JPanel p = new JPanel(new BorderLayout(0, 8));
         p.setBackground(AppColors.FONDO);
@@ -210,7 +265,14 @@ public class FrmConsultaVicarial extends JFrame {
         return p;
     }
 
-    // Barra de busqueda sin boton "+ Nuevo"
+    /**
+     * Crea la barra de búsqueda por texto.
+     * <p>
+     * No incluye el botón «+ Nuevo» ya que el rol solo tiene acceso de lectura.
+     * </p>
+     *
+     * @return panel con el campo de búsqueda y el botón de filtros
+     */
     private JPanel crearBarraBusqueda() {
         JPanel p = new JPanel(new BorderLayout(8, 0));
         p.setOpaque(false);
@@ -232,6 +294,12 @@ public class FrmConsultaVicarial extends JFrame {
         return p;
     }
 
+    /**
+     * Construye y configura la tabla de expedientes con su modelo, renderizadores
+     * de celdas, ordenador de filas y el listener de doble clic para ver el detalle.
+     *
+     * @return panel contenedor del {@link JScrollPane} con la tabla
+     */
     private JPanel crearPanelTabla() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(AppColors.PANEL);
@@ -307,6 +375,12 @@ public class FrmConsultaVicarial extends JFrame {
         return p;
     }
 
+    /**
+     * Construye el panel de filtros avanzados (estado y etapa) con sus botones
+     * «Aplicar» y «Limpiar». El panel se muestra u oculta desde la barra de búsqueda.
+     *
+     * @return panel de filtros configurado
+     */
     private JPanel crearPanelFiltros() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -357,6 +431,12 @@ public class FrmConsultaVicarial extends JFrame {
     // =========================================================================
     // LOGICA DE DATOS
     // =========================================================================
+
+    /**
+     * Consulta todos los expedientes mediante {@link ExpedienteController#findAll()}
+     * y los carga en el modelo de la tabla.
+     * Muestra un diálogo de error si la operación falla.
+     */
     private void cargarTabla() {
         modeloTabla.setRowCount(0);
         try {
@@ -383,6 +463,10 @@ public class FrmConsultaVicarial extends JFrame {
         }
     }
 
+    /**
+     * Aplica un filtro de texto libre sobre las columnas ficha, nombre y cédula
+     * a partir del contenido actual del campo de búsqueda.
+     */
     private void filtrarTexto() {
         String texto = txtBuscar.getText().trim();
         if (texto.startsWith("Buscar") || texto.isEmpty()) {
@@ -392,6 +476,10 @@ public class FrmConsultaVicarial extends JFrame {
         sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 0, 1, 2));
     }
 
+    /**
+     * Aplica los filtros seleccionados de estado y etapa sobre la tabla.
+     * Si ambos combos están en su valor por defecto, elimina cualquier filtro activo.
+     */
     private void aplicarFiltros() {
         String estado = (String) cmbEstado.getSelectedItem();
         String etapa  = (String) cmbEtapa.getSelectedItem();
@@ -403,6 +491,10 @@ public class FrmConsultaVicarial extends JFrame {
         sorter.setRowFilter(filtros.isEmpty() ? null : RowFilter.andFilter(filtros));
     }
 
+    /**
+     * Restablece todos los controles de filtrado a su estado inicial y elimina
+     * cualquier filtro activo en el ordenador de la tabla.
+     */
     private void limpiarFiltros() {
         cmbEstado.setSelectedIndex(0);
         cmbEtapa.setSelectedIndex(0);
@@ -411,6 +503,11 @@ public class FrmConsultaVicarial extends JFrame {
         txtBuscar.setForeground(AppColors.TEXTO_GRIS);
     }
 
+    /**
+     * Obtiene el expediente correspondiente a la fila seleccionada y abre
+     * {@link FrmDetalleExpediente} en modo solo lectura.
+     * Muestra un error si no se puede recuperar el expediente.
+     */
     private void abrirDetalleReadOnly() {
         int fila = tabla.getSelectedRow();
         if (fila < 0) return;
