@@ -10,20 +10,22 @@ import javax.persistence.NoResultException;
 import java.util.Date;
 import java.util.List;
 
-// Implementación concreta del DAO de Evento.
-// Aquí es donde realmente se ejecutan las consultas contra la base de datos usando JPA.
-// Extiende GenericDAOImpl para heredar las operaciones básicas (save, update, delete)
-// e implementa IEventoDAO para agregar las consultas específicas de eventos.
+
 public class EventoDAOImpl extends GenericDAOImpl<Evento, Long> implements IEventoDAO {
 
-    // El constructor le indica a la clase genérica que trabajará con la entidad Evento
+    /**
+     * El constructor le indica a la clase genérica que trabajará con la entidad Evento
+     */
     public EventoDAOImpl() {
         super(Evento.class);
     }
 
-    // Obtiene todos los eventos usando una NamedQuery definida en la entidad Evento.
-    // El EntityManager es la conexión con la base de datos; siempre se cierra en el bloque finally
-    // para liberar recursos aunque ocurra un error.
+    /**
+     *
+     Obtiene todos los eventos usando una NamedQuery definida en la entidad Evento.
+     El EntityManager es la conexión con la base de datos; siempre se cierra en el bloque finally
+     para liberar recursos aunque ocurra un error.
+     */
     @Override
     public List<Evento> findAll() {
         EntityManager em = JPAUtil.getEntityManager();
@@ -35,9 +37,12 @@ public class EventoDAOImpl extends GenericDAOImpl<Evento, Long> implements IEven
         }
     }
 
-    // Busca un evento por ID usando getSingleResult(), que espera exactamente un resultado.
-    // Si no existe ningún registro con ese ID, JPA lanza NoResultException y se captura
-    // para devolver null sin que el programa falle.
+    /**
+     * Busca un evento por ID usando getSingleResult(), que espera exactamente un resultado.
+     * Si no existe ningún registro con ese ID, JPA lanza NoResultException y se captura
+     * para devolver null sin que el programa falle.
+     * @param id
+     */
     @Override
     public Evento findById(Long id) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -52,8 +57,11 @@ public class EventoDAOImpl extends GenericDAOImpl<Evento, Long> implements IEven
         }
     }
 
-    // Busca todos los eventos asociados a una parroquia.
-    // setParameter("parroquiaId", parroquiaId) inyecta el valor en la consulta JPQL de forma segura.
+    /**
+     * Busca todos los eventos asociados a una parroquia.
+     * setParameter("parroquiaId", parroquiaId) inyecta el valor en la consulta JPQL de forma segura.
+     * @param parroquiaId
+     */
     @Override
     public List<Evento> findByParroquia(Long parroquiaId) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -66,7 +74,10 @@ public class EventoDAOImpl extends GenericDAOImpl<Evento, Long> implements IEven
         }
     }
 
-    // Filtra eventos por tipo (el enum TipoEvento se pasa directamente como parámetro).
+    /**
+     * Filtra eventos por tipo (el enum TipoEvento se pasa directamente como parámetro).
+     * @param tipo
+     */
     @Override
     public List<Evento> findByTipo(TipoEvento tipo) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -79,7 +90,10 @@ public class EventoDAOImpl extends GenericDAOImpl<Evento, Long> implements IEven
         }
     }
 
-    // Busca eventos que coincidan con la fecha indicada.
+    /**
+     * Busca eventos que coincidan con la fecha indicada.
+     * @param fecha
+     */
     @Override
     public List<Evento> findByFecha(Date fecha) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -92,7 +106,10 @@ public class EventoDAOImpl extends GenericDAOImpl<Evento, Long> implements IEven
         }
     }
 
-    // Busca eventos cuyo nombre coincida con el parámetro recibido.
+    /**
+     * Busca eventos cuyo nombre coincida con el parámetro recibido.
+     * @param nombre
+     */
     @Override
     public List<Evento> findByNombre(String nombre) {
         EntityManager em = JPAUtil.getEntityManager();
