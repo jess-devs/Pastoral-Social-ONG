@@ -6,6 +6,14 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
+@NamedQueries({
+        @NamedQuery(name = "DocumentoAdjunto.findByExpediente", query = "SELECT d FROM DocumentoAdjunto d LEFT JOIN FETCH d.subidoPor WHERE d.expediente.id = :expedienteId ORDER BY d.fechaSubida DESC"),
+        @NamedQuery(name = "DocumentoAdjunto.findFirmadosByExpediente", query = "SELECT d FROM DocumentoAdjunto d WHERE d.expediente.id = :expedienteId AND d.esDocFirmado = true"),
+        @NamedQuery(name = "DocumentoAdjunto.findByTipo", query = "SELECT d FROM DocumentoAdjunto d WHERE d.tipo = :tipo")
+})
+@NamedNativeQueries({
+        @NamedNativeQuery(name = "DocumentoAdjunto.buscarPorDescripcion", query = "SELECT * FROM documento_adjunto WHERE expediente_id = :expedienteId AND LOWER(descripcion) LIKE LOWER(CONCAT('%', :texto, '%')) ORDER BY fecha_subida DESC", resultClass = DocumentoAdjunto.class)
+})
 @Entity
 @Table(name = "documento_adjunto")
 public class DocumentoAdjunto implements Serializable {
@@ -49,35 +57,86 @@ public class DocumentoAdjunto implements Serializable {
     @JoinColumn(name = "subido_por")
     private Usuario subidoPor;
 
-    public DocumentoAdjunto() {}
+    public DocumentoAdjunto() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public TipoDocumentoAdjunto getTipo() { return tipo; }
-    public void setTipo(TipoDocumentoAdjunto tipo) { this.tipo = tipo; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getDescripcion() { return descripcion; }
-    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public TipoDocumentoAdjunto getTipo() {
+        return tipo;
+    }
 
-    public String getArchivoUrl() { return archivoUrl; }
-    public void setArchivoUrl(String archivoUrl) { this.archivoUrl = archivoUrl; }
+    public void setTipo(TipoDocumentoAdjunto tipo) {
+        this.tipo = tipo;
+    }
 
-    public Date getFechaSubida() { return fechaSubida; }
-    public void setFechaSubida(Date fechaSubida) { this.fechaSubida = fechaSubida; }
+    public String getDescripcion() {
+        return descripcion;
+    }
 
-    public Boolean getEsDocFirmado() { return esDocFirmado; }
-    public void setEsDocFirmado(Boolean esDocFirmado) { this.esDocFirmado = esDocFirmado; }
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
 
-    public String getNombreFirmante() { return nombreFirmante; }
-    public void setNombreFirmante(String nombreFirmante) { this.nombreFirmante = nombreFirmante; }
+    public String getArchivoUrl() {
+        return archivoUrl;
+    }
 
-    public Date getFechaFirma() { return fechaFirma; }
-    public void setFechaFirma(Date fechaFirma) { this.fechaFirma = fechaFirma; }
+    public void setArchivoUrl(String archivoUrl) {
+        this.archivoUrl = archivoUrl;
+    }
 
-    public Expediente getExpediente() { return expediente; }
-    public void setExpediente(Expediente expediente) { this.expediente = expediente; }
+    public Date getFechaSubida() {
+        return fechaSubida;
+    }
 
-    public Usuario getSubidoPor() { return subidoPor; }
-    public void setSubidoPor(Usuario subidoPor) { this.subidoPor = subidoPor; }
+    public void setFechaSubida(Date fechaSubida) {
+        this.fechaSubida = fechaSubida;
+    }
+
+    public Boolean getEsDocFirmado() {
+        return esDocFirmado;
+    }
+
+    public void setEsDocFirmado(Boolean esDocFirmado) {
+        this.esDocFirmado = esDocFirmado;
+    }
+
+    public String getNombreFirmante() {
+        return nombreFirmante;
+    }
+
+    public void setNombreFirmante(String nombreFirmante) {
+        this.nombreFirmante = nombreFirmante;
+    }
+
+    public Date getFechaFirma() {
+        return fechaFirma;
+    }
+
+    public void setFechaFirma(Date fechaFirma) {
+        this.fechaFirma = fechaFirma;
+    }
+
+    public Expediente getExpediente() {
+        return expediente;
+    }
+
+    public void setExpediente(Expediente expediente) {
+        this.expediente = expediente;
+    }
+
+    public Usuario getSubidoPor() {
+        return subidoPor;
+    }
+
+    public void setSubidoPor(Usuario subidoPor) {
+        this.subidoPor = subidoPor;
+    }
 }

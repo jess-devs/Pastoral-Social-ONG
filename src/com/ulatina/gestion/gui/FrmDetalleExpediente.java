@@ -6,6 +6,7 @@ import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.*;
 import com.ulatina.gestion.model.enums.*;
+import com.ulatina.gestion.util.FileStorageUtil;
 import com.ulatina.gestion.util.SessionContext;
 
 import javax.swing.*;
@@ -14,37 +15,43 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 /**
- * FrmDetalleExpediente — Dialog de creación/edición de expedientes.
- * Modo nuevo: expediente == null. Modo editar: expediente != null.
+ * Diálogo modal para crear o editar un expediente.
+ * En modo nuevo (expediente == null) las pestañas 1 a 7 están bloqueadas hasta
+ * que el registro se guarda por primera vez.
+ * En modo edición precarga todos los datos asociados al expediente recibido.
  */
 public class FrmDetalleExpediente extends JDialog {
 
-    // ─── Estado ───────────────────────────────────────────────────────────────
     private Expediente expediente;
+
+    /** true cuando el diálogo se abrió sin expediente existente.
+     *  Afecta el título, las validaciones de guardar() y el estado inicial de las pestañas. */
     private final boolean esNuevo;
+
+    /** Callback ejecutado después de cada guardado exitoso.
+     *  Normalmente es FrmExpedientes::cargarTabla para refrescar la lista padre. */
     private final Runnable onGuardado;
     private boolean readOnly = false;
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
-    // ─── Controllers ──────────────────────────────────────────────────────────
     private final ExpedienteController expedienteController = new ExpedienteController();
     private final ParroquiaController parroquiaController = new ParroquiaController();
 
-    // ─── Componentes — título ────────────────────────────────────────────────
     private JLabel lblTituloPrincipal;
     private JLabel lblMarcadorBadge;
 
-    // ─── Tab pane ─────────────────────────────────────────────────────────────
     private JTabbedPane tabbedPane;
 
-    // ─── Tab 0: Datos — Persona ───────────────────────────────────────────────
     private JTextField txtNombres;
     private JTextField txtApellidos;
     private JComboBox<TipoDocumentoPersona> cmbTipoDoc;
@@ -61,7 +68,6 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextArea txtCondicionSalud;
     private JCheckBox chkTieneSeguro;
     private JTextField txtCondicionMigratoria;
-    // Tab 0: Datos — Expediente
     private JTextField txtEntrevistador;
     private JComboBox<EstadoExpediente> cmbEstado;
     private JComboBox<Parroquia> cmbParroquia;
@@ -70,14 +76,14 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextArea txtObservaciones;
     private JComboBox<String> cmbColorMarcador;
 
-    // ─── Tab 2: Vivienda ──────────────────────────────────────────────────────
     private JTextField txtDirVivienda;
     private JComboBox<TipoVivienda> cmbTipoVivienda;
     private JComboBox<TenenciaVivienda> cmbTenencia;
     private JComboBox<CondicionVivienda> cmbCondicion;
+
+    /** Vivienda vinculada al expediente. Null si aún no se ha registrado. */
     private Vivienda viviendaActual;
 
-    // ─── Tab 3: Adendum ───────────────────────────────────────────────────────
     private JTextArea txtAdendumObs;
     private DefaultTableModel modeloGastos;
     private JTable tablaGastos;
@@ -86,17 +92,70 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextField txtConceptoGasto;
     private JTextField txtMontoGasto;
     private JFormattedTextField txtFechaGasto;
+
+    /** Gasto mensual que se está editando en este momento.
+     *  Null cuando el formulario de gastos está en modo agregar. */
     private GastoMensual gastoEnEdicion = null;
     private final java.util.List<GastoMensual> gastosActuales = new java.util.ArrayList<>();
+
+    /** Adendum vinculado al expediente; contiene los gastos mensuales.
+     *  Puede ser null hasta el primer guardado. */
     private Adendum adendumActual;
 
-    // ─── Tablas read-only ─────────────────────────────────────────────────────
     private DefaultTableModel modeloFamilia;
-    private DefaultTableModel modeloDocs;
-    private DefaultTableModel modeloAsistencia;
     private DefaultTableModel modeloEntrevistas;
 
-    // ─── Tab 1: Familia — formulario inline ───────────────────────────────────
+    private JFormattedTextField txtFechaEntrevista;
+    private JTextField txtEntrevistadorEntrev;
+    private JTextArea txtObsEntrevista;
+    private JCheckBox chkRecomiendaAyuda;
+
+    private DefaultTableModel modeloProlongaciones;
+    private JFormattedTextField txtFechaProlongacion;
+    private JTextField txtObsProlongacion;
+    private BarraProgresoPanel panelBarraProgreso;
+
+    /**
+     * Paginadores en memoria para cada lista del formulario.
+     * Cada paginador guarda la lista completa y un índice de página; devuelve 20 ítems
+     * por página. Deben recargarse con pag.cargar(lista) antes de redibujar el panel.
+     */
+    private final Paginador<MiembroFamiliar>      pagFamilia       = new Paginador<>();
+    private final Paginador<GastoMensual>         pagGastos        = new Paginador<>();
+    private final Paginador<DocumentoAdjunto>     pagDocs          = new Paginador<>();
+    private final Paginador<AsistenciaSolicitada> pagAsistencias   = new Paginador<>();
+    private final Paginador<Entrevista>           pagEntrevistas   = new Paginador<>();
+    private final Paginador<ProlongacionAyuda>    pagProlongaciones = new Paginador<>();
+    private final JPanel panelPagFamilia       = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagGastos        = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagDocs          = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagAsistencias   = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagEntrevistas   = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+    private final JPanel panelPagProlongaciones = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 2));
+
+    private JPanel panelListaAsistencias;
+    private JComboBox<TipoAsistencia> cmbTipoAsistencia;
+    private JTextField txtModalidadAsist;
+    private JTextField txtFrecuenciaAsist;
+    private JTextField txtDuracionAsist;
+    private JTextField txtValorAsist;
+
+    /** Asistencia que se está editando. Null en modo agregar. */
+    private AsistenciaSolicitada asistenciaEnEdicion = null;
+    private JButton btnConfirmarAsist;
+
+    private File archivoSeleccionado;
+    private JLabel lblArchivoNombre;
+    private JComboBox<TipoDocumentoAdjunto> cmbTipoDocAdjunto;
+    private JTextField txtDescripcionDoc;
+    private JCheckBox chkEsFirmado;
+
+    /** Panel de datos del firmante; solo visible cuando chkEsFirmado está marcado. */
+    private JPanel panelFirmante;
+    private JTextField txtNombreFirmante;
+    private JFormattedTextField txtFechaFirmaDoc;
+    private JPanel panelListaDocs;
+
     private JPanel panelFormFamilia;
     private JLabel lblHeaderFormFamilia;
     private JLabel lblPersonaSeleccionada;
@@ -106,12 +165,24 @@ public class FrmDetalleExpediente extends JDialog {
     private JTextField txtOcupacion;
     private JButton btnTrabaja;
     private JTextField txtIngreso;
+
+    /** Miembro familiar en edición. Null en modo agregar. */
     private MiembroFamiliar miembroEnEdicion;
+
+    /** Persona encontrada por cédula; se asigna al miembro en confirmarMiembro().
+     *  Null si la persona aún no existe en el sistema. */
     private Persona personaSeleccionada;
+
+    /** Lista local de miembros cuando el expediente aún no está persistido.
+     *  En modo edición los miembros se leen directo de la BD. */
     private final java.util.List<MiembroFamiliar> listaMiembros = new java.util.ArrayList<>();
     private JTable tablaFamilia;
 
-    // ─── Constructor ──────────────────────────────────────────────────────────
+    /**
+     * @param owner      ventana propietaria del diálogo.
+     * @param expediente expediente a editar, o null para crear uno nuevo.
+     * @param onGuardado callback ejecutado tras cada guardado exitoso.
+     */
     public FrmDetalleExpediente(Window owner, Expediente expediente, Runnable onGuardado) {
         super(owner, ModalityType.APPLICATION_MODAL);
         this.expediente = expediente;
@@ -129,24 +200,21 @@ public class FrmDetalleExpediente extends JDialog {
         setResizable(true);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // CONSTRUCCIÓN UI
-    // ═════════════════════════════════════════════════════════════════════════
     private void initComponents() {
         setTitle(esNuevo ? "Nuevo Expediente" : "Expediente #" + expediente.getNumeroFicha());
         getContentPane().setBackground(AppColors.FONDO);
         setLayout(new BorderLayout());
 
         tabbedPane = crearTabbedPane();
+        actualizarEtapaActual();
 
         add(crearPanelTitulo(), BorderLayout.NORTH);
         add(tabbedPane, BorderLayout.CENTER);
         add(crearBarraInferior(), BorderLayout.SOUTH);
     }
 
-    // ─── Panel título ─────────────────────────────────────────────────────────
     private JPanel crearPanelTitulo() {
-        JPanel p = new JPanel(new BorderLayout(12, 0));
+        JPanel p = new JPanel(new BorderLayout(12, 6));
         p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(16, 24, 12, 24));
 
@@ -167,7 +235,7 @@ public class FrmDetalleExpediente extends JDialog {
             }
         };
         lblMarcadorBadge.setOpaque(false);
-        lblMarcadorBadge.setForeground(Color.WHITE);
+        lblMarcadorBadge.setForeground(AppColors.PANEL);
         lblMarcadorBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblMarcadorBadge.setVisible(false);
 
@@ -175,12 +243,22 @@ public class FrmDetalleExpediente extends JDialog {
         derecha.setOpaque(false);
         derecha.add(lblMarcadorBadge);
 
-        p.add(lblTituloPrincipal, BorderLayout.WEST);
-        p.add(derecha, BorderLayout.EAST);
+        EtapaExpediente etapaInicial = (expediente != null && expediente.getEtapaActual() != null)
+                ? expediente.getEtapaActual()
+                : EtapaExpediente.REGISTRO;
+        panelBarraProgreso = new BarraProgresoPanel(etapaInicial.ordinal());
+
+        JPanel norte = new JPanel(new BorderLayout());
+        norte.setOpaque(false);
+        norte.add(lblTituloPrincipal, BorderLayout.WEST);
+        norte.add(derecha, BorderLayout.EAST);
+
+        p.add(norte, BorderLayout.NORTH);
+        if (!esNuevo)
+            p.add(panelBarraProgreso, BorderLayout.SOUTH);
         return p;
     }
 
-    // ─── TabbedPane ───────────────────────────────────────────────────────────
     private JTabbedPane crearTabbedPane() {
         JTabbedPane tp = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
         tp.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -193,10 +271,10 @@ public class FrmDetalleExpediente extends JDialog {
         tp.addTab("Docs", crearTabDocs());
         tp.addTab("Asistencia", crearTabAsistencia());
         tp.addTab("Entrevistas", crearTabEntrevistas());
+        tp.addTab("Prolongaciones", crearTabProlongaciones());
         return tp;
     }
 
-    // ─── Tab 0: Datos ─────────────────────────────────────────────────────────
     private JScrollPane crearTabDatos() {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBackground(AppColors.PANEL);
@@ -219,7 +297,6 @@ public class FrmDetalleExpediente extends JDialog {
 
         int row = 0;
 
-        // Subtítulo sección Titular
         lc.gridx = 0;
         lc.gridy = row;
         lc.gridwidth = 4;
@@ -260,7 +337,6 @@ public class FrmDetalleExpediente extends JDialog {
         txtCondicionMigratoria = new JTextField(15);
         agregarFila(p, row++, lc, fc, "Nacionalidad", txtNacionalidad, "Cond. Migratoria", txtCondicionMigratoria);
 
-        // Dirección (full width)
         txtDireccion = new JTextField();
         lc.gridx = 0;
         lc.gridy = row;
@@ -273,7 +349,6 @@ public class FrmDetalleExpediente extends JDialog {
         wc.gridwidth = 4;
         row++;
 
-        // Tiene Seguro
         chkTieneSeguro = new JCheckBox("Tiene seguro de salud");
         chkTieneSeguro.setOpaque(false);
         chkTieneSeguro.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -284,7 +359,6 @@ public class FrmDetalleExpediente extends JDialog {
         lc.gridwidth = 1;
         row++;
 
-        // Condición de Salud
         txtCondicionSalud = new JTextArea(2, 20);
         txtCondicionSalud.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtCondicionSalud.setLineWrap(true);
@@ -304,7 +378,6 @@ public class FrmDetalleExpediente extends JDialog {
         wc.gridwidth = 4;
         row++;
 
-        // Separador
         JSeparator sep = new JSeparator();
         sep.setForeground(AppColors.BORDE);
         lc.gridx = 0;
@@ -318,7 +391,6 @@ public class FrmDetalleExpediente extends JDialog {
         lc.gridwidth = 1;
         row++;
 
-        // Subtítulo sección Expediente
         lc.gridx = 0;
         lc.gridy = row;
         lc.gridwidth = 4;
@@ -356,7 +428,6 @@ public class FrmDetalleExpediente extends JDialog {
         txtFechaPrevista = UIFactory.crearCampoFecha();
         agregarFila(p, row++, lc, fc, "Fecha Inicio *", txtFechaInicio, "Fecha Prevista Concl.", txtFechaPrevista);
 
-        // Observaciones (full width)
         txtObservaciones = new JTextArea(3, 20);
         txtObservaciones.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtObservaciones.setLineWrap(true);
@@ -373,7 +444,6 @@ public class FrmDetalleExpediente extends JDialog {
         p.add(scrollObs, wc);
         row++;
 
-        // Spacer
         GridBagConstraints sc = new GridBagConstraints();
         sc.gridy = row;
         sc.gridwidth = 4;
@@ -411,13 +481,11 @@ public class FrmDetalleExpediente extends JDialog {
         return l;
     }
 
-    // ─── Tab 1: Familia ───────────────────────────────────────────────────────
     private JPanel crearTabFamilia() {
         JPanel p = new JPanel(new BorderLayout(0, 0));
         p.setBackground(AppColors.PANEL);
         p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
-        // ── Barra superior ────────────────────────────────────────────────────
         JPanel barraTop = new JPanel(new BorderLayout());
         barraTop.setOpaque(false);
         barraTop.setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -432,27 +500,19 @@ public class FrmDetalleExpediente extends JDialog {
         barraTop.add(lblTitGrupo, BorderLayout.WEST);
         barraTop.add(btnAgregarMiembro, BorderLayout.EAST);
 
-        // ── Tabla ─────────────────────────────────────────────────────────────
         modeloFamilia = new DefaultTableModel(
-                new String[]{"Nombre", "Cédula", "Relación", "Jefatura", "Ocupación", "Ingreso", "Acciones"}, 0) {
+                new String[] { "Nombre", "Cédula", "Relación", "Jefatura", "Ocupación", "Ingreso", "Acciones" }, 0) {
             @Override
-            public boolean isCellEditable(int r, int c) { return false; }
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
 
         tablaFamilia = new JTable(modeloFamilia);
-        tablaFamilia.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tablaFamilia.setRowHeight(38);
-        tablaFamilia.setShowVerticalLines(false);
+        configurarTabla(tablaFamilia, 38);
         tablaFamilia.setShowHorizontalLines(true);
-        tablaFamilia.setGridColor(new Color(243, 244, 246));
         tablaFamilia.setSelectionBackground(AppColors.FILA_SEL);
-        tablaFamilia.setFocusable(false);
-        tablaFamilia.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaFamilia.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tablaFamilia.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tablaFamilia.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
 
-        // Anchos de columnas
         tablaFamilia.getColumnModel().getColumn(0).setPreferredWidth(160);
         tablaFamilia.getColumnModel().getColumn(1).setPreferredWidth(110);
         tablaFamilia.getColumnModel().getColumn(2).setPreferredWidth(90);
@@ -475,7 +535,7 @@ public class FrmDetalleExpediente extends JDialog {
             badge.setForeground(fg);
             badge.setBorder(new EmptyBorder(3, 10, 3, 10));
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
-            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : AppColors.PANEL);
             cell.add(badge);
             return cell;
         });
@@ -484,7 +544,7 @@ public class FrmDetalleExpediente extends JDialog {
         tablaFamilia.getColumnModel().getColumn(6).setCellRenderer((tbl, val, sel, foc, row, col) -> {
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
             cell.setOpaque(true);
-            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : AppColors.PANEL);
             JLabel editar = new JLabel("Editar");
             editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             editar.setForeground(AppColors.AZUL);
@@ -505,24 +565,30 @@ public class FrmDetalleExpediente extends JDialog {
             public void mouseClicked(MouseEvent e) {
                 int col = tablaFamilia.columnAtPoint(e.getPoint());
                 int row = tablaFamilia.rowAtPoint(e.getPoint());
-                if (col != 6 || row < 0 || row >= listaMiembros.size()) return;
+                if (col != 6 || row < 0 || row >= listaMiembros.size())
+                    return;
                 Rectangle rect = tablaFamilia.getCellRect(row, col, false);
                 int relX = e.getX() - rect.x;
-                if (relX < 50) cargarMiembroEnFormulario(row);
-                else eliminarMiembro(row);
+                if (relX < 50)
+                    cargarMiembroEnFormulario(row);
+                else
+                    eliminarMiembro(row);
             }
         });
 
-        JScrollPane scrollTabla = new JScrollPane(tablaFamilia);
-        scrollTabla.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollTabla.getViewport().setBackground(Color.WHITE);
+        JScrollPane scrollTabla = crearScrollTabla(tablaFamilia);
 
-        // ── Formulario inline ─────────────────────────────────────────────────
+        panelPagFamilia.setOpaque(false);
+        JPanel tablaConPag = new JPanel(new BorderLayout(0, 0));
+        tablaConPag.setOpaque(false);
+        tablaConPag.add(scrollTabla, BorderLayout.CENTER);
+        tablaConPag.add(panelPagFamilia, BorderLayout.SOUTH);
+
         panelFormFamilia = crearPanelFormFamilia();
         panelFormFamilia.setVisible(false);
 
         p.add(barraTop, BorderLayout.NORTH);
-        p.add(scrollTabla, BorderLayout.CENTER);
+        p.add(tablaConPag, BorderLayout.CENTER);
         p.add(panelFormFamilia, BorderLayout.SOUTH);
         return p;
     }
@@ -532,24 +598,21 @@ public class FrmDetalleExpediente extends JDialog {
         contenedor.setOpaque(false);
         contenedor.setBorder(new EmptyBorder(10, 0, 0, 0));
 
-        // Header azul
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(AppColors.AZUL);
         header.setBorder(new EmptyBorder(8, 14, 8, 14));
         lblHeaderFormFamilia = new JLabel("Agregar miembro familiar");
         lblHeaderFormFamilia.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lblHeaderFormFamilia.setForeground(Color.WHITE);
+        lblHeaderFormFamilia.setForeground(AppColors.PANEL);
         header.add(lblHeaderFormFamilia, BorderLayout.WEST);
 
-        // Body
         JPanel body = new JPanel();
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBackground(Color.WHITE);
+        body.setBackground(AppColors.PANEL);
         body.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(AppColors.BORDE, 1),
                 new EmptyBorder(12, 14, 12, 14)));
 
-        // Campos comunes
         txtBuscarCedula = new JTextField(14);
         txtBuscarCedula.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtBuscarCedula.putClientProperty("JTextField.placeholderText", "Buscar por cédula...");
@@ -558,7 +621,8 @@ public class FrmDetalleExpediente extends JDialog {
         txtBuscarCedula.setPreferredSize(new Dimension(160, 30));
         txtBuscarCedula.addActionListener(e -> buscarPersonaPorCedula());
 
-        JButton btnBuscar = UIFactory.crearBotonSmall("Buscar", AppColors.AZUL, Color.WHITE, e -> buscarPersonaPorCedula());
+        JButton btnBuscar = UIFactory.crearBotonSmall("Buscar", AppColors.AZUL, Color.WHITE,
+                e -> buscarPersonaPorCedula());
         JButton btnCrearNueva = UIFactory.crearBotonSmall("Crear nueva", AppColors.GRIS_BTN, AppColors.TEXTO,
                 e -> abrirFormNuevaPersona());
 
@@ -582,7 +646,7 @@ public class FrmDetalleExpediente extends JDialog {
         fila1.add(wrapLblPersona);
         fila1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        cmbRelacion = new JComboBox<>(new String[]{
+        cmbRelacion = new JComboBox<>(new String[] {
                 "Esposo/a", "Hijo/a", "Padre", "Madre", "Hermano/a", "Abuelo/a", "Tío/a", "Sobrino/a", "Otro"
         });
         cmbRelacion.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -638,25 +702,28 @@ public class FrmDetalleExpediente extends JDialog {
         return contenedor;
     }
 
-    /** Botón toggle Sí/No con colores verde/gris. */
+    /**
+     * Crea un botón que alterna entre "Sí" (verde) y "No" (gris) al hacer clic.
+     * @param estadoInicial "Sí" o "No".
+     * @return el botón configurado.
+     */
     private JButton crearBtnToggle(String estadoInicial) {
-        boolean[] estado = {estadoInicial.equals("Sí")};
+        boolean[] estado = { estadoInicial.equals("Sí") };
         JButton btn = UIFactory.crearBotonSmall(
                 estado[0] ? "Sí" : "No",
                 estado[0] ? AppColors.PRIMARIO : AppColors.GRIS_BTN,
-                estado[0] ? Color.WHITE : AppColors.TEXTO);
+                estado[0] ? AppColors.PANEL : AppColors.TEXTO);
         btn.setPreferredSize(new Dimension(52, 30));
         btn.addActionListener(e -> {
             estado[0] = !estado[0];
             btn.setText(estado[0] ? "Sí" : "No");
             btn.setBackground(estado[0] ? AppColors.PRIMARIO : AppColors.GRIS_BTN);
-            btn.setForeground(estado[0] ? Color.WHITE : AppColors.TEXTO);
+            btn.setForeground(estado[0] ? AppColors.PANEL : AppColors.TEXTO);
             btn.repaint();
         });
         return btn;
     }
 
-    // ─── Tab 2: Vivienda ──────────────────────────────────────────────────────
     private JPanel crearTabVivienda() {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBackground(AppColors.PANEL);
@@ -715,7 +782,6 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ─── Tab 3: Adendum ───────────────────────────────────────────────────────
     private JPanel crearTabAdendum() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setBackground(AppColors.PANEL);
@@ -785,20 +851,12 @@ public class FrmDetalleExpediente extends JDialog {
         };
 
         tablaGastos = new JTable(modeloGastos);
-        tablaGastos.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tablaGastos.setRowHeight(34);
-        tablaGastos.setShowVerticalLines(false);
-        tablaGastos.setGridColor(new Color(243, 244, 246));
-        tablaGastos.setFocusable(false);
-        tablaGastos.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaGastos.getTableHeader().setBackground(AppColors.HEADER_TBL);
-        tablaGastos.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
-        tablaGastos.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
+        configurarTabla(tablaGastos);
 
         tablaGastos.getColumnModel().getColumn(4).setCellRenderer((tbl, val, sel, foc, row, col) -> {
             JPanel cell = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
             cell.setOpaque(true);
-            cell.setBackground(sel ? tbl.getSelectionBackground() : Color.WHITE);
+            cell.setBackground(sel ? tbl.getSelectionBackground() : AppColors.PANEL);
             JLabel editar = new JLabel("Editar");
             editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             editar.setForeground(AppColors.AZUL);
@@ -832,9 +890,7 @@ public class FrmDetalleExpediente extends JDialog {
             }
         });
 
-        JScrollPane scrollGastos = new JScrollPane(tablaGastos);
-        scrollGastos.setBorder(new LineBorder(AppColors.BORDE, 1, true));
-        scrollGastos.getViewport().setBackground(Color.WHITE);
+        JScrollPane scrollGastos = crearScrollTabla(tablaGastos);
 
         JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
         totalPanel.setBackground(AppColors.HEADER_TBL);
@@ -850,10 +906,16 @@ public class FrmDetalleExpediente extends JDialog {
         totalPanel.add(lTotal);
         totalPanel.add(lblTotalGastos);
 
+        panelPagGastos.setOpaque(false);
+        JPanel gastosBottom = new JPanel(new BorderLayout(0, 0));
+        gastosBottom.setOpaque(false);
+        gastosBottom.add(totalPanel, BorderLayout.NORTH);
+        gastosBottom.add(panelPagGastos, BorderLayout.SOUTH);
+
         JPanel gastosConTotal = new JPanel(new BorderLayout());
         gastosConTotal.setOpaque(false);
         gastosConTotal.add(scrollGastos, BorderLayout.CENTER);
-        gastosConTotal.add(totalPanel, BorderLayout.SOUTH);
+        gastosConTotal.add(gastosBottom, BorderLayout.SOUTH);
 
         JPanel norte = new JPanel(new BorderLayout(0, 8));
         norte.setOpaque(false);
@@ -869,9 +931,6 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // LÓGICA — Tab Familia
-    // ═════════════════════════════════════════════════════════════════════════
 
     private void mostrarFormFamilia(boolean visible) {
         if (!visible) {
@@ -895,18 +954,24 @@ public class FrmDetalleExpediente extends JDialog {
     private void resetearToggle(JButton btn, boolean estadoSi) {
         btn.setText(estadoSi ? "Sí" : "No");
         btn.setBackground(estadoSi ? AppColors.PRIMARIO : AppColors.GRIS_BTN);
-        btn.setForeground(estadoSi ? Color.WHITE : AppColors.TEXTO);
+        btn.setForeground(estadoSi ? AppColors.PANEL : AppColors.TEXTO);
         btn.repaint();
     }
 
+    /**
+     * Busca una Persona por el número de cédula ingresado.
+     * Si la encuentra, rellena el formulario de familia con sus datos.
+     * Si no existe, muestra la opción de crear una persona nueva.
+     */
     private void buscarPersonaPorCedula() {
         String cedula = txtBuscarCedula.getText().trim();
-        if (cedula.isEmpty()) return;
+        if (cedula.isEmpty())
+            return;
         Persona p = expedienteController.findPersonaByNumeroDocumento(cedula);
         if (p != null) {
             personaSeleccionada = p;
             lblPersonaSeleccionada.setText(nvl(p.getNombres()) + " " + nvl(p.getApellidos()));
-            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+            lblPersonaSeleccionada.setForeground(AppColors.VERDE_FG);
         } else {
             personaSeleccionada = null;
             lblPersonaSeleccionada.setText("Persona no encontrada.");
@@ -942,8 +1007,12 @@ public class FrmDetalleExpediente extends JDialog {
 
         agregarFila(form, 0, lc, fc, "Nombres *", txtNom, "Apellidos *", txtApe);
         agregarFila(form, 1, lc, fc, "Tipo Doc *", cmbTipo, "Número Doc *", txtDoc);
-        lc.gridx = 0; lc.gridy = 2; form.add(etiqueta("Teléfono"), lc);
-        fc.gridx = 1; fc.gridy = 2; form.add(txtTel, fc);
+        lc.gridx = 0;
+        lc.gridy = 2;
+        form.add(etiqueta("Teléfono"), lc);
+        fc.gridx = 1;
+        fc.gridy = 2;
+        form.add(txtTel, fc);
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 8));
         btns.setOpaque(false);
@@ -971,7 +1040,7 @@ public class FrmDetalleExpediente extends JDialog {
             personaSeleccionada = nueva;
             txtBuscarCedula.setText(doc);
             lblPersonaSeleccionada.setText(nom + " " + ape);
-            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+            lblPersonaSeleccionada.setForeground(AppColors.VERDE_FG);
             dlg.dispose();
         }));
         btns.add(UIFactory.crearBotonDialog("Cancelar", AppColors.GRIS_BTN, AppColors.TEXTO, e -> dlg.dispose()));
@@ -984,6 +1053,11 @@ public class FrmDetalleExpediente extends JDialog {
         dlg.setVisible(true);
     }
 
+    /**
+     * Agrega o actualiza un MiembroFamiliar.
+     * En modo nuevo comprueba duplicados en listaMiembros (la BD aún no tiene el registro).
+     * En modo edición persiste directamente y recarga la tabla.
+     */
     private void confirmarMiembro() {
         if (expediente == null || expediente.getId() == null) {
             JOptionPane.showMessageDialog(this, "Guarde el expediente antes de agregar miembros familiares.",
@@ -1016,8 +1090,11 @@ public class FrmDetalleExpediente extends JDialog {
         miembro.setTrabaja("Sí".equals(btnTrabaja.getText()));
         String ingresoTxt = txtIngreso.getText().trim().replace(",", "");
         if (!ingresoTxt.isEmpty()) {
-            try { miembro.setIngresoMensual(new BigDecimal(ingresoTxt)); }
-            catch (NumberFormatException ex) { miembro.setIngresoMensual(BigDecimal.ZERO); }
+            try {
+                miembro.setIngresoMensual(new BigDecimal(ingresoTxt));
+            } catch (NumberFormatException ex) {
+                miembro.setIngresoMensual(BigDecimal.ZERO);
+            }
         } else {
             miembro.setIngresoMensual(BigDecimal.ZERO);
         }
@@ -1028,15 +1105,21 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void cargarMiembroEnFormulario(int row) {
-        if (row < 0 || row >= listaMiembros.size()) return;
+        if (row < 0 || row >= listaMiembros.size())
+            return;
         MiembroFamiliar m = listaMiembros.get(row);
         miembroEnEdicion = m;
-        try { personaSeleccionada = m.getPersona(); } catch (Exception ignored) { personaSeleccionada = null; }
+        try {
+            personaSeleccionada = m.getPersona();
+        } catch (Exception ignored) {
+            personaSeleccionada = null;
+        }
 
         if (personaSeleccionada != null) {
             txtBuscarCedula.setText(nvl(personaSeleccionada.getNumeroDocumento()));
-            lblPersonaSeleccionada.setText(nvl(personaSeleccionada.getNombres()) + " " + nvl(personaSeleccionada.getApellidos()));
-            lblPersonaSeleccionada.setForeground(new Color(0x166534));
+            lblPersonaSeleccionada
+                    .setText(nvl(personaSeleccionada.getNombres()) + " " + nvl(personaSeleccionada.getApellidos()));
+            lblPersonaSeleccionada.setForeground(AppColors.VERDE_FG);
         }
         if (m.getRelacionTitular() != null) {
             cmbRelacion.setSelectedItem(m.getRelacionTitular());
@@ -1050,17 +1133,25 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void eliminarMiembro(int row) {
-        if (row < 0 || row >= listaMiembros.size()) return;
+        if (row < 0 || row >= listaMiembros.size())
+            return;
         int confirm = JOptionPane.showConfirmDialog(this,
                 "¿Eliminar este miembro del grupo familiar?",
                 "Confirmar eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (confirm != JOptionPane.YES_OPTION) return;
+        if (confirm != JOptionPane.YES_OPTION)
+            return;
         MiembroFamiliar m = listaMiembros.get(row);
-        if (m.getId() != null) expedienteController.eliminarMiembro(m.getId());
+        if (m.getId() != null)
+            expedienteController.eliminarMiembro(m.getId());
         cargarTablaFamilia();
     }
 
-    // ─── Helper: campo con etiqueta encima ───────────────────────────────────
+    /**
+     * Envuelve un componente con su etiqueta encima, usando fuente pequeña en gris.
+     * @param texto texto de la etiqueta.
+     * @param campo componente a envolver.
+     * @return panel con etiqueta arriba y campo abajo.
+     */
     private JPanel campoConEtiqueta(String texto, JComponent campo) {
         JPanel wrap = new JPanel(new BorderLayout(0, 3));
         wrap.setOpaque(false);
@@ -1072,7 +1163,11 @@ public class FrmDetalleExpediente extends JDialog {
         return wrap;
     }
 
-    // ─── Cargar gasto en formulario para edición ──────────────────────────────
+    /**
+     * Carga los datos de un gasto en el formulario y establece gastoEnEdicion
+     * para que confirmarGasto() actualice en lugar de crear uno nuevo.
+     * @param row índice en gastosActuales.
+     */
     private void cargarGastoEnFormulario(int row) {
         if (row < 0 || row >= gastosActuales.size())
             return;
@@ -1084,7 +1179,10 @@ public class FrmDetalleExpediente extends JDialog {
             txtFechaGasto.setText(sdf.format(gastoEnEdicion.getFecha()));
     }
 
-    // ─── Confirmar (agregar o actualizar) gasto ───────────────────────────────
+    /**
+     * Agrega o actualiza un GastoMensual.
+     * Valida que concepto y monto no estén vacíos. Si adendumActual es null, lo crea primero.
+     */
     private void confirmarGasto() {
         String concepto = txtConceptoGasto.getText().trim();
         String montoStr = txtMontoGasto.getText().trim();
@@ -1142,7 +1240,10 @@ public class FrmDetalleExpediente extends JDialog {
         recargarTablaGastos();
     }
 
-    // ─── Eliminar gasto ───────────────────────────────────────────────────────
+    /**
+     * Elimina el gasto en la posición indicada de gastosActuales, previa confirmación.
+     * @param row índice en gastosActuales.
+     */
     private void eliminarGasto(int row) {
         if (row < 0 || row >= gastosActuales.size())
             return;
@@ -1160,7 +1261,7 @@ public class FrmDetalleExpediente extends JDialog {
         recargarTablaGastos();
     }
 
-    // ─── Limpiar formulario de gasto ──────────────────────────────────────────
+    /** Resetea los campos del formulario de gasto al estado vacío. */
     private void limpiarFormularioGasto() {
         cmbCatGasto.setSelectedIndex(0);
         txtConceptoGasto.setText("");
@@ -1171,59 +1272,733 @@ public class FrmDetalleExpediente extends JDialog {
         }
     }
 
-    // ─── Recargar tabla de gastos ─────────────────────────────────────────────
+    /** Recarga los gastos desde la BD, actualiza el paginador y refresca la tabla. */
     private void recargarTablaGastos() {
+        if (adendumActual == null || adendumActual.getId() == null) return;
+        pagGastos.cargar(expedienteController.findGastosByAdendum(adendumActual.getId()));
+        refrescarTablaGastos();
+    }
+
+    private void refrescarTablaGastos() {
         modeloGastos.setRowCount(0);
         gastosActuales.clear();
-        if (adendumActual == null || adendumActual.getId() == null)
-            return;
-        List<GastoMensual> gastos = expedienteController.findGastosByAdendum(adendumActual.getId());
-        BigDecimal total = BigDecimal.ZERO;
-        for (GastoMensual g : gastos) {
+        // Total sobre TODOS los gastos, no solo la página actual
+        BigDecimal total = pagGastos.getTodos().stream()
+                .map(g -> g.getMonto() != null ? g.getMonto() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        lblTotalGastos.setText(String.format("%,.0f colones", total));
+        for (GastoMensual g : pagGastos.getPagina()) {
             gastosActuales.add(g);
             BigDecimal m = g.getMonto() != null ? g.getMonto() : BigDecimal.ZERO;
-            total = total.add(m);
             String catDisplay = g.getCategoria() != null
                     ? g.getCategoria().name().replace("_", " ").substring(0, 1).toUpperCase()
                             + g.getCategoria().name().replace("_", " ").substring(1).toLowerCase()
                     : "—";
             modeloGastos.addRow(new Object[] {
-                    catDisplay,
-                    nvl(g.getConcepto()),
+                    catDisplay, nvl(g.getConcepto()),
                     String.format("%,.0f", m),
                     g.getFecha() != null ? sdf.format(g.getFecha()) : "—",
                     ""
             });
         }
-        lblTotalGastos.setText(String.format("%,.0f colones", total));
+        actualizarPanelPaginacion(panelPagGastos, pagGastos, this::refrescarTablaGastos);
     }
 
-    // ─── Tab 4: Docs ──────────────────────────────────────────────────────────
+
+    /**
+     * Agrega o actualiza una AsistenciaSolicitada.
+     * Requiere que el campo modalidad no esté vacío.
+     * Distingue modo agregar vs. editar según asistenciaEnEdicion.
+     */
+    private void confirmarAsistencia() {
+        String modalidad = txtModalidadAsist.getText().trim();
+        if (modalidad.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La modalidad es obligatoria.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (expediente == null || expediente.getId() == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Guarde el expediente primero antes de agregar asistencias.",
+                    "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        BigDecimal valor = BigDecimal.ZERO;
+        String valorStr = txtValorAsist.getText().trim();
+        if (!valorStr.isEmpty()) {
+            try {
+                valor = new BigDecimal(valorStr.replace(",", "."));
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "El valor debe ser un número válido.",
+                        "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
+        try {
+            AsistenciaSolicitada a = (asistenciaEnEdicion != null) ? asistenciaEnEdicion : new AsistenciaSolicitada();
+            a.setTipoAsistencia((TipoAsistencia) cmbTipoAsistencia.getSelectedItem());
+            a.setModalidad(modalidad);
+            a.setFrecuencia(txtFrecuenciaAsist.getText().trim());
+            a.setDuracion(txtDuracionAsist.getText().trim());
+            a.setValor(valor);
+            a.setExpediente(expediente);
+            expedienteController.guardarAsistencia(a);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al guardar la asistencia:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        limpiarFormularioAsistencia();
+        recargarListaAsistencias();
+    }
+
+    private void limpiarFormularioAsistencia() {
+        asistenciaEnEdicion = null;
+        cmbTipoAsistencia.setSelectedIndex(0);
+        txtModalidadAsist.setText("");
+        txtFrecuenciaAsist.setText("");
+        txtDuracionAsist.setText("");
+        txtValorAsist.setText("");
+        btnConfirmarAsist.setText("+ Agregar asistencia");
+        btnConfirmarAsist.setBackground(AppColors.PRIMARIO);
+    }
+
+    private void recargarListaAsistencias() {
+        if (expediente == null || expediente.getId() == null) {
+            panelListaAsistencias.removeAll();
+            panelListaAsistencias.revalidate();
+            panelListaAsistencias.repaint();
+            return;
+        }
+        pagAsistencias.cargar(expedienteController.findAsistenciasByExpediente(expediente.getId()));
+        refrescarListaAsistencias();
+    }
+
+    private void refrescarListaAsistencias() {
+        panelListaAsistencias.removeAll();
+        for (AsistenciaSolicitada a : pagAsistencias.getPagina())
+            panelListaAsistencias.add(crearFilaAsistencia(a));
+        panelListaAsistencias.revalidate();
+        panelListaAsistencias.repaint();
+        actualizarPanelPaginacion(panelPagAsistencias, pagAsistencias, this::refrescarListaAsistencias);
+    }
+
     private JPanel crearTabDocs() {
-        modeloDocs = new DefaultTableModel(
-                new String[] { "Tipo", "Descripción", "Fecha Subida", "Firmado" }, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-        return crearTabTabla(modeloDocs, "Documentos adjuntos al expediente");
+        JPanel p = new JPanel(new BorderLayout(0, 12));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(new EmptyBorder(16, 24, 16, 24));
+
+        p.add(crearPanelSubidaDoc(), BorderLayout.NORTH);
+
+        panelListaDocs = new JPanel();
+        panelListaDocs.setLayout(new BoxLayout(panelListaDocs, BoxLayout.Y_AXIS));
+        panelListaDocs.setBackground(AppColors.PANEL);
+
+        JScrollPane scroll = new JScrollPane(panelListaDocs);
+        scroll.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        scroll.getViewport().setBackground(AppColors.PANEL);
+
+        JLabel lblDocs = new JLabel("Documentos adjuntos");
+        lblDocs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblDocs.setForeground(AppColors.TEXTO_GRIS);
+
+        panelPagDocs.setOpaque(false);
+        JPanel scrollConPag = new JPanel(new BorderLayout(0, 0));
+        scrollConPag.setOpaque(false);
+        scrollConPag.add(scroll, BorderLayout.CENTER);
+        scrollConPag.add(panelPagDocs, BorderLayout.SOUTH);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 6));
+        centro.setBackground(AppColors.PANEL);
+        centro.add(lblDocs, BorderLayout.NORTH);
+        centro.add(scrollConPag, BorderLayout.CENTER);
+
+        p.add(centro, BorderLayout.CENTER);
+        return p;
     }
 
-    // ─── Tab 5: Asistencia ────────────────────────────────────────────────────
+    private JPanel crearPanelSubidaDoc() {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true),
+                new EmptyBorder(12, 16, 12, 16)));
+
+        JPanel filePicker = new JPanel(new BorderLayout(8, 0));
+        filePicker.setBackground(AppColors.FONDO);
+        filePicker.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true),
+                new EmptyBorder(10, 12, 10, 12)));
+        filePicker.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+
+        lblArchivoNombre = new JLabel("Ningún archivo seleccionado");
+        lblArchivoNombre.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblArchivoNombre.setForeground(AppColors.TEXTO_GRIS);
+
+        JButton btnElegir = UIFactory.crearBotonSmall("Seleccionar archivo...", AppColors.GRIS_BTN, AppColors.TEXTO,
+                e -> elegirArchivo());
+
+        filePicker.add(lblArchivoNombre, BorderLayout.CENTER);
+        filePicker.add(btnElegir, BorderLayout.EAST);
+
+        JPanel fila1 = new JPanel(new GridLayout(1, 2, 12, 0));
+        fila1.setBackground(AppColors.PANEL);
+        fila1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+
+        JPanel grpTipo = new JPanel(new BorderLayout(0, 4));
+        grpTipo.setBackground(AppColors.PANEL);
+        JLabel lblTipoDoc = new JLabel("Tipo de documento");
+        lblTipoDoc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTipoDoc.setForeground(AppColors.TEXTO_GRIS);
+        cmbTipoDocAdjunto = new JComboBox<>(TipoDocumentoAdjunto.values());
+        cmbTipoDocAdjunto.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        grpTipo.add(lblTipoDoc, BorderLayout.NORTH);
+        grpTipo.add(cmbTipoDocAdjunto, BorderLayout.CENTER);
+
+        JPanel grpDesc = new JPanel(new BorderLayout(0, 4));
+        grpDesc.setBackground(AppColors.PANEL);
+        JLabel lblDescDoc = new JLabel("Descripción (opcional)");
+        lblDescDoc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblDescDoc.setForeground(AppColors.TEXTO_GRIS);
+        txtDescripcionDoc = new JTextField();
+        txtDescripcionDoc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtDescripcionDoc.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE), new EmptyBorder(4, 8, 4, 8)));
+        grpDesc.add(lblDescDoc, BorderLayout.NORTH);
+        grpDesc.add(txtDescripcionDoc, BorderLayout.CENTER);
+
+        fila1.add(grpTipo);
+        fila1.add(grpDesc);
+
+        chkEsFirmado = new JCheckBox("Es consentimiento firmado");
+        chkEsFirmado.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        chkEsFirmado.setBackground(AppColors.PANEL);
+        chkEsFirmado.setForeground(AppColors.TEXTO);
+
+        panelFirmante = new JPanel(new GridLayout(1, 2, 12, 0));
+        panelFirmante.setBackground(AppColors.PANEL);
+        panelFirmante.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        panelFirmante.setVisible(false);
+
+        JPanel grpFirmante = new JPanel(new BorderLayout(0, 4));
+        grpFirmante.setBackground(AppColors.PANEL);
+        JLabel lblFirmante = new JLabel("Nombre firmante");
+        lblFirmante.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblFirmante.setForeground(AppColors.TEXTO_GRIS);
+        txtNombreFirmante = new JTextField();
+        txtNombreFirmante.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtNombreFirmante.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE), new EmptyBorder(4, 8, 4, 8)));
+        grpFirmante.add(lblFirmante, BorderLayout.NORTH);
+        grpFirmante.add(txtNombreFirmante, BorderLayout.CENTER);
+
+        JPanel grpFechaFirma = new JPanel(new BorderLayout(0, 4));
+        grpFechaFirma.setBackground(AppColors.PANEL);
+        JLabel lblFechaFirma = new JLabel("Fecha firma");
+        lblFechaFirma.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblFechaFirma.setForeground(AppColors.TEXTO_GRIS);
+        txtFechaFirmaDoc = UIFactory.crearCampoFecha();
+        txtFechaFirmaDoc.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE), new EmptyBorder(4, 8, 4, 8)));
+        grpFechaFirma.add(lblFechaFirma, BorderLayout.NORTH);
+        grpFechaFirma.add(txtFechaFirmaDoc, BorderLayout.CENTER);
+
+        panelFirmante.add(grpFirmante);
+        panelFirmante.add(grpFechaFirma);
+
+        chkEsFirmado.addActionListener(e -> panelFirmante.setVisible(chkEsFirmado.isSelected()));
+
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        btnRow.setBackground(AppColors.PANEL);
+        JButton btnSubir = UIFactory.crearBoton("Subir documento", AppColors.PRIMARIO, Color.WHITE,
+                e -> subirDocumento());
+        btnRow.add(btnSubir);
+
+        p.add(filePicker);
+        p.add(Box.createVerticalStrut(10));
+        p.add(fila1);
+        p.add(Box.createVerticalStrut(8));
+        p.add(chkEsFirmado);
+        p.add(panelFirmante);
+        p.add(Box.createVerticalStrut(10));
+        p.add(btnRow);
+
+        return p;
+    }
+
+    private void elegirArchivo() {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Seleccionar documento");
+        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            archivoSeleccionado = fc.getSelectedFile();
+            lblArchivoNombre.setText(archivoSeleccionado.getName());
+            lblArchivoNombre.setForeground(AppColors.TEXTO);
+        }
+    }
+
+    /**
+     * Valida que el archivo seleccionado no pese más de 5 MB y que no exista ya
+     * un documento con el mismo nombre en el expediente.
+     * Si pasa la validación, copia el archivo y persiste el DocumentoAdjunto.
+     */
+    private void subirDocumento() {
+        if (archivoSeleccionado == null) {
+            JOptionPane.showMessageDialog(this, "Selecciona un archivo primero.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (archivoSeleccionado.length() > FileStorageUtil.MAX_BYTES) {
+            JOptionPane.showMessageDialog(this,
+                    "El archivo supera el límite de 5 MB.",
+                    "Archivo muy grande", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        // Verificar que no exista ya un documento con el mismo nombre en este expediente
+        String nombreNuevo = archivoSeleccionado.getName();
+        boolean yaExiste = expedienteController.findDocsByExpediente(expediente.getId()).stream()
+                .anyMatch(d -> d.getArchivoUrl() != null && d.getArchivoUrl().endsWith(nombreNuevo));
+        if (yaExiste) {
+            JOptionPane.showMessageDialog(this,
+                    "Ya existe un documento con el nombre \"" + nombreNuevo + "\" en este expediente.",
+                    "Documento duplicado", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        try {
+            File copiado = FileStorageUtil.copiarArchivo(archivoSeleccionado, expediente.getNumeroFicha());
+            String rutaRel = FileStorageUtil.rutaRelativa(expediente.getNumeroFicha(), copiado.getName());
+
+            DocumentoAdjunto doc = new DocumentoAdjunto();
+            doc.setExpediente(expediente);
+            doc.setTipo((TipoDocumentoAdjunto) cmbTipoDocAdjunto.getSelectedItem());
+            String desc = txtDescripcionDoc.getText().trim();
+            doc.setDescripcion(desc.isEmpty() ? null : desc);
+            doc.setArchivoUrl(rutaRel);
+            doc.setFechaSubida(new Date());
+            doc.setEsDocFirmado(chkEsFirmado.isSelected());
+            if (chkEsFirmado.isSelected()) {
+                doc.setNombreFirmante(txtNombreFirmante.getText().trim());
+                String fechaStr = txtFechaFirmaDoc.getText().replace("_", "").trim();
+                if (fechaStr.length() == 10) {
+                    try {
+                        doc.setFechaFirma(new SimpleDateFormat("dd/MM/yyyy").parse(fechaStr));
+                    } catch (ParseException ignored) {
+                    }
+                }
+            }
+            doc.setSubidoPor(SessionContext.getUsuarioActual());
+
+            expedienteController.guardarDocumento(doc);
+
+            archivoSeleccionado = null;
+            lblArchivoNombre.setText("Ningún archivo seleccionado");
+            lblArchivoNombre.setForeground(AppColors.TEXTO_GRIS);
+            txtDescripcionDoc.setText("");
+            chkEsFirmado.setSelected(false);
+            panelFirmante.setVisible(false);
+            txtNombreFirmante.setText("");
+            txtFechaFirmaDoc.setValue(null);
+
+            cargarTablaDocs();
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al copiar el archivo: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al guardar el documento: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private JPanel crearFilaDoc(DocumentoAdjunto doc) {
+        String nombreArchivo = doc.getArchivoUrl() != null
+                ? new File(doc.getArchivoUrl()).getName()
+                : "—";
+
+        JPanel fila = new JPanel(new BorderLayout(8, 0));
+        fila.setBackground(AppColors.PANEL);
+        fila.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 0, 1, 0, AppColors.BORDE),
+                new EmptyBorder(10, 12, 10, 12)));
+        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+
+        JPanel izq = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        izq.setBackground(AppColors.PANEL);
+
+        JLabel lblNombreDoc = new JLabel(nombreArchivo);
+        lblNombreDoc.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblNombreDoc.setForeground(AppColors.TEXTO);
+        izq.add(lblNombreDoc);
+        izq.add(crearBadgeTipo(doc.getTipo()));
+        if (Boolean.TRUE.equals(doc.getEsDocFirmado())) {
+            izq.add(crearBadge("Firmado", AppColors.VERDE_BG, AppColors.VERDE_FG));
+        }
+
+        String fecha = doc.getFechaSubida() != null ? sdf.format(doc.getFechaSubida()) : "—";
+        String subidoPor = doc.getSubidoPor() != null ? doc.getSubidoPor().getNombre() : "—";
+        String firmaInfo = Boolean.TRUE.equals(doc.getEsDocFirmado()) && doc.getNombreFirmante() != null
+                ? "  ·  Firma: " + doc.getNombreFirmante()
+                : "";
+        JLabel lblMeta = new JLabel(fecha + "  ·  Subido por: " + subidoPor + firmaInfo);
+        lblMeta.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblMeta.setForeground(AppColors.TEXTO_GRIS);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 2));
+        centro.setBackground(AppColors.PANEL);
+        centro.add(izq, BorderLayout.NORTH);
+        centro.add(lblMeta, BorderLayout.SOUTH);
+
+        JPanel der = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        der.setBackground(AppColors.PANEL);
+
+        JButton btnVer = UIFactory.crearBotonSmall("Ver", AppColors.AZUL_PANEL, AppColors.AZUL, e -> {
+            try {
+                FileStorageUtil.abrirArchivo(doc.getArchivoUrl());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo abrir el archivo: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JButton btnEliminar = UIFactory.crearBotonSmall("X", AppColors.ROJO_CARD_BG, AppColors.ROJO, e -> {
+            int conf = JOptionPane.showConfirmDialog(this,
+                    "¿Eliminar el documento \"" + nombreArchivo + "\"?\nEsta acción no se puede deshacer.",
+                    "Confirmar eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (conf == JOptionPane.YES_OPTION) {
+                FileStorageUtil.eliminarArchivo(doc.getArchivoUrl());
+                expedienteController.eliminarDocumento(doc.getId());
+                cargarTablaDocs();
+            }
+        });
+
+        der.add(btnVer);
+        der.add(btnEliminar);
+
+        fila.add(centro, BorderLayout.CENTER);
+        fila.add(der, BorderLayout.EAST);
+        return fila;
+    }
+
+    private JLabel crearBadgeTipo(TipoDocumentoAdjunto tipo) {
+        Color bg, fg;
+        switch (tipo != null ? tipo : TipoDocumentoAdjunto.OTRO) {
+            case CEDULA:
+            case PASAPORTE:
+                bg = AppColors.AZUL_CARD_BG;
+                fg = AppColors.AZUL_CARD_FG;
+                break;
+            case CONSENTIMIENTO:
+                bg = AppColors.VERDE_BG;
+                fg = AppColors.VERDE_FG;
+                break;
+            case INFO_MEDICA:
+            case DICTAMEN:
+            case RECETA:
+                bg = AppColors.ROJO_CARD_BG;
+                fg = AppColors.ROJO_CARD_FG;
+                break;
+            case FACTURA:
+                bg = AppColors.PURP_BG;
+                fg = AppColors.PURPURA;
+                break;
+            default:
+                bg = AppColors.AMBAR_BG;
+                fg = AppColors.AMBAR_FG;
+                break;
+        }
+        String texto = tipo != null ? tipo.name().replace("_", " ") : "OTRO";
+        return crearBadge(texto, bg, fg);
+    }
+
+    private JLabel crearBadge(String texto, Color bg, Color fg) {
+        JLabel badge = new JLabel(" " + texto + " ") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 12, 12));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        badge.setOpaque(false);
+        badge.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        badge.setBackground(bg);
+        badge.setForeground(fg);
+        return badge;
+    }
+
+    private JPanel crearFilaAsistencia(AsistenciaSolicitada a) {
+        JPanel fila = new JPanel(new BorderLayout(8, 0));
+        fila.setBackground(AppColors.PANEL);
+        fila.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 0, 1, 0, AppColors.BORDE),
+                new EmptyBorder(10, 12, 10, 12)));
+        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+
+        JPanel izq = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        izq.setBackground(AppColors.PANEL);
+        izq.add(crearBadgeAsistencia(a.getTipoAsistencia()));
+
+        JLabel lblModalidad = new JLabel(nvl(a.getModalidad()));
+        lblModalidad.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblModalidad.setForeground(AppColors.TEXTO);
+        izq.add(lblModalidad);
+
+        String valorStr = a.getValor() != null ? String.format("₡ %,.0f", a.getValor()) : "";
+        String frecStr = nvl(a.getFrecuencia());
+        String durStr = nvl(a.getDuracion());
+        StringBuilder meta = new StringBuilder();
+        if (!frecStr.equals("—"))
+            meta.append(frecStr);
+        if (!durStr.equals("—")) {
+            if (meta.length() > 0)
+                meta.append("  ·  ");
+            meta.append(durStr);
+        }
+        if (!valorStr.isEmpty()) {
+            if (meta.length() > 0)
+                meta.append("  ·  ");
+            meta.append(valorStr);
+        }
+
+        JLabel lblMeta = new JLabel(meta.toString());
+        lblMeta.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblMeta.setForeground(AppColors.TEXTO_GRIS);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 2));
+        centro.setBackground(AppColors.PANEL);
+        centro.add(izq, BorderLayout.NORTH);
+        centro.add(lblMeta, BorderLayout.SOUTH);
+
+        JPanel der = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        der.setBackground(AppColors.PANEL);
+
+        JButton btnEditar = UIFactory.crearBotonSmall("Editar", AppColors.AZUL_PANEL, AppColors.AZUL, e -> {
+            asistenciaEnEdicion = a;
+            cmbTipoAsistencia.setSelectedItem(a.getTipoAsistencia());
+            txtModalidadAsist.setText(nvl(a.getModalidad()).equals("—") ? "" : nvl(a.getModalidad()));
+            txtFrecuenciaAsist.setText(nvl(a.getFrecuencia()).equals("—") ? "" : nvl(a.getFrecuencia()));
+            txtDuracionAsist.setText(nvl(a.getDuracion()).equals("—") ? "" : nvl(a.getDuracion()));
+            txtValorAsist.setText(a.getValor() != null ? a.getValor().toPlainString() : "");
+            btnConfirmarAsist.setText("Guardar cambios");
+            btnConfirmarAsist.setBackground(AppColors.AZUL);
+        });
+
+        JButton btnEliminar = UIFactory.crearBotonSmall("X", AppColors.ROJO_CARD_BG, AppColors.ROJO, e -> {
+            int conf = JOptionPane.showConfirmDialog(this,
+                    "¿Eliminar esta asistencia?", "Confirmar eliminación",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (conf == JOptionPane.YES_OPTION) {
+                try {
+                    if (a.getId() != null)
+                        expedienteController.eliminarAsistencia(a.getId());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                recargarListaAsistencias();
+            }
+        });
+
+        der.add(btnEditar);
+        der.add(btnEliminar);
+
+        fila.add(centro, BorderLayout.CENTER);
+        fila.add(der, BorderLayout.EAST);
+        return fila;
+    }
+
+    private JLabel crearBadgeAsistencia(TipoAsistencia tipo) {
+        Color bg, fg;
+        switch (tipo != null ? tipo : TipoAsistencia.OTRO) {
+            case ALIMENTOS:
+                bg = AppColors.VERDE_BG;
+                fg = AppColors.VERDE_FG;
+                break;
+            case MEDICAMENTOS:
+                bg = AppColors.PURP_BG;
+                fg = AppColors.PURPURA;
+                break;
+            case HIGIENE_LIMPIEZA:
+                bg = AppColors.AZUL_CARD_BG;
+                fg = AppColors.AZUL_CARD_FG;
+                break;
+            case INDUMENTARIA:
+                bg = AppColors.AMBAR_BG;
+                fg = AppColors.AMBAR_FG;
+                break;
+            case ALQUILER:
+                bg = AppColors.ALQUILER_BG;
+                fg = AppColors.AMBAR_FG;
+                break;
+            case SERVICIOS:
+                bg = AppColors.SERVICIOS_BG;
+                fg = AppColors.SERVICIOS_FG;
+                break;
+            case APARATOS_ORTOPEDICOS:
+                bg = AppColors.ROJO_CARD_BG;
+                fg = AppColors.ROJO_CARD_FG;
+                break;
+            default:
+                bg = AppColors.GRIS_BTN;
+                fg = AppColors.TEXTO_GRIS;
+                break;
+        }
+        String texto = tipo != null ? tipo.name().replace("_", " ") : "OTRO";
+        return crearBadge(texto, bg, fg);
+    }
+
     private JPanel crearTabAsistencia() {
-        modeloAsistencia = new DefaultTableModel(
-                new String[] { "Tipo Asistencia", "Modalidad", "Frecuencia", "Duración", "Valor" }, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-        return crearTabTabla(modeloAsistencia, "Asistencias solicitadas");
+        JPanel p = new JPanel(new BorderLayout(0, 12));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(new EmptyBorder(16, 24, 16, 24));
+
+        p.add(crearPanelFormAsistencia(), BorderLayout.NORTH);
+
+        panelListaAsistencias = new JPanel();
+        panelListaAsistencias.setLayout(new BoxLayout(panelListaAsistencias, BoxLayout.Y_AXIS));
+        panelListaAsistencias.setBackground(AppColors.PANEL);
+
+        JScrollPane scroll = new JScrollPane(panelListaAsistencias);
+        scroll.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        scroll.getViewport().setBackground(AppColors.PANEL);
+
+        JLabel lblLista = new JLabel("Asistencias registradas");
+        lblLista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblLista.setForeground(AppColors.TEXTO_GRIS);
+
+        panelPagAsistencias.setOpaque(false);
+        JPanel scrollConPag = new JPanel(new BorderLayout(0, 0));
+        scrollConPag.setOpaque(false);
+        scrollConPag.add(scroll, BorderLayout.CENTER);
+        scrollConPag.add(panelPagAsistencias, BorderLayout.SOUTH);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 6));
+        centro.setBackground(AppColors.PANEL);
+        centro.add(lblLista, BorderLayout.NORTH);
+        centro.add(scrollConPag, BorderLayout.CENTER);
+
+        p.add(centro, BorderLayout.CENTER);
+        return p;
     }
 
-    // ─── Tab 6: Entrevistas ───────────────────────────────────────────────────
+    private JPanel crearPanelFormAsistencia() {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true),
+                new EmptyBorder(12, 16, 12, 16)));
+
+        cmbTipoAsistencia = new JComboBox<>(TipoAsistencia.values());
+        txtModalidadAsist = new JTextField();
+        txtModalidadAsist.putClientProperty("JTextField.placeholderText", "Ej: Entrega directa");
+        txtFrecuenciaAsist = new JTextField();
+        txtFrecuenciaAsist.putClientProperty("JTextField.placeholderText", "Ej: Quincenal");
+        txtDuracionAsist = new JTextField();
+        txtDuracionAsist.putClientProperty("JTextField.placeholderText", "Ej: 6 meses");
+        txtValorAsist = new JTextField();
+        txtValorAsist.putClientProperty("JTextField.placeholderText", "Ej: 25000");
+
+        JPanel fila = new JPanel(new GridLayout(1, 5, 12, 0));
+        fila.setBackground(AppColors.PANEL);
+        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+
+        fila.add(campoConEtiqueta("Tipo", cmbTipoAsistencia));
+        fila.add(campoConEtiqueta("Modalidad *", txtModalidadAsist));
+        fila.add(campoConEtiqueta("Frecuencia", txtFrecuenciaAsist));
+        fila.add(campoConEtiqueta("Duración", txtDuracionAsist));
+        fila.add(campoConEtiqueta("Valor (₡)", txtValorAsist));
+
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        btnRow.setBackground(AppColors.PANEL);
+        btnConfirmarAsist = UIFactory.crearBoton("+ Agregar asistencia", AppColors.PRIMARIO, Color.WHITE,
+                e -> confirmarAsistencia());
+        JButton btnLimpiar = UIFactory.crearBoton("Limpiar", AppColors.GRIS_BTN, AppColors.TEXTO,
+                e -> limpiarFormularioAsistencia());
+        btnRow.add(btnConfirmarAsist);
+        btnRow.add(btnLimpiar);
+
+        p.add(fila);
+        p.add(Box.createVerticalStrut(10));
+        p.add(btnRow);
+        return p;
+    }
+
     private JPanel crearTabEntrevistas() {
+        JPanel p = new JPanel(new BorderLayout(0, 12));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(new EmptyBorder(16, 24, 16, 24));
+
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(AppColors.PANEL);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true),
+                new EmptyBorder(12, 16, 12, 16)));
+
+        txtFechaEntrevista = UIFactory.crearCampoFecha();
+        txtEntrevistadorEntrev = new JTextField();
+        txtEntrevistadorEntrev.putClientProperty("JTextField.placeholderText", "Nombre del entrevistador");
+        chkRecomiendaAyuda = new JCheckBox("Recomienda ayuda");
+        chkRecomiendaAyuda.setBackground(AppColors.PANEL);
+        chkRecomiendaAyuda.setForeground(AppColors.TEXTO);
+        chkRecomiendaAyuda.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        JPanel filasCampos = new JPanel(new GridLayout(1, 2, 12, 0));
+        filasCampos.setBackground(AppColors.PANEL);
+        filasCampos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        filasCampos.add(campoConEtiqueta("Fecha (dd/mm/aaaa) *", txtFechaEntrevista));
+        filasCampos.add(campoConEtiqueta("Entrevistador *", txtEntrevistadorEntrev));
+
+        txtObsEntrevista = new JTextArea(3, 20);
+        txtObsEntrevista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtObsEntrevista.setLineWrap(true);
+        txtObsEntrevista.setWrapStyleWord(true);
+        JScrollPane scrollObs = new JScrollPane(txtObsEntrevista);
+        scrollObs.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        scrollObs.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+
+        JLabel lblObs = new JLabel("Observaciones");
+        lblObs.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblObs.setForeground(AppColors.TEXTO_GRIS);
+
+        JPanel obsPanel = new JPanel(new BorderLayout(0, 4));
+        obsPanel.setOpaque(false);
+        obsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        obsPanel.add(lblObs, BorderLayout.NORTH);
+        obsPanel.add(scrollObs, BorderLayout.CENTER);
+
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        btnRow.setBackground(AppColors.PANEL);
+        JButton btnAgregar = UIFactory.crearBoton("+ Agregar entrevista", AppColors.PRIMARIO, Color.WHITE,
+                e -> confirmarEntrevista());
+        JButton btnLimpiar = UIFactory.crearBoton("Limpiar", AppColors.GRIS_BTN, AppColors.TEXTO,
+                e -> limpiarFormularioEntrevista());
+        btnRow.add(btnAgregar);
+        btnRow.add(btnLimpiar);
+
+        formPanel.add(filasCampos);
+        formPanel.add(Box.createVerticalStrut(8));
+        formPanel.add(new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0)) {
+            {
+                setOpaque(false);
+                add(chkRecomiendaAyuda);
+            }
+        });
+        formPanel.add(Box.createVerticalStrut(6));
+        formPanel.add(obsPanel);
+        formPanel.add(Box.createVerticalStrut(10));
+        formPanel.add(btnRow);
+
         modeloEntrevistas = new DefaultTableModel(
                 new String[] { "Fecha", "Entrevistador", "Recomienda Ayuda", "Observaciones" }, 0) {
             @Override
@@ -1231,10 +2006,193 @@ public class FrmDetalleExpediente extends JDialog {
                 return false;
             }
         };
-        return crearTabTabla(modeloEntrevistas, "Entrevistas realizadas");
+        JTable tablaEntrevistas = new JTable(modeloEntrevistas);
+        configurarTabla(tablaEntrevistas);
+        JScrollPane scrollTabla = crearScrollTabla(tablaEntrevistas);
+
+        JLabel lblLista = new JLabel("Entrevistas realizadas");
+        lblLista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblLista.setForeground(AppColors.TEXTO_GRIS);
+
+        panelPagEntrevistas.setOpaque(false);
+        JPanel centroPanel = new JPanel(new BorderLayout(0, 6));
+        centroPanel.setBackground(AppColors.PANEL);
+        centroPanel.add(lblLista, BorderLayout.NORTH);
+        centroPanel.add(scrollTabla, BorderLayout.CENTER);
+        centroPanel.add(panelPagEntrevistas, BorderLayout.SOUTH);
+
+        p.add(formPanel, BorderLayout.NORTH);
+        p.add(centroPanel, BorderLayout.CENTER);
+        return p;
     }
 
-    // ─── Helper: panel tabla genérico (read-only) ─────────────────────────────
+    private void confirmarEntrevista() {
+        String fechaStr = txtFechaEntrevista.getText();
+        String entrevistador = txtEntrevistadorEntrev.getText().trim();
+        if (fechaStr == null || fechaStr.contains("_") || fechaStr.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La fecha de la entrevista es obligatoria.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (entrevistador.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "El nombre del entrevistador es obligatorio.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (expediente == null || expediente.getId() == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Guarde el expediente primero antes de agregar entrevistas.",
+                    "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        try {
+            Entrevista entrevista = new Entrevista();
+            entrevista.setFecha(parseFecha(fechaStr));
+            entrevista.setEntrevistador(entrevistador);
+            entrevista.setObservaciones(txtObsEntrevista.getText().trim());
+            entrevista.setRecomiendaAyuda(chkRecomiendaAyuda.isSelected());
+            entrevista.setExpediente(expediente);
+            expedienteController.guardarEntrevista(entrevista);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al guardar la entrevista:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        limpiarFormularioEntrevista();
+        cargarTablaEntrevistas();
+    }
+
+    private void limpiarFormularioEntrevista() {
+        txtFechaEntrevista.setValue(null);
+        txtFechaEntrevista.setText("");
+        txtEntrevistadorEntrev.setText("");
+        txtObsEntrevista.setText("");
+        chkRecomiendaAyuda.setSelected(false);
+    }
+
+    private JPanel crearTabProlongaciones() {
+        JPanel p = new JPanel(new BorderLayout(0, 12));
+        p.setBackground(AppColors.PANEL);
+        p.setBorder(new EmptyBorder(16, 24, 16, 24));
+
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(AppColors.PANEL);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(AppColors.BORDE, 1, true),
+                new EmptyBorder(12, 16, 12, 16)));
+
+        txtFechaProlongacion = UIFactory.crearCampoFecha();
+        txtObsProlongacion = new JTextField();
+        txtObsProlongacion.putClientProperty("JTextField.placeholderText", "Motivo o nota de la prolongación");
+
+        JPanel filas = new JPanel(new GridLayout(1, 2, 12, 0));
+        filas.setBackground(AppColors.PANEL);
+        filas.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        filas.add(campoConEtiqueta("Fecha prolongación (dd/mm/aaaa) *", txtFechaProlongacion));
+        filas.add(campoConEtiqueta("Observaciones", txtObsProlongacion));
+
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        btnRow.setBackground(AppColors.PANEL);
+        JButton btnConfirmar = UIFactory.crearBoton("+ Registrar prolongación", AppColors.PURPURA, Color.WHITE,
+                e -> confirmarProlongacion());
+        btnRow.add(btnConfirmar);
+
+        formPanel.add(filas);
+        formPanel.add(Box.createVerticalStrut(10));
+        formPanel.add(btnRow);
+
+        modeloProlongaciones = new DefaultTableModel(
+                new String[] { "Fecha", "Observaciones", "Registrado por" }, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        JTable tablaProlongaciones = new JTable(modeloProlongaciones);
+        configurarTabla(tablaProlongaciones);
+        JScrollPane scrollTabla = crearScrollTabla(tablaProlongaciones);
+
+        JLabel lblLista = new JLabel("Prolongaciones registradas");
+        lblLista.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblLista.setForeground(AppColors.TEXTO_GRIS);
+
+        panelPagProlongaciones.setOpaque(false);
+        JPanel centroPanel = new JPanel(new BorderLayout(0, 6));
+        centroPanel.setBackground(AppColors.PANEL);
+        centroPanel.add(lblLista, BorderLayout.NORTH);
+        centroPanel.add(scrollTabla, BorderLayout.CENTER);
+        centroPanel.add(panelPagProlongaciones, BorderLayout.SOUTH);
+
+        p.add(formPanel, BorderLayout.NORTH);
+        p.add(centroPanel, BorderLayout.CENTER);
+        return p;
+    }
+
+    private void confirmarProlongacion() {
+        String fechaStr = txtFechaProlongacion.getText();
+        if (fechaStr == null || fechaStr.contains("_") || fechaStr.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La fecha de prolongación es obligatoria.",
+                    "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (expediente == null || expediente.getId() == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Guarde el expediente primero antes de registrar prolongaciones.",
+                    "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        try {
+            ProlongacionAyuda prol = new ProlongacionAyuda();
+            prol.setFechaProlongacion(parseFecha(fechaStr));
+            prol.setObservaciones(txtObsProlongacion.getText().trim());
+            prol.setExpediente(expediente);
+            Usuario usuarioActual = SessionContext.getUsuarioActual();
+            if (usuarioActual != null)
+                prol.setRegistradoPor(usuarioActual);
+            expedienteController.guardarProlongacion(prol);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al registrar la prolongación:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        txtFechaProlongacion.setValue(null);
+        txtFechaProlongacion.setText("");
+        txtObsProlongacion.setText("");
+        cargarTablaProlongaciones();
+    }
+
+    private void cargarTablaProlongaciones() {
+        if (modeloProlongaciones == null || expediente == null || expediente.getId() == null) return;
+        pagProlongaciones.cargar(expedienteController.findProlongacionesByExpediente(expediente.getId()));
+        refrescarTablaProlongaciones();
+    }
+
+    private void refrescarTablaProlongaciones() {
+        modeloProlongaciones.setRowCount(0);
+        for (ProlongacionAyuda pr : pagProlongaciones.getPagina()) {
+            String registradoPor = "—";
+            try {
+                if (pr.getRegistradoPor() != null)
+                    registradoPor = nvl(pr.getRegistradoPor().getNombre());
+            } catch (Exception ignored) {}
+            modeloProlongaciones.addRow(new Object[] {
+                    pr.getFechaProlongacion() != null ? sdf.format(pr.getFechaProlongacion()) : "—",
+                    nvl(pr.getObservaciones()),
+                    registradoPor
+            });
+        }
+        actualizarPanelPaginacion(panelPagProlongaciones, pagProlongaciones, this::refrescarTablaProlongaciones);
+    }
+
+    /**
+     * Crea un panel con etiqueta superior y tabla de solo lectura.
+     * @param modelo      modelo de la tabla.
+     * @param descripcion texto de la etiqueta de encabezado.
+     * @return panel listo para usar en una pestaña.
+     */
     private JPanel crearTabTabla(DefaultTableModel modelo, String descripcion) {
         JPanel p = new JPanel(new BorderLayout(0, 8));
         p.setBackground(AppColors.PANEL);
@@ -1248,7 +2206,7 @@ public class FrmDetalleExpediente extends JDialog {
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(34);
         tabla.setShowVerticalLines(false);
-        tabla.setGridColor(new Color(243, 244, 246));
+        tabla.setGridColor(AppColors.GRID_TBL);
         tabla.setFocusable(false);
         tabla.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tabla.getTableHeader().setBackground(AppColors.HEADER_TBL);
@@ -1264,7 +2222,31 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ─── Barra inferior ───────────────────────────────────────────────────────
+    /**
+     * Aplica el estilo visual estándar (fuente, altura de fila, colores) a una tabla.
+     * @param rowHeight altura de cada fila en píxeles.
+     */
+    private void configurarTabla(JTable tabla, int rowHeight) {
+        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tabla.setRowHeight(rowHeight);
+        tabla.setShowVerticalLines(false);
+        tabla.setGridColor(AppColors.GRID_TBL);
+        tabla.setFocusable(false);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabla.getTableHeader().setBackground(AppColors.HEADER_TBL);
+        tabla.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
+        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
+    }
+
+    private void configurarTabla(JTable tabla) { configurarTabla(tabla, 34); }
+
+    private JScrollPane crearScrollTabla(JTable tabla) {
+        JScrollPane s = new JScrollPane(tabla);
+        s.setBorder(new LineBorder(AppColors.BORDE, 1, true));
+        s.getViewport().setBackground(AppColors.PANEL);
+        return s;
+    }
+
     private JPanel crearBarraInferior() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(AppColors.PANEL);
@@ -1281,9 +2263,7 @@ public class FrmDetalleExpediente extends JDialog {
         JButton btnGuardar = UIFactory.crearBotonDialog("Guardar", AppColors.PRIMARIO, Color.WHITE, e -> guardar());
 
         JButton btnProlong = UIFactory.crearBotonDialog("+ Prolongar ayuda", AppColors.PURPURA, Color.WHITE,
-                e -> JOptionPane.showMessageDialog(this,
-                        "La función de prolongación de ayuda estará disponible en la próxima versión.",
-                        "Próximamente", JOptionPane.INFORMATION_MESSAGE));
+                e -> tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1));
         btnProlong.setVisible(!esNuevo);
 
         derecha.add(btnGuardar);
@@ -1294,11 +2274,12 @@ public class FrmDetalleExpediente extends JDialog {
         return p;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // CARGA DE DATOS
-    // ═════════════════════════════════════════════════════════════════════════
+    /**
+     * Precarga combos (parroquias, enums) y, si el expediente no es null,
+     * llama a todos los métodos cargarTabla*() para llenar cada pestaña.
+     * Es seguro llamarlo con expediente null (modo nuevo).
+     */
     private void cargarDatos() {
-        // Poblar parroquias via controller
         for (Parroquia par : parroquiaController.findParroquiasDisponibles())
             cmbParroquia.addItem(par);
 
@@ -1339,9 +2320,7 @@ public class FrmDetalleExpediente extends JDialog {
             txtCondicionMigratoria.setText(nvl(p.getCondicionMigratoria()));
         }
 
-        // Campos de Expediente
-
-        // Validacion para agregar automaticamente el usuario de entrevistador
+        // En modo nuevo, precarga el entrevistador con el usuario en sesión
         if (esNuevo) {
             Usuario actual = SessionContext.getUsuarioActual();
             if (actual != null) {
@@ -1374,12 +2353,18 @@ public class FrmDetalleExpediente extends JDialog {
             }
         }
 
+        // Pre-llenar entrevistador con el usuario actual
+        Usuario usuarioActual = SessionContext.getUsuarioActual();
+        if (usuarioActual != null && txtEntrevistadorEntrev != null)
+            txtEntrevistadorEntrev.setText(usuarioActual.getNombre());
+
         cargarVivienda();
         cargarAdendum();
         cargarTablaFamilia();
         cargarTablaDocs();
         cargarTablaAsistencia();
         cargarTablaEntrevistas();
+        cargarTablaProlongaciones();
     }
 
     private void cargarVivienda() {
@@ -1408,69 +2393,73 @@ public class FrmDetalleExpediente extends JDialog {
     }
 
     private void cargarTablaFamilia() {
-        if (expediente == null || expediente.getId() == null)
-            return;
+        if (expediente == null || expediente.getId() == null) return;
+        pagFamilia.cargar(expedienteController.findMiembrosByExpediente(expediente.getId()));
+        refrescarTablaFamilia();
+    }
+
+    private void refrescarTablaFamilia() {
         modeloFamilia.setRowCount(0);
         listaMiembros.clear();
-        for (MiembroFamiliar m : expedienteController.findMiembrosByExpediente(expediente.getId())) {
+        for (MiembroFamiliar m : pagFamilia.getPagina()) {
             listaMiembros.add(m);
-            String nombre = "—";
-            String cedula = "—";
+            String nombre = "—", cedula = "—";
             try {
                 if (m.getPersona() != null) {
                     nombre = nvl(m.getPersona().getNombres()) + " " + nvl(m.getPersona().getApellidos());
                     cedula = nvl(m.getPersona().getNumeroDocumento());
                 }
-            } catch (Exception ignored) { /* LazyInitializationException en entidad detached */ }
-            modeloFamilia.addRow(new Object[]{
-                    nombre,
-                    cedula,
-                    nvl(m.getRelacionTitular()),
+            } catch (Exception ignored) { /* LazyInitializationException */ }
+            modeloFamilia.addRow(new Object[] {
+                    nombre, cedula, nvl(m.getRelacionTitular()),
                     Boolean.TRUE.equals(m.getEsJefatura()) ? "Sí" : "No",
                     nvl(m.getOcupacion()),
                     m.getIngresoMensual() != null ? m.getIngresoMensual().toPlainString() : "0.00",
                     ""
             });
         }
+        actualizarPanelPaginacion(panelPagFamilia, pagFamilia, this::refrescarTablaFamilia);
     }
 
     private void cargarTablaDocs() {
-        if (expediente == null || expediente.getId() == null)
-            return;
-        modeloDocs.setRowCount(0);
-        for (DocumentoAdjunto d : expedienteController.findDocsByExpediente(expediente.getId())) {
-            modeloDocs.addRow(new Object[] {
-                    d.getTipo() != null ? d.getTipo().name() : "—",
-                    nvl(d.getDescripcion()),
-                    d.getFechaSubida() != null ? sdf.format(d.getFechaSubida()) : "—",
-                    Boolean.TRUE.equals(d.getEsDocFirmado()) ? "Sí" : "No"
-            });
+        if (panelListaDocs == null || expediente == null || expediente.getId() == null) return;
+        pagDocs.cargar(expedienteController.findDocsByExpediente(expediente.getId()));
+        refrescarListaDocs();
+    }
+
+    private void refrescarListaDocs() {
+        panelListaDocs.removeAll();
+        List<DocumentoAdjunto> pagina = pagDocs.getPagina();
+        if (pagina.isEmpty() && pagDocs.getTodos().isEmpty()) {
+            JLabel lblVacio = new JLabel("No hay documentos adjuntos.");
+            lblVacio.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            lblVacio.setForeground(AppColors.TEXTO_GRIS);
+            lblVacio.setBorder(new EmptyBorder(16, 12, 16, 12));
+            panelListaDocs.add(lblVacio);
+        } else {
+            for (DocumentoAdjunto d : pagina)
+                panelListaDocs.add(crearFilaDoc(d));
         }
+        panelListaDocs.revalidate();
+        panelListaDocs.repaint();
+        actualizarPanelPaginacion(panelPagDocs, pagDocs, this::refrescarListaDocs);
     }
 
     private void cargarTablaAsistencia() {
-        if (expediente == null || expediente.getId() == null)
-            return;
-        modeloAsistencia.setRowCount(0);
-        for (AsistenciaSolicitada a : expedienteController.findAsistenciasByExpediente(expediente.getId())) {
-            modeloAsistencia.addRow(new Object[] {
-                    a.getTipoAsistencia() != null ? a.getTipoAsistencia().name().replace("_", " ") : "—",
-                    nvl(a.getModalidad()),
-                    nvl(a.getFrecuencia()),
-                    nvl(a.getDuracion()),
-                    a.getValor() != null ? a.getValor().toPlainString() : "—"
-            });
-        }
+        recargarListaAsistencias();
     }
 
     private void cargarTablaEntrevistas() {
-        if (expediente == null || expediente.getId() == null)
-            return;
+        if (expediente == null || expediente.getId() == null) return;
+        pagEntrevistas.cargar(expedienteController.findEntrevistasByExpediente(expediente.getId()));
+        refrescarTablaEntrevistas();
+    }
+
+    private void refrescarTablaEntrevistas() {
         modeloEntrevistas.setRowCount(0);
-        for (Entrevista e : expedienteController.findEntrevistasByExpediente(expediente.getId())) {
+        for (Entrevista e : pagEntrevistas.getPagina()) {
             String obs = nvl(e.getObservaciones());
-            if (obs.length() > 60)
-                obs = obs.substring(0, 57) + "...";
+            if (obs.length() > 60) obs = obs.substring(0, 57) + "...";
             modeloEntrevistas.addRow(new Object[] {
                     e.getFecha() != null ? sdf.format(e.getFecha()) : "—",
                     nvl(e.getEntrevistador()),
@@ -1478,11 +2467,15 @@ public class FrmDetalleExpediente extends JDialog {
                     obs
             });
         }
+        actualizarPanelPaginacion(panelPagEntrevistas, pagEntrevistas, this::refrescarTablaEntrevistas);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // GUARDAR
-    // ═════════════════════════════════════════════════════════════════════════
+    /**
+     * Guarda el expediente.
+     * Pasos: valida campos obligatorios, verifica en modo nuevo que no exista otro
+     * expediente con el mismo número de documento, crea o actualiza Persona y Expediente
+     * en una sola transacción, recalcula la etapa, desbloquea las pestañas y llama onGuardado.
+     */
     private void guardar() {
         // 1. Validación básica
         if (txtNombres.getText().trim().isEmpty() || txtApellidos.getText().trim().isEmpty()) {
@@ -1504,6 +2497,19 @@ public class FrmDetalleExpediente extends JDialog {
         try {
             // 2. Buscar o crear Persona
             String numDoc = txtNumeroDoc.getText().trim();
+
+            // En modo nuevo, verifica que no exista otro expediente con el mismo número de documento
+            if (esNuevo) {
+                Expediente existente = expedienteController.findByNumeroFicha(
+                        expedienteController.generarNumeroFicha(numDoc));
+                if (existente != null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Ya existe un expediente registrado para este número de documento.\nFicha: " + existente.getNumeroFicha(),
+                            "Duplicado detectado", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+
             Persona titular = expedienteController.findPersonaByNumeroDocumento(numDoc);
             if (titular == null)
                 titular = new Persona();
@@ -1524,8 +2530,6 @@ public class FrmDetalleExpediente extends JDialog {
             titular.setTieneSeguro(chkTieneSeguro.isSelected());
             titular.setCondicionMigratoria(txtCondicionMigratoria.getText().trim());
             titular.setFechaNacimiento(parseFecha(txtFechaNac.getText()));
-            expedienteController.guardarPersona(titular);
-
             // 3. Crear o actualizar Expediente
             boolean wasNuevo = esNuevo || (expediente == null);
             if (wasNuevo) {
@@ -1534,7 +2538,6 @@ public class FrmDetalleExpediente extends JDialog {
                 expediente.setEtapaActual(EtapaExpediente.REGISTRO);
             }
 
-            expediente.setTitular(titular);
             expediente.setParroquia((Parroquia) cmbParroquia.getSelectedItem());
             expediente.setEstado((EstadoExpediente) cmbEstado.getSelectedItem());
             expediente.setEntrevistador(txtEntrevistador.getText().trim());
@@ -1543,7 +2546,13 @@ public class FrmDetalleExpediente extends JDialog {
             expediente.setObservaciones(txtObservaciones.getText().trim());
             String marcador = (String) cmbColorMarcador.getSelectedItem();
             expediente.setColorMarcador("NINGUNO".equals(marcador) ? null : marcador);
-            expedienteController.guardarExpediente(expediente);
+
+            // Persona + Expediente en una sola transacción atómica
+            expedienteController.guardarTitularYExpediente(titular, expediente);
+            EtapaExpediente etapaAntes = expediente.getEtapaActual();
+            actualizarEtapaActual();
+            if (expediente.getEtapaActual() != etapaAntes)
+                expedienteController.guardarExpediente(expediente);
 
             // 4. Guardar Vivienda si hay datos
             if (expediente.getId() != null) {
@@ -1576,6 +2585,7 @@ public class FrmDetalleExpediente extends JDialog {
 
             // 6. Post-guardado
             actualizarTitulo();
+            actualizarBarraProgreso();
             aplicarModoAcceso();
             if (onGuardado != null)
                 onGuardado.run();
@@ -1591,9 +2601,6 @@ public class FrmDetalleExpediente extends JDialog {
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // HELPERS
-    // ═════════════════════════════════════════════════════════════════════════
     private void actualizarTitulo() {
         if (expediente == null)
             return;
@@ -1603,6 +2610,73 @@ public class FrmDetalleExpediente extends JDialog {
             lblTituloPrincipal.setText(titulo);
     }
 
+    /**
+     * Guarda la etapa calculada en expediente.etapaActual y refresca la barra de progreso.
+     * No hace nada si el expediente es null.
+     */
+    private void actualizarEtapaActual() {
+        if (expediente == null)
+            return;
+        EtapaExpediente etapaActual = expediente.getEtapaActual();
+        if (etapaActual == null)
+            etapaActual = EtapaExpediente.REGISTRO;
+
+        // Solo avanza, nunca retrocede
+        EtapaExpediente calculada = calcularEtapa();
+        if (calculada.ordinal() > etapaActual.ordinal())
+            expediente.setEtapaActual(calculada);
+    }
+
+    /**
+     * Determina la etapa más avanzada alcanzada por el expediente inspeccionando
+     * qué secciones tienen datos, de mayor a menor:
+     * entrevistas > doc CONSENTIMIENTO > cualquier doc > gastos > vivienda > familia > REGISTRO.
+     * @return la etapa calculada; nunca null.
+     */
+    private EtapaExpediente calcularEtapa() {
+        if (expediente == null || expediente.getId() == null)
+            return EtapaExpediente.REGISTRO;
+        Long id = expediente.getId();
+
+        boolean tieneEntrevistas = !expedienteController.findEntrevistasByExpediente(id).isEmpty();
+        if (tieneEntrevistas)
+            return EtapaExpediente.EVALUACION;
+
+        List<DocumentoAdjunto> docs = expedienteController.findDocsByExpediente(id);
+        boolean tieneConsentimiento = docs.stream().anyMatch(
+                d -> d.getTipo() != null && TipoDocumentoAdjunto.CONSENTIMIENTO.equals(d.getTipo()));
+        if (tieneConsentimiento)
+            return EtapaExpediente.CONSENTIMIENTO;
+        if (!docs.isEmpty())
+            return EtapaExpediente.DOCUMENTOS;
+
+        boolean tieneGastos = adendumActual != null &&
+                !expedienteController.findGastosByAdendum(adendumActual.getId()).isEmpty();
+        if (tieneGastos)
+            return EtapaExpediente.GASTOS;
+
+        if (viviendaActual != null)
+            return EtapaExpediente.VIVIENDA;
+
+        if (!expedienteController.findMiembrosByExpediente(id).isEmpty())
+            return EtapaExpediente.FAMILIA;
+
+        return EtapaExpediente.REGISTRO;
+    }
+
+    private void actualizarBarraProgreso() {
+        if (panelBarraProgreso == null || expediente == null)
+            return;
+        EtapaExpediente etapaActual = expediente.getEtapaActual() != null
+                ? expediente.getEtapaActual()
+                : EtapaExpediente.REGISTRO;
+        panelBarraProgreso.setIdx(etapaActual.ordinal());
+    }
+
+    /**
+     * Bloquea las pestañas 1 a 7 mientras el expediente no tenga ID (aún no persistido).
+     * Pone un tooltip en cada pestaña bloqueada explicando por qué no está disponible.
+     */
     private void aplicarModoAcceso() {
         if (tabbedPane == null)
             return;
@@ -1657,6 +2731,13 @@ public class FrmDetalleExpediente extends JDialog {
         return s != null ? s : "";
     }
 
+    /**
+     * Intenta parsear el texto como fecha con formato dd/MM/yyyy.
+     * Devuelve null si el texto está vacío, contiene guiones bajos del enmascaramiento
+     * o no es una fecha válida. No lanza excepción.
+     * @param texto texto a parsear.
+     * @return la fecha parseada o null.
+     */
     private Date parseFecha(String texto) {
         if (texto == null || texto.trim().isEmpty() || texto.contains("_"))
             return null;
@@ -1664,6 +2745,129 @@ public class FrmDetalleExpediente extends JDialog {
             return sdf.parse(texto.trim());
         } catch (ParseException e) {
             return null;
+        }
+    }
+
+    /**
+     * Paginador genérico en memoria.
+     * Mantiene la lista completa y un índice de página.
+     * getPagina() devuelve los 20 ítems de la página actual.
+     * Los datos se cargan con cargar(List) y no se consulta la BD directamente.
+     */
+    private static class Paginador<T> {
+        private static final int TAMANO = 20;
+        private List<T> datos = Collections.emptyList();
+        private int pagina = 0;
+
+        void cargar(List<T> todos) { datos = todos != null ? todos : Collections.emptyList(); pagina = 0; }
+        List<T> getPagina() {
+            int desde = pagina * TAMANO;
+            int hasta = Math.min(desde + TAMANO, datos.size());
+            return desde < datos.size() ? datos.subList(desde, hasta) : Collections.emptyList();
+        }
+        List<T> getTodos() { return Collections.unmodifiableList(datos); }
+        boolean hayAnterior()   { return pagina > 0; }
+        boolean haySiguiente()  { return (pagina + 1) * TAMANO < datos.size(); }
+        void anterior()         { if (hayAnterior()) pagina--; }
+        void siguiente()        { if (haySiguiente()) pagina++; }
+        boolean necesitaPaginacion() { return datos.size() > TAMANO; }
+        String etiqueta() {
+            int total = Math.max(1, (int) Math.ceil(datos.size() / (double) TAMANO));
+            return "Página " + (pagina + 1) + " de " + total;
+        }
+    }
+
+    private void actualizarPanelPaginacion(JPanel panel, Paginador<?> pag, Runnable refresh) {
+        panel.removeAll();
+        if (pag.necesitaPaginacion()) {
+            JButton btnAnt = new JButton("< Anterior");
+            JButton btnSig = new JButton("Siguiente >");
+            JLabel lblPag  = new JLabel(pag.etiqueta());
+            Font f = new Font("Segoe UI", Font.PLAIN, 11);
+            btnAnt.setFont(f); btnSig.setFont(f);
+            lblPag.setFont(f); lblPag.setForeground(AppColors.TEXTO_GRIS);
+            btnAnt.setEnabled(pag.hayAnterior());
+            btnSig.setEnabled(pag.haySiguiente());
+            btnAnt.addActionListener(e -> { pag.anterior(); refresh.run(); });
+            btnSig.addActionListener(e -> { pag.siguiente(); refresh.run(); });
+            panel.add(btnAnt); panel.add(lblPag); panel.add(btnSig);
+        }
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    /**
+     * Panel que dibuja el progreso de etapas del expediente.
+     * Un círculo por etapa: verde = completada, azul (más grande) = actual, gris = pendiente.
+     * La etapa actual muestra su nombre debajo del círculo.
+     */
+    private static class BarraProgresoPanel extends JPanel {
+        private int idx;
+
+        BarraProgresoPanel(int idx) {
+            this.idx = idx;
+            setOpaque(false);
+            setPreferredSize(new Dimension(0, 38));
+        }
+
+        void setIdx(int idx) {
+            this.idx = idx;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            EtapaExpediente[] etapas = EtapaExpediente.values();
+            int n = etapas.length;
+            int w = getWidth();
+            int cy = 12; // centro Y del rail y círculos
+            int r = 5; // radio etapas normales
+            int rAct = 7; // radio etapa actual
+            int step = w / (n + 1);
+
+            // Rail completo (gris)
+            g2.setColor(AppColors.HEADER_TBL);
+            g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.drawLine(step, cy, w - step, cy);
+
+            // Segmento completado (verde)
+            if (idx > 0) {
+                g2.setColor(AppColors.VERDE_BG);
+                g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.drawLine(step, cy, step * (idx + 1), cy);
+            }
+
+            // Círculos y etiqueta de la etapa actual
+            for (int i = 0; i < n; i++) {
+                int cx = step * (i + 1);
+                if (i < idx) {
+                    g2.setColor(AppColors.VERDE_BG);
+                    g2.fillOval(cx - r, cy - r, r * 2, r * 2);
+                    g2.setColor(AppColors.VERDE_FG);
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.drawOval(cx - r, cy - r, r * 2, r * 2);
+                } else if (i == idx) {
+                    g2.setColor(AppColors.PRIMARIO);
+                    g2.fillOval(cx - rAct, cy - rAct, rAct * 2, rAct * 2);
+                    // Nombre de la etapa actual debajo del círculo
+                    String nombre = etapas[i].getDisplay();
+                    g2.setFont(new Font("Segoe UI", Font.BOLD, 9));
+                    FontMetrics fm = g2.getFontMetrics();
+                    g2.setColor(AppColors.TEXTO);
+                    g2.drawString(nombre, cx - fm.stringWidth(nombre) / 2, cy + rAct + fm.getAscent() + 1);
+                } else {
+                    g2.setColor(AppColors.HEADER_TBL);
+                    g2.fillOval(cx - r, cy - r, r * 2, r * 2);
+                    g2.setColor(AppColors.TEXTO_GRIS);
+                    g2.setStroke(new BasicStroke(1f));
+                    g2.drawOval(cx - r, cy - r, r * 2, r * 2);
+                }
+            }
+            g2.dispose();
         }
     }
 }

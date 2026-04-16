@@ -2,6 +2,7 @@ package com.ulatina.gestion.gui;
 
 import com.ulatina.gestion.controller.ExpedienteController;
 import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.Usuario;
 import com.ulatina.gestion.model.enums.RolUsuario;
 import com.ulatina.gestion.util.JPAUtil;
@@ -125,7 +126,6 @@ public class FrmDashboard extends JFrame {
         sb.add(bCons);
         sb.add(Box.createVerticalGlue());
 
-
         bAdmin.addActionListener(e -> {
             activar(bAdmin);
             mostrarPanelAdministrativo();
@@ -133,7 +133,7 @@ public class FrmDashboard extends JFrame {
         sb.add(bAdmin);
 
         JButton bCerrar = navBtn("  Cerrar sesión");
-        bCerrar.setForeground(new Color(0xFCA5A5));
+        bCerrar.setForeground(AppColors.ROJO_LIGHT);
         bCerrar.addActionListener(e -> cerrarSesion());
         sb.add(bCerrar);
         sb.add(Box.createVerticalStrut(16));
@@ -144,7 +144,8 @@ public class FrmDashboard extends JFrame {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "¿Desea cerrar la sesión?", "Cerrar sesión",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (confirm != JOptionPane.YES_OPTION) return;
+        if (confirm != JOptionPane.YES_OPTION)
+            return;
         SessionContext.cerrarSesion();
         SwingUtilities.invokeLater(() -> {
             new FrmLogin().setVisible(true);
@@ -361,16 +362,7 @@ public class FrmDashboard extends JFrame {
         lDesc.setForeground(AppColors.TEXTO_GRIS);
         lDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton btnAbr = new JButton("Abrir →");
-        btnAbr.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btnAbr.setForeground(AppColors.AZUL);
-        btnAbr.setBackground(null);
-        btnAbr.setBorderPainted(false);
-        btnAbr.setContentAreaFilled(false);
-        btnAbr.setFocusPainted(false);
-        btnAbr.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnAbr.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btnAbr.addActionListener(e -> accion.run());
+        JButton btnAbr = UIFactory.crearBotonLink("Abrir \u2192", e -> accion.run());
 
         c.add(icono);
         c.add(Box.createVerticalStrut(10));
