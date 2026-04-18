@@ -22,6 +22,7 @@ public class TabDocs {
 
   private final ExpedienteContext ctx;
 
+  private JPanel panelSubidaDoc;
   private JPanel panelListaDocs;
   private File archivoSeleccionado;
   private JLabel lblArchivoNombre;
@@ -45,7 +46,8 @@ public class TabDocs {
     JPanel p = new JPanel(new BorderLayout(0, 12));
     p.setBackground(AppColors.PANEL);
     p.setBorder(new EmptyBorder(16, 24, 16, 24));
-    p.add(crearPanelSubidaDoc(), BorderLayout.NORTH);
+    panelSubidaDoc = crearPanelSubidaDoc();
+    p.add(panelSubidaDoc, BorderLayout.NORTH);
 
     panelListaDocs = new JPanel();
     panelListaDocs.setLayout(new BoxLayout(panelListaDocs, BoxLayout.Y_AXIS));
@@ -207,6 +209,11 @@ public class TabDocs {
     p.add(Box.createVerticalStrut(10));
     p.add(btnRow);
     return p;
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    if (!readOnly) return;
+    if (panelSubidaDoc != null) panelSubidaDoc.setVisible(false);
   }
 
   public void cargarDatos() {

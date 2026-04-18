@@ -327,6 +327,12 @@ public class TabFamilia {
     return contenedor;
   }
 
+  public void setReadOnly(boolean readOnly) {
+    if (!readOnly) return;
+    if (tablaFamilia != null)
+      tablaFamilia.removeColumn(tablaFamilia.getColumnModel().getColumn(6));
+  }
+
   public void cargarDatos() {
     Expediente exp = ctx.getExpediente();
     if (exp == null || exp.getId() == null) return;

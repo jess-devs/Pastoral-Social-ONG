@@ -15,6 +15,7 @@ public class TabAsistencia {
 
   private final ExpedienteContext ctx;
 
+  private JPanel panelFormAsistencia;
   private JPanel panelListaAsistencias;
   private JComboBox<TipoAsistencia> cmbTipoAsistencia;
   private JTextField txtModalidadAsist;
@@ -38,7 +39,8 @@ public class TabAsistencia {
     JPanel p = new JPanel(new BorderLayout(0, 12));
     p.setBackground(AppColors.PANEL);
     p.setBorder(new EmptyBorder(16, 24, 16, 24));
-    p.add(crearPanelFormAsistencia(), BorderLayout.NORTH);
+    panelFormAsistencia = crearPanelFormAsistencia();
+    p.add(panelFormAsistencia, BorderLayout.NORTH);
 
     panelListaAsistencias = new JPanel();
     panelListaAsistencias.setLayout(
@@ -129,6 +131,11 @@ public class TabAsistencia {
     p.add(Box.createVerticalStrut(10));
     p.add(btnRow);
     return p;
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    if (!readOnly) return;
+    if (panelFormAsistencia != null) panelFormAsistencia.setVisible(false);
   }
 
   public void cargarDatos() {

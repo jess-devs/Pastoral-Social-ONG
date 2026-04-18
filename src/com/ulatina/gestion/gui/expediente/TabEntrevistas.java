@@ -14,6 +14,7 @@ public class TabEntrevistas {
 
   private final ExpedienteContext ctx;
 
+  private JPanel formPanel;
   private DefaultTableModel modeloEntrevistas;
   private JFormattedTextField txtFechaEntrevista;
   private JTextField txtEntrevistadorEntrev;
@@ -34,7 +35,7 @@ public class TabEntrevistas {
     p.setBackground(AppColors.PANEL);
     p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
-    JPanel formPanel = new JPanel();
+    formPanel = new JPanel();
     formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
     formPanel.setBackground(AppColors.PANEL);
     formPanel.setBorder(
@@ -238,6 +239,11 @@ public class TabEntrevistas {
     }
     limpiarFormularioEntrevista();
     cargarDatos();
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    if (!readOnly) return;
+    if (formPanel != null) formPanel.setVisible(false);
   }
 
   private void limpiarFormularioEntrevista() {

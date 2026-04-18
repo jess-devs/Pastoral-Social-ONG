@@ -21,6 +21,7 @@ public class TabAdendum implements TabConDatosGuardables {
 
   private final ExpedienteContext ctx;
 
+  private JPanel entradaPanel;
   private JTextArea txtAdendumObs;
   private DefaultTableModel modeloGastos;
   private JTable tablaGastos;
@@ -104,7 +105,7 @@ public class TabAdendum implements TabConDatosGuardables {
       e -> confirmarGasto()
     );
 
-    JPanel entradaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+    entradaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
     entradaPanel.setOpaque(false);
     entradaPanel.add(ctx.campoConEtiqueta("Categoría", cmbCatGasto));
     entradaPanel.add(ctx.campoConEtiqueta("Concepto", txtConceptoGasto));
@@ -212,6 +213,13 @@ public class TabAdendum implements TabConDatosGuardables {
     p.add(norte, BorderLayout.NORTH);
     p.add(gastosConTotal, BorderLayout.CENTER);
     return p;
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    if (!readOnly) return;
+    if (entradaPanel != null) entradaPanel.setVisible(false);
+    if (tablaGastos != null)
+      tablaGastos.removeColumn(tablaGastos.getColumnModel().getColumn(4));
   }
 
   public void cargarDatos() {

@@ -425,6 +425,12 @@ public class FrmDetalleExpediente extends JDialog {
         (expediente != null ? expediente.getNumeroFicha() : "")
     );
     aplicarReadOnly(getContentPane());
+    tabFamilia.setReadOnly(true);
+    tabAdendum.setReadOnly(true);
+    tabDocs.setReadOnly(true);
+    tabAsistencia.setReadOnly(true);
+    tabEntrevistas.setReadOnly(true);
+    tabProlongaciones.setReadOnly(true);
   }
 
   private void aplicarReadOnly(Container container) {
@@ -445,11 +451,19 @@ public class FrmDetalleExpediente extends JDialog {
           txt.startsWith("Agregar") ||
           txt.startsWith("Eliminar") ||
           txt.startsWith("Subir") ||
-          txt.startsWith("Buscar")
+          txt.startsWith("Buscar") ||
+          txt.startsWith("+") ||
+          txt.equals("Limpiar") ||
+          txt.equals("X") ||
+          txt.equals("Editar") ||
+          txt.equals("Seleccionar archivo...") ||
+          txt.equals("Crear nueva")
         ) {
           btn.setVisible(false);
         } else if (txt.equals("Cancelar")) {
           btn.setText("Cerrar");
+        } else if (txt.equals("Sí") || txt.equals("No")) {
+          btn.setEnabled(false);
         }
       }
       if (c instanceof Container) aplicarReadOnly((Container) c);

@@ -16,6 +16,7 @@ public class TabProlongaciones {
 
   private final ExpedienteContext ctx;
 
+  private JPanel formPanel;
   private DefaultTableModel modeloProlongaciones;
   private JFormattedTextField txtFechaProlongacion;
   private JTextField txtObsProlongacion;
@@ -35,7 +36,7 @@ public class TabProlongaciones {
     p.setBackground(AppColors.PANEL);
     p.setBorder(new EmptyBorder(16, 24, 16, 24));
 
-    JPanel formPanel = new JPanel();
+    formPanel = new JPanel();
     formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
     formPanel.setBackground(AppColors.PANEL);
     formPanel.setBorder(
@@ -104,6 +105,11 @@ public class TabProlongaciones {
     p.add(formPanel, BorderLayout.NORTH);
     p.add(centroPanel, BorderLayout.CENTER);
     return p;
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    if (!readOnly) return;
+    if (formPanel != null) formPanel.setVisible(false);
   }
 
   public void cargarDatos() {
