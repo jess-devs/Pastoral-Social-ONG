@@ -5,21 +5,40 @@ import com.ulatina.gestion.model.enums.EtapaExpediente;
 import java.awt.*;
 import javax.swing.*;
 
+/**
+ * Panel que dibuja la barra de progreso del expediente como una línea de círculos conectados.
+ * Cada círculo representa una etapa de EtapaExpediente.
+ * Las etapas completadas se pintan en verde, la activa en azul primario y las pendientes en gris.
+ */
 public class BarraProgresoPanel extends JPanel {
 
+  /** Índice de la etapa activa según EtapaExpediente.ordinal(). */
   private int idx;
 
+  /**
+   * Crea el panel inicializado en la etapa indicada.
+   * @param idx índice de la etapa activa (valor de EtapaExpediente.ordinal())
+   */
   public BarraProgresoPanel(int idx) {
     this.idx = idx;
     setOpaque(false);
     setPreferredSize(new Dimension(0, 38));
   }
 
+  /**
+   * Actualiza la etapa activa y fuerza un repintado inmediato.
+   * @param idx nuevo índice de etapa activa
+   */
   public void setIdx(int idx) {
     this.idx = idx;
     repaint();
   }
 
+  /**
+   * Dibuja la línea base, la línea de progreso y los nodos de cada etapa con antialiasing.
+   * El nodo activo es más grande e incluye el nombre de la etapa debajo.
+   * @param g contexto gráfico proporcionado por Swing
+   */
   @Override
   protected void paintComponent(Graphics g) {
     super.paintComponent(g);

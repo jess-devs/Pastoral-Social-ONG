@@ -10,31 +10,68 @@ import java.math.BigDecimal;
 import javax.swing.*;
 import javax.swing.border.*;
 
-/** Tab 6 — Asistencias solicitadas por el expediente. */
+/**
+ * Pestaña 6 — Asistencias solicitadas para el expediente.
+ * Muestra la lista de asistencias como paneles personalizados con badges de color
+ * por tipo. Cada fila tiene botones de editar y eliminar inline.
+ */
 public class TabAsistencia {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Panel del formulario de entrada de asistencias; se oculta en modo solo lectura. */
   private JPanel panelFormAsistencia;
+
+  /** Panel vertical que contiene los paneles de cada asistencia registrada. */
   private JPanel panelListaAsistencias;
+
+  /** Tipo de asistencia solicitada (alimentos, medicamentos, etc.). */
   private JComboBox<TipoAsistencia> cmbTipoAsistencia;
+
+  /** Campo requerido: modalidad o forma de entrega de la asistencia (ej: "Entrega directa"). */
   private JTextField txtModalidadAsist;
+
+  /** Frecuencia con la que se entrega la asistencia (ej: "Quincenal"). */
   private JTextField txtFrecuenciaAsist;
+
+  /** Duración estimada de la asistencia (ej: "6 meses"). */
   private JTextField txtDuracionAsist;
+
+  /** Valor monetario de la asistencia en colones. */
   private JTextField txtValorAsist;
+
+  /** Botón principal del formulario; cambia de texto entre "Agregar" y "Guardar cambios". */
   private JButton btnConfirmarAsist;
+
+  /** Asistencia que se está editando; null cuando se está creando una nueva. */
   private AsistenciaSolicitada asistenciaEnEdicion = null;
 
+  /** Paginador de las asistencias del expediente. */
   private final Paginador<AsistenciaSolicitada> pagAsistencias =
     new Paginador<>();
+
+  /** Panel de controles de paginación para la lista de asistencias. */
   private final JPanel panelPagAsistencias = new JPanel(
     new FlowLayout(FlowLayout.CENTER, 8, 2)
   );
 
+  /**
+   * Crea la pestaña con el contexto compartido.
+   *
+   * @param ctx contexto compartido del diálogo
+   */
   public TabAsistencia(ExpedienteContext ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * Construye y devuelve el panel principal de la pestaña.
+   * La zona norte contiene el formulario de entrada.
+   * La zona central contiene el scroll con la lista de asistencias y los controles de paginación.
+   *
+   * @return JPanel con la estructura completa de la pestaña
+   */
   public JPanel construir() {
     JPanel p = new JPanel(new BorderLayout(0, 12));
     p.setBackground(AppColors.PANEL);
@@ -71,6 +108,12 @@ public class TabAsistencia {
     return p;
   }
 
+  /**
+   * Construye el formulario de entrada de asistencias con los campos tipo, modalidad,
+   * frecuencia, duración y valor en una fila de grid, y los botones Agregar y Limpiar.
+   *
+   * @return JPanel con el formulario de entrada
+   */
   private JPanel crearPanelFormAsistencia() {
     JPanel p = new JPanel();
     p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -133,11 +176,20 @@ public class TabAsistencia {
     return p;
   }
 
+  /**
+   * Activa el modo de solo lectura ocultando el formulario de entrada.
+   *
+   * @param readOnly true para activar el modo consulta; false no hace nada
+   */
   public void setReadOnly(boolean readOnly) {
     if (!readOnly) return;
     if (panelFormAsistencia != null) panelFormAsistencia.setVisible(false);
   }
 
+  /**
+   * Carga las asistencias del expediente y refresca la lista.
+   * Limpia el panel si el expediente no tiene ID todavía.
+   */
   public void cargarDatos() {
     Expediente exp = ctx.getExpediente();
     if (exp == null || exp.getId() == null) {
@@ -154,6 +206,9 @@ public class TabAsistencia {
     refrescarListaAsistencias();
   }
 
+  /**
+   * Repopula el panel de lista con la página actual del paginador y actualiza los controles.
+   */
   private void refrescarListaAsistencias() {
     panelListaAsistencias.removeAll();
     for (AsistenciaSolicitada a : pagAsistencias.getPagina())
@@ -167,6 +222,11 @@ public class TabAsistencia {
     );
   }
 
+  /**
+   * Valida que la modalidad no esté vacía y persiste la asistencia.
+   * Requiere que el expediente esté guardado.
+   * Al finalizar limpia el formulario y recarga la lista.
+   */
   private void confirmarAsistencia() {
     String modalidad = txtModalidadAsist.getText().trim();
     if (modalidad.isEmpty()) {
@@ -219,8 +279,7 @@ public class TabAsistencia {
     } catch (Exception ex) {
       JOptionPane.showMessageDialog(
         ctx.getOwner(),
-        "Error al guardar la asistencia:" +
-                "\n" + ex.getMessage(),
+        "Error al guardar la asistencia:" + "\n" + ex.getMessage(),
         "Error",
         JOptionPane.ERROR_MESSAGE
       );
@@ -230,6 +289,9 @@ public class TabAsistencia {
     cargarDatos();
   }
 
+  /**
+   * Limpia los campos del formulario y restaura el botón al texto "Agregar asistencia".
+   */
   private void limpiarFormularioAsistencia() {
     asistenciaEnEdicion = null;
     cmbTipoAsistencia.setSelectedIndex(0);
@@ -237,10 +299,17 @@ public class TabAsistencia {
     txtFrecuenciaAsist.setText("");
     txtDuracionAsist.setText("");
     txtValorAsist.setText("");
-    btnConfirmarAsist.setText("+ Agregar asistencia");
+    btnConfirmarAsist.setText("Agregar asistencia");
     btnConfirmarAsist.setBackground(AppColors.PRIMARIO);
   }
 
+  /**
+   * Construye el panel visual de una asistencia con badge de tipo, modalidad,
+   * metadatos (frecuencia, duración, valor) y botones de editar y eliminar.
+   *
+   * @param a asistencia a representar
+   * @return JPanel con el diseño de tarjeta de la asistencia
+   */
   private JPanel crearFilaAsistencia(AsistenciaSolicitada a) {
     JPanel fila = new JPanel(new BorderLayout(8, 0));
     fila.setBackground(AppColors.PANEL);
@@ -344,6 +413,13 @@ public class TabAsistencia {
     return fila;
   }
 
+  /**
+   * Crea un badge de color específico según el tipo de asistencia.
+   * Cada tipo tiene un par de colores de fondo y texto predefinidos.
+   *
+   * @param tipo tipo de asistencia; si es null se usa OTRO
+   * @return JLabel badge con el nombre del tipo y los colores correspondientes
+   */
   private JLabel crearBadgeAsistencia(TipoAsistencia tipo) {
     Color bg, fg;
     switch (tipo != null ? tipo : TipoAsistencia.OTRO) {

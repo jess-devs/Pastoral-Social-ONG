@@ -10,20 +10,43 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-/** Tab 3 — Datos de la vivienda del titular. */
+/**
+ * Pestaña 3 — Datos de la vivienda del titular del expediente.
+ * Todos los campos son opcionales; validar() no lanza excepción.
+ * aplicarAlModelo() crea el objeto Vivienda si no existe y el formulario tiene datos.
+ */
 public class TabVivienda implements TabConDatosGuardables {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Dirección de la vivienda del titular. */
   private JTextField txtDirVivienda;
+
+  /** Tipo de vivienda (casa, apartamento, cuarto, etc.). */
   private JComboBox<TipoVivienda> cmbTipoVivienda;
+
+  /** Forma de tenencia de la vivienda (propia, alquilada, prestada, etc.). */
   private JComboBox<TenenciaVivienda> cmbTenencia;
+
+  /** Condición estructural de la vivienda (buena, regular, mala, etc.). */
   private JComboBox<CondicionVivienda> cmbCondicion;
 
+  /**
+   * Crea la pestaña con el contexto compartido.
+   *
+   * @param ctx contexto compartido del diálogo
+   */
   public TabVivienda(ExpedienteContext ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * Construye y devuelve el panel con el formulario de vivienda.
+   * Incluye dirección (ancho completo), tipo y tenencia en la misma fila, y condición.
+   *
+   * @return JPanel con el formulario de vivienda
+   */
   public JPanel construir() {
     JPanel p = new JPanel(new GridBagLayout());
     p.setBackground(AppColors.PANEL);
@@ -95,6 +118,10 @@ public class TabVivienda implements TabConDatosGuardables {
     return p;
   }
 
+  /**
+   * Carga los datos de vivienda desde el expediente actual en el contexto.
+   * No hace nada si el expediente no tiene ID (todavía no se ha guardado).
+   */
   public void cargarDatos() {
     Expediente exp = ctx.getExpediente();
     if (exp == null || exp.getId() == null) return;
@@ -112,13 +139,19 @@ public class TabVivienda implements TabConDatosGuardables {
     }
   }
 
-  // ─── TabConDatosGuardables ────────────────────────────────────────────────
-
+  /**
+   * La vivienda es opcional; no lanza excepción.
+   */
   @Override
   public void validar() throws IllegalStateException {
     /* vivienda es opcional */
   }
 
+  /**
+   * Sincroniza los campos de UI con el objeto Vivienda del contexto.
+   * Si no hay vivienda y la dirección está vacía con el tipo por defecto, no hace nada.
+   * Si el expediente no tiene ID todavía, no hace nada.
+   */
   @Override
   public void aplicarAlModelo() {
     String dir = txtDirVivienda.getText().trim();
@@ -137,8 +170,18 @@ public class TabVivienda implements TabConDatosGuardables {
     v.setCondicion((CondicionVivienda) cmbCondicion.getSelectedItem());
   }
 
-  // ─── Helpers privados ────────────────────────────────────────────────────
-
+  /**
+   * Agrega dos pares etiqueta-campo en una misma fila del GridBagLayout.
+   *
+   * @param p    panel destino
+   * @param row  fila destino
+   * @param lc   constraints para etiquetas
+   * @param fc   constraints para campos
+   * @param lbl1 texto de la primera etiqueta
+   * @param c1   primer campo
+   * @param lbl2 texto de la segunda etiqueta
+   * @param c2   segundo campo
+   */
   private void agregarFila(
     JPanel p,
     int row,
@@ -163,6 +206,12 @@ public class TabVivienda implements TabConDatosGuardables {
     p.add(c2, fc);
   }
 
+  /**
+   * Crea una etiqueta con la fuente y el color estándar para los campos del formulario.
+   *
+   * @param texto texto de la etiqueta
+   * @return JLabel con Segoe UI 12pt en color TEXTO_GRIS
+   */
   private JLabel etiqueta(String texto) {
     JLabel l = new JLabel(texto);
     l.setFont(new Font("Segoe UI", Font.PLAIN, 12));

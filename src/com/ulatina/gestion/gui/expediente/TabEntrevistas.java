@@ -9,27 +9,58 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 
-/** Tab 7 — Entrevistas realizadas en el marco del expediente. */
+/**
+ * Pestaña 7 — Entrevistas realizadas en el marco del expediente.
+ * Los registros de entrevista son de solo lectura una vez guardados;
+ * no se permite editar entrevistas existentes, solo agregar nuevas.
+ */
 public class TabEntrevistas {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Panel del formulario de registro de entrevistas; se oculta en modo solo lectura. */
   private JPanel formPanel;
+
+  /** Modelo de datos de la tabla de entrevistas. */
   private DefaultTableModel modeloEntrevistas;
+
+  /** Campo requerido: fecha de la entrevista en formato dd/MM/yyyy. */
   private JFormattedTextField txtFechaEntrevista;
+
+  /** Campo requerido: nombre del profesional que realizó la entrevista. */
   private JTextField txtEntrevistadorEntrev;
+
+  /** Observaciones o notas del resultado de la entrevista. */
   private JTextArea txtObsEntrevista;
+
+  /** Indica si el entrevistador recomienda otorgar ayuda al beneficiario. */
   private JCheckBox chkRecomiendaAyuda;
 
+  /** Paginador de las entrevistas del expediente. */
   private final Paginador<Entrevista> pagEntrevistas = new Paginador<>();
+
+  /** Panel de controles de paginación para la tabla de entrevistas. */
   private final JPanel panelPagEntrevistas = new JPanel(
     new FlowLayout(FlowLayout.CENTER, 8, 2)
   );
 
+  /**
+   * Crea la pestaña con el contexto compartido.
+   *
+   * @param ctx contexto compartido del diálogo
+   */
   public TabEntrevistas(ExpedienteContext ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * Construye y devuelve el panel principal de la pestaña.
+   * La zona norte contiene el formulario de registro.
+   * La zona central contiene la tabla de entrevistas con controles de paginación.
+   *
+   * @return JPanel con la estructura completa de la pestaña
+   */
   public JPanel construir() {
     JPanel p = new JPanel(new BorderLayout(0, 12));
     p.setBackground(AppColors.PANEL);
@@ -150,6 +181,11 @@ public class TabEntrevistas {
     return p;
   }
 
+  /**
+   * Carga las entrevistas del expediente, refresca la tabla y rellena el campo
+   * de entrevistador con el nombre del usuario de sesión actual.
+   * No hace nada si el expediente aún no tiene ID.
+   */
   public void cargarDatos() {
     Expediente exp = ctx.getExpediente();
     if (exp == null || exp.getId() == null) return;
@@ -165,6 +201,11 @@ public class TabEntrevistas {
     ) txtEntrevistadorEntrev.setText(actual.getNombre());
   }
 
+  /**
+   * Repopula la tabla con la página actual del paginador.
+   * Las observaciones se truncan a 57 caracteres si son más largas.
+   * Actualiza los controles de paginación.
+   */
   private void refrescarTablaEntrevistas() {
     modeloEntrevistas.setRowCount(0);
     for (Entrevista e : pagEntrevistas.getPagina()) {
@@ -186,6 +227,11 @@ public class TabEntrevistas {
     );
   }
 
+  /**
+   * Valida los campos requeridos y persiste la entrevista.
+   * Requiere fecha válida, entrevistador no vacío y expediente con ID.
+   * Al finalizar limpia el formulario y recarga los datos.
+   */
   private void confirmarEntrevista() {
     String fechaStr = txtFechaEntrevista.getText();
     String entrevistador = txtEntrevistadorEntrev.getText().trim();
@@ -230,8 +276,7 @@ public class TabEntrevistas {
     } catch (Exception ex) {
       JOptionPane.showMessageDialog(
         ctx.getOwner(),
-        "Error al guardar la entrevista:" +
-                "\n" + ex.getMessage(),
+        "Error al guardar la entrevista:" + "\n" + ex.getMessage(),
         "Error",
         JOptionPane.ERROR_MESSAGE
       );
@@ -241,11 +286,19 @@ public class TabEntrevistas {
     cargarDatos();
   }
 
+  /**
+   * Activa el modo de solo lectura ocultando el formulario de registro.
+   *
+   * @param readOnly true para activar el modo consulta; false no hace nada
+   */
   public void setReadOnly(boolean readOnly) {
     if (!readOnly) return;
     if (formPanel != null) formPanel.setVisible(false);
   }
 
+  /**
+   * Limpia todos los campos del formulario de entrevista.
+   */
   private void limpiarFormularioEntrevista() {
     txtFechaEntrevista.setValue(null);
     txtFechaEntrevista.setText("");

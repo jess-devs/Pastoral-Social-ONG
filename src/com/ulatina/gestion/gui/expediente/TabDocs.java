@@ -17,31 +17,71 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.*;
 
-/** Tab 5 — Documentos adjuntos del expediente. */
+/**
+ * Pestaña 5 — Documentos adjuntos del expediente.
+ * Gestiona la carga de archivos al almacenamiento local mediante FileStorageUtil
+ * y el registro de sus metadatos (tipo, descripción, firma) en base de datos.
+ * El tamaño máximo permitido por archivo es 5 MB.
+ */
 public class TabDocs {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Panel del formulario de carga de documentos; se oculta en modo solo lectura. */
   private JPanel panelSubidaDoc;
+
+  /** Panel vertical que contiene los paneles de cada documento registrado. */
   private JPanel panelListaDocs;
+
+  /** Archivo seleccionado por el usuario mediante el JFileChooser; null si no hay selección. */
   private File archivoSeleccionado;
+
+  /** Muestra el nombre del archivo seleccionado o "Ningún archivo seleccionado". */
   private JLabel lblArchivoNombre;
+
+  /** Tipo de documento adjunto (cédula, pasaporte, consentimiento, receta, etc.). */
   private JComboBox<TipoDocumentoAdjunto> cmbTipoDocAdjunto;
+
+  /** Descripción opcional del documento. */
   private JTextField txtDescripcionDoc;
+
+  /** Indica si el documento es un consentimiento firmado; controla la visibilidad de panelFirmante. */
   private JCheckBox chkEsFirmado;
+
+  /** Panel con los campos de firmante; visible solo cuando chkEsFirmado está activo. */
   private JPanel panelFirmante;
+
+  /** Nombre de la persona que firmó el documento de consentimiento. */
   private JTextField txtNombreFirmante;
+
+  /** Fecha de la firma del documento en formato dd/MM/yyyy. */
   private JFormattedTextField txtFechaFirmaDoc;
 
+  /** Paginador de los documentos adjuntos del expediente. */
   private final Paginador<DocumentoAdjunto> pagDocs = new Paginador<>();
+
+  /** Panel de controles de paginación para la lista de documentos. */
   private final JPanel panelPagDocs = new JPanel(
     new FlowLayout(FlowLayout.CENTER, 8, 2)
   );
 
+  /**
+   * Crea la pestaña con el contexto compartido.
+   *
+   * @param ctx contexto compartido del diálogo
+   */
   public TabDocs(ExpedienteContext ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * Construye y devuelve el panel principal de la pestaña.
+   * La zona norte contiene el formulario de carga.
+   * La zona central contiene el scroll con la lista de documentos y los controles de paginación.
+   *
+   * @return JPanel con la estructura completa de la pestaña
+   */
   public JPanel construir() {
     JPanel p = new JPanel(new BorderLayout(0, 12));
     p.setBackground(AppColors.PANEL);
@@ -76,6 +116,12 @@ public class TabDocs {
     return p;
   }
 
+  /**
+   * Construye el formulario de carga de documentos: selector de archivo,
+   * tipo y descripción, checkbox de consentimiento firmado y campos de firmante.
+   *
+   * @return JPanel con el formulario de carga
+   */
   private JPanel crearPanelSubidaDoc() {
     JPanel p = new JPanel();
     p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -211,11 +257,20 @@ public class TabDocs {
     return p;
   }
 
+  /**
+   * Activa el modo de solo lectura ocultando el formulario de carga.
+   *
+   * @param readOnly true para activar el modo consulta; false no hace nada
+   */
   public void setReadOnly(boolean readOnly) {
     if (!readOnly) return;
     if (panelSubidaDoc != null) panelSubidaDoc.setVisible(false);
   }
 
+  /**
+   * Carga los documentos del expediente y refresca la lista.
+   * No hace nada si el expediente aún no tiene ID o si el panel no está inicializado.
+   */
   public void cargarDatos() {
     if (panelListaDocs == null) return;
     Expediente exp = ctx.getExpediente();
@@ -226,6 +281,10 @@ public class TabDocs {
     refrescarListaDocs();
   }
 
+  /**
+   * Abre un JFileChooser y asigna el archivo seleccionado a archivoSeleccionado.
+   * Actualiza lblArchivoNombre con el nombre del archivo.
+   */
   private void elegirArchivo() {
     JFileChooser fc = new JFileChooser();
     fc.setDialogTitle("Seleccionar documento");
@@ -237,6 +296,12 @@ public class TabDocs {
     }
   }
 
+  /**
+   * Valida y sube el archivo seleccionado al almacenamiento.
+   * Verifica que haya archivo seleccionado, que no supere 5 MB y que el nombre
+   * no esté duplicado en el expediente. Copia el archivo con FileStorageUtil,
+   * guarda el DocumentoAdjunto y limpia el formulario.
+   */
   private void subirDocumento() {
     if (archivoSeleccionado == null) {
       JOptionPane.showMessageDialog(
@@ -335,6 +400,10 @@ public class TabDocs {
     }
   }
 
+  /**
+   * Repopula el panel de lista con la página actual del paginador.
+   * Muestra un mensaje si no hay documentos. Actualiza los controles de paginación.
+   */
   private void refrescarListaDocs() {
     panelListaDocs.removeAll();
     List<DocumentoAdjunto> pagina = pagDocs.getPagina();
@@ -356,6 +425,13 @@ public class TabDocs {
     );
   }
 
+  /**
+   * Construye el panel visual de un documento adjunto con nombre, badges de tipo y firma,
+   * metadatos (fecha subida, usuario) y botones Ver y Eliminar.
+   *
+   * @param doc documento a representar
+   * @return JPanel con el diseño de tarjeta del documento
+   */
   private JPanel crearFilaDoc(DocumentoAdjunto doc) {
     String nombreArchivo =
       doc.getArchivoUrl() != null
@@ -434,7 +510,7 @@ public class TabDocs {
           "¿Eliminar el documento \"" +
             nombreArchivo +
             "\"?" +
-                  "\nEsta acción no se puede deshacer.",
+            "\nEsta acción no se puede deshacer.",
           "Confirmar eliminación",
           JOptionPane.YES_NO_OPTION,
           JOptionPane.WARNING_MESSAGE
@@ -454,6 +530,12 @@ public class TabDocs {
     return fila;
   }
 
+  /**
+   * Crea un badge de color específico según el tipo de documento adjunto.
+   *
+   * @param tipo tipo del documento; si es null se usa OTRO
+   * @return JLabel badge con el nombre del tipo y los colores correspondientes
+   */
   private JLabel crearBadgeTipo(TipoDocumentoAdjunto tipo) {
     Color bg, fg;
     switch (tipo != null ? tipo : TipoDocumentoAdjunto.OTRO) {

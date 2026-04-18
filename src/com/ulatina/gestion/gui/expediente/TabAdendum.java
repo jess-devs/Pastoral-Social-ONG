@@ -16,32 +16,74 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 
-/** Tab 4 — Observaciones de la entrevista y gastos mensuales. */
+/**
+ * Pestaña 4 — Adéndum del expediente.
+ * Gestiona las observaciones de entrevista (texto libre) y la lista de gastos
+ * mensuales del beneficiario con soporte para crear, editar y eliminar registros.
+ * Implementa TabConDatosGuardables; adéndum y gastos son opcionales.
+ */
 public class TabAdendum implements TabConDatosGuardables {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Panel del formulario de entrada de gastos; se oculta en modo solo lectura. */
   private JPanel entradaPanel;
+
+  /** Texto libre de observaciones de la entrevista. */
   private JTextArea txtAdendumObs;
+
+  /** Modelo de datos de la tabla de gastos mensuales. */
   private DefaultTableModel modeloGastos;
+
+  /** Tabla que muestra los gastos mensuales con columna de acciones. */
   private JTable tablaGastos;
+
+  /** Muestra la suma total de todos los gastos del adéndum. */
   private JLabel lblTotalGastos;
+
+  /** Categoría del gasto (alimentación, vivienda, salud, etc.). */
   private JComboBox<CategoriaGasto> cmbCatGasto;
+
+  /** Concepto o descripción del gasto (ej: "Electricidad"). */
   private JTextField txtConceptoGasto;
+
+  /** Monto del gasto como cadena numérica; se convierte a BigDecimal al guardar. */
   private JTextField txtMontoGasto;
+
+  /** Fecha del gasto en formato dd/MM/yyyy. */
   private JFormattedTextField txtFechaGasto;
 
+  /** Gasto que se está editando; null cuando se está creando uno nuevo. */
   private GastoMensual gastoEnEdicion = null;
+
+  /** Copia de la página actual de gastos, usada para mapear clics de la tabla. */
   private final List<GastoMensual> gastosActuales = new ArrayList<>();
+
+  /** Paginador de los gastos mensuales del adéndum. */
   private final Paginador<GastoMensual> pagGastos = new Paginador<>();
+
+  /** Panel de controles de paginación para la tabla de gastos. */
   private final JPanel panelPagGastos = new JPanel(
     new FlowLayout(FlowLayout.CENTER, 8, 2)
   );
 
+  /**
+   * Crea la pestaña con el contexto compartido.
+   *
+   * @param ctx contexto compartido del diálogo
+   */
   public TabAdendum(ExpedienteContext ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * Construye y devuelve el panel principal de la pestaña.
+   * La zona norte contiene el área de observaciones y el formulario de gastos.
+   * La zona central contiene la tabla de gastos con total y controles de paginación.
+   *
+   * @return JPanel con la estructura completa de la pestaña
+   */
   public JPanel construir() {
     JPanel p = new JPanel(new BorderLayout(0, 12));
     p.setBackground(AppColors.PANEL);
@@ -215,13 +257,24 @@ public class TabAdendum implements TabConDatosGuardables {
     return p;
   }
 
+  /**
+   * Activa el modo de solo lectura: oculta el formulario de entrada y
+   * elimina la columna de acciones de la tabla de gastos.
+   *
+   * @param readOnly true para activar el modo consulta; false no hace nada
+   */
   public void setReadOnly(boolean readOnly) {
     if (!readOnly) return;
     if (entradaPanel != null) entradaPanel.setVisible(false);
-    if (tablaGastos != null)
-      tablaGastos.removeColumn(tablaGastos.getColumnModel().getColumn(4));
+    if (tablaGastos != null) tablaGastos.removeColumn(
+      tablaGastos.getColumnModel().getColumn(4)
+    );
   }
 
+  /**
+   * Carga el adéndum del expediente y popula las observaciones y la tabla de gastos.
+   * No hace nada si el expediente aún no tiene ID.
+   */
   public void cargarDatos() {
     Expediente exp = ctx.getExpediente();
     if (exp == null || exp.getId() == null) return;
@@ -235,13 +288,18 @@ public class TabAdendum implements TabConDatosGuardables {
     }
   }
 
-  // ─── TabConDatosGuardables ────────────────────────────────────────────────
-
+  /**
+   * El adéndum es opcional; no lanza excepción.
+   */
   @Override
   public void validar() throws IllegalStateException {
     /* adendum es opcional */
   }
 
+  /**
+   * Si el campo de observaciones tiene texto, sincroniza el objeto Adendum del contexto.
+   * Crea el Adendum si no existe. Si el expediente no tiene ID, no hace nada.
+   */
   @Override
   public void aplicarAlModelo() {
     String obsAd = txtAdendumObs.getText().trim();
@@ -257,8 +315,11 @@ public class TabAdendum implements TabConDatosGuardables {
     ad.setObservaciones(obsAd);
   }
 
-  // ─── CRUD gastos ──────────────────────────────────────────────────────────
-
+  /**
+   * Valida los campos del formulario de gasto y persiste el registro.
+   * Si el adéndum no existe aún, lo crea primero.
+   * Al finalizar limpia el formulario y recarga la tabla.
+   */
   private void confirmarGasto() {
     String concepto = txtConceptoGasto.getText().trim();
     String montoStr = txtMontoGasto.getText().trim();
@@ -322,8 +383,7 @@ public class TabAdendum implements TabConDatosGuardables {
     } catch (Exception ex) {
       JOptionPane.showMessageDialog(
         ctx.getOwner(),
-        "Error al guardar el gasto:" +
-                "\n" + ex.getMessage(),
+        "Error al guardar el gasto:" + "\n" + ex.getMessage(),
         "Error",
         JOptionPane.ERROR_MESSAGE
       );
@@ -335,6 +395,12 @@ public class TabAdendum implements TabConDatosGuardables {
     recargarTablaGastos();
   }
 
+  /**
+   * Pide confirmación y elimina el gasto en la fila indicada.
+   * Si el gasto tiene ID en base de datos, lo borra a través del controlador.
+   *
+   * @param row índice de la fila en gastosActuales (página actual)
+   */
   private void eliminarGasto(int row) {
     if (row < 0 || row >= gastosActuales.size()) return;
     int confirm = JOptionPane.showConfirmDialog(
@@ -355,6 +421,11 @@ public class TabAdendum implements TabConDatosGuardables {
     recargarTablaGastos();
   }
 
+  /**
+   * Carga el gasto en la fila indicada en el formulario para su edición in-place.
+   *
+   * @param row índice de la fila en gastosActuales (página actual)
+   */
   private void cargarGastoEnFormulario(int row) {
     if (row < 0 || row >= gastosActuales.size()) return;
     gastoEnEdicion = gastosActuales.get(row);
@@ -370,6 +441,9 @@ public class TabAdendum implements TabConDatosGuardables {
     );
   }
 
+  /**
+   * Limpia todos los campos del formulario de gasto y resetea gastoEnEdicion a null.
+   */
   private void limpiarFormularioGasto() {
     cmbCatGasto.setSelectedIndex(0);
     txtConceptoGasto.setText("");
@@ -379,6 +453,10 @@ public class TabAdendum implements TabConDatosGuardables {
     } catch (Exception ignored) {}
   }
 
+  /**
+   * Recupera todos los gastos del adéndum actual desde el controlador y refresca la tabla.
+   * No hace nada si el adéndum no tiene ID todavía.
+   */
   private void recargarTablaGastos() {
     Adendum ad = ctx.getAdendumActual();
     if (ad == null || ad.getId() == null) return;
@@ -388,6 +466,10 @@ public class TabAdendum implements TabConDatosGuardables {
     refrescarTablaGastos();
   }
 
+  /**
+   * Repopula la tabla con la página actual, calcula el total sobre el dataset completo
+   * y actualiza los controles de paginación.
+   */
   private void refrescarTablaGastos() {
     modeloGastos.setRowCount(0);
     gastosActuales.clear();

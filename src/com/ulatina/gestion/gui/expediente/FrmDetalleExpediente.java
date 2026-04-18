@@ -16,42 +16,79 @@ import javax.swing.border.EmptyBorder;
 
 /**
  * Diálogo modal para crear o editar un expediente.
- * Orquesta los 8 tabs y gestiona la persistencia.
- * En modo nuevo (expediente == null) las pestañas 1-7 están bloqueadas hasta
- * el primer guardado. En modo edición precarga todos los datos.
+ * Orquesta las 8 pestañas del formulario, gestiona el flujo de guardado y
+ * mantiene la barra de progreso de etapas sincronizada.
+ * En modo nuevo las pestañas 1-7 están deshabilitadas hasta el primer guardado.
+ * En modo edición precarga datos en todas las pestañas.
+ * En modo consulta (setReadOnly) deshabilita toda edición recursivamente.
  */
 public class FrmDetalleExpediente extends JDialog {
 
+  /** Expediente que se está editando; puede ser reemplazado al guardar en modo nuevo. */
   private Expediente expediente;
+
+  /** true si el diálogo fue abierto sin expediente existente (creación). */
   private final boolean esNuevo;
+
+  /** Callback invocado tras cada guardado exitoso para actualizar la lista padre. */
   private final Runnable onGuardado;
+
+  /** true cuando el diálogo está en modo consulta; impide edición. */
   private boolean readOnly = false;
 
+  /** Servicio de persistencia para expedientes y entidades relacionadas. */
   private final ExpedienteController expedienteController =
     new ExpedienteController();
+
+  /** Servicio de persistencia para parroquias. */
   private final ParroquiaController parroquiaController =
     new ParroquiaController();
 
+  /** Contexto compartido que se pasa a todas las pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Etiqueta del encabezado con el número de ficha y nombre del titular. */
   private JLabel lblTituloPrincipal;
+
+  /** Badge "URGENTE" visible cuando el expediente tiene ese marcador de prioridad. */
   private JLabel lblMarcadorBadge;
+
+  /** Contenedor de las 8 pestañas. */
   private JTabbedPane tabbedPane;
+
+  /** Barra visual de progreso de etapas; oculta en modo nuevo. */
   private BarraProgresoPanel panelBarraProgreso;
 
+  /** Pestaña 1: datos del titular y del expediente. */
   private final TabDatos tabDatos;
+
+  /** Pestaña 2: grupo familiar del titular. */
   private final TabFamilia tabFamilia;
+
+  /** Pestaña 3: datos de la vivienda del titular. */
   private final TabVivienda tabVivienda;
+
+  /** Pestaña 4: adéndum con observaciones y gastos mensuales. */
   private final TabAdendum tabAdendum;
+
+  /** Pestaña 5: documentos adjuntos del expediente. */
   private final TabDocs tabDocs;
+
+  /** Pestaña 6: asistencias solicitadas. */
   private final TabAsistencia tabAsistencia;
+
+  /** Pestaña 7: entrevistas realizadas. */
   private final TabEntrevistas tabEntrevistas;
+
+  /** Pestaña 8: prolongaciones de ayuda. */
   private final TabProlongaciones tabProlongaciones;
 
   /**
-   * @param owner      ventana propietaria del diálogo.
-   * @param expediente expediente a editar, o null para crear uno nuevo.
-   * @param onGuardado callback ejecutado tras cada guardado exitoso.
+   * Crea el diálogo, inicializa las pestañas y carga los datos existentes si los hay.
+   *
+   * @param owner      ventana propietaria del diálogo
+   * @param expediente expediente a editar, o null para crear uno nuevo
+   * @param onGuardado callback ejecutado tras cada guardado exitoso
    */
   public FrmDetalleExpediente(
     Window owner,
@@ -93,6 +130,10 @@ public class FrmDetalleExpediente extends JDialog {
     setResizable(true);
   }
 
+  /**
+   * Inicializa el contenido del diálogo: título, fondo, layout, tabbed pane,
+   * panel de encabezado y barra inferior.
+   */
   private void initComponents() {
     setTitle(
       esNuevo
@@ -110,6 +151,12 @@ public class FrmDetalleExpediente extends JDialog {
     add(crearBarraInferior(), BorderLayout.SOUTH);
   }
 
+  /**
+   * Construye el panel de encabezado con el título del expediente, el badge de urgencia
+   * y la barra de progreso de etapas (solo visible en modo edición).
+   *
+   * @return JPanel con el encabezado del diálogo
+   */
   private JPanel crearPanelTitulo() {
     JPanel p = new JPanel(new BorderLayout(12, 6));
     p.setBackground(AppColors.PANEL);
@@ -164,6 +211,11 @@ public class FrmDetalleExpediente extends JDialog {
     return p;
   }
 
+  /**
+   * Crea el JTabbedPane con las 8 pestañas del expediente.
+   *
+   * @return JTabbedPane configurado con todas las pestañas
+   */
   private JTabbedPane crearTabbedPane() {
     JTabbedPane tp = new JTabbedPane(
       JTabbedPane.TOP,
@@ -183,6 +235,13 @@ public class FrmDetalleExpediente extends JDialog {
     return tp;
   }
 
+  /**
+   * Construye la barra inferior con el botón Cancelar a la izquierda
+   * y los botones Guardar y Prolongar ayuda a la derecha.
+   * El botón Prolongar ayuda solo es visible en modo edición.
+   *
+   * @return JPanel con la barra inferior del diálogo
+   */
   private JPanel crearBarraInferior() {
     JPanel p = new JPanel(new BorderLayout());
     p.setBackground(AppColors.PANEL);
@@ -229,8 +288,10 @@ public class FrmDetalleExpediente extends JDialog {
     return p;
   }
 
-  // ─── Carga de datos ───────────────────────────────────────────────────────
-
+  /**
+   * Carga datos en todas las pestañas.
+   * En modo nuevo solo carga tabDatos (las demás pestañas están bloqueadas).
+   */
   private void cargarDatos() {
     tabDatos.cargarDatos();
     if (esNuevo) return;
@@ -244,8 +305,16 @@ public class FrmDetalleExpediente extends JDialog {
     tabProlongaciones.cargarDatos();
   }
 
-  // ─── Guardado ─────────────────────────────────────────────────────────────
-
+  /**
+   * Ejecuta el flujo completo de guardado:
+   * 1. valida tabDatos y muestra errores si no es válido,
+   * 2. comprueba duplicado de número de ficha en modo nuevo,
+   * 3. carga o crea la Persona titular,
+   * 4. crea el Expediente si es nuevo,
+   * 5. aplica modelos de tabDatos, tabVivienda y tabAdendum,
+   * 6. actualiza la etapa y persiste cambios,
+   * 7. actualiza la UI y llama a onGuardado.
+   */
   private void guardar() {
     try {
       tabDatos.validar();
@@ -270,7 +339,7 @@ public class FrmDetalleExpediente extends JDialog {
           JOptionPane.showMessageDialog(
             this,
             "Ya existe un expediente registrado para este número de documento." +
-                    "\nFicha: " +
+              "\nFicha: " +
               existente.getNumeroFicha(),
             "Duplicado detectado",
             JOptionPane.WARNING_MESSAGE
@@ -329,16 +398,17 @@ public class FrmDetalleExpediente extends JDialog {
       ex.printStackTrace();
       JOptionPane.showMessageDialog(
         this,
-        "Error al guardar el expediente:" +
-                "\n" + ex.getMessage(),
+        "Error al guardar el expediente:" + "\n" + ex.getMessage(),
         "Error",
         JOptionPane.ERROR_MESSAGE
       );
     }
   }
 
-  // ─── Etapas y barra de progreso ──────────────────────────────────────────
-
+  /**
+   * Calcula la etapa actual del expediente y la actualiza solo si avanza.
+   * Nunca retrocede la etapa; la lógica es progresiva.
+   */
   private void actualizarEtapaActual() {
     if (expediente == null) return;
     EtapaExpediente etapaActual = expediente.getEtapaActual();
@@ -349,6 +419,15 @@ public class FrmDetalleExpediente extends JDialog {
     );
   }
 
+  /**
+   * Determina la etapa del expediente consultando los datos ya persistidos.
+   * La prioridad es de mayor a menor: EVALUACION (tiene entrevistas),
+   * CONSENTIMIENTO (tiene doc de consentimiento), DOCUMENTOS (tiene cualquier doc),
+   * GASTOS (tiene gastos en adéndum), VIVIENDA (vivienda registrada),
+   * FAMILIA (tiene miembros), REGISTRO (sin datos adicionales).
+   *
+   * @return etapa calculada según el estado de datos del expediente
+   */
   private EtapaExpediente calcularEtapa() {
     if (
       expediente == null || expediente.getId() == null
@@ -386,6 +465,9 @@ public class FrmDetalleExpediente extends JDialog {
     return EtapaExpediente.REGISTRO;
   }
 
+  /**
+   * Sincroniza el índice de la barra de progreso con la etapa actual del expediente.
+   */
   private void actualizarBarraProgreso() {
     if (panelBarraProgreso == null || expediente == null) return;
     EtapaExpediente etapa =
@@ -395,8 +477,10 @@ public class FrmDetalleExpediente extends JDialog {
     panelBarraProgreso.setIdx(etapa.ordinal());
   }
 
-  // ─── Título y acceso ─────────────────────────────────────────────────────
-
+  /**
+   * Actualiza el título del diálogo y la etiqueta del encabezado con el número
+   * de ficha y el nombre del titular actual.
+   */
   private void actualizarTitulo() {
     if (expediente == null) return;
     String titulo =
@@ -405,6 +489,10 @@ public class FrmDetalleExpediente extends JDialog {
     if (lblTituloPrincipal != null) lblTituloPrincipal.setText(titulo);
   }
 
+  /**
+   * Habilita o deshabilita las pestañas 1-7 según si el expediente ya fue persistido.
+   * Las pestañas se desbloquean solo después del primer guardado exitoso.
+   */
   private void aplicarModoAcceso() {
     if (tabbedPane == null) return;
     boolean tieneId = (expediente != null && expediente.getId() != null);
@@ -417,6 +505,13 @@ public class FrmDetalleExpediente extends JDialog {
     }
   }
 
+  /**
+   * Activa el modo de solo lectura: cambia el título a "Consulta", deshabilita
+   * la edición en todas las pestañas y llama a aplicarReadOnly recursivamente
+   * sobre el contenido del diálogo.
+   *
+   * @param readOnly true para activar el modo consulta
+   */
   public void setReadOnly(boolean readOnly) {
     this.readOnly = readOnly;
     if (!readOnly) return;
@@ -433,6 +528,13 @@ public class FrmDetalleExpediente extends JDialog {
     tabProlongaciones.setReadOnly(true);
   }
 
+  /**
+   * Recorre recursivamente los componentes del contenedor y aplica las restricciones
+   * de solo lectura: campos de texto no editables, combos y checkboxes deshabilitados,
+   * botones de acción ocultos, y el botón Cancelar renombrado a Cerrar.
+   *
+   * @param container contenedor raíz desde el que comenzar el recorrido
+   */
   private void aplicarReadOnly(Container container) {
     for (Component c : container.getComponents()) {
       if (c instanceof JTextField) ((JTextField) c).setEditable(false);
@@ -470,6 +572,11 @@ public class FrmDetalleExpediente extends JDialog {
     }
   }
 
+  /**
+   * Devuelve el nombre completo del titular del expediente actual.
+   *
+   * @return nombre y apellidos del titular, o cadena vacía si no están disponibles
+   */
   private String nombreTitular() {
     if (expediente == null || expediente.getTitular() == null) return "";
     return (

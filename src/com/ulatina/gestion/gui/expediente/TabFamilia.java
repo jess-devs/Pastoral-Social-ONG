@@ -16,36 +16,83 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 
-/** Tab 2 — Grupo familiar del titular. */
+/**
+ * Pestaña 2 — Grupo familiar del titular del expediente.
+ * Permite buscar una persona existente por cédula o crear una nueva mediante
+ * un diálogo modal, para luego registrarla como miembro familiar con relación,
+ * jefatura, ocupación e ingreso mensual.
+ */
 public class TabFamilia {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Modelo de datos de la tabla de miembros familiares. */
   private DefaultTableModel modeloFamilia;
+
+  /** Tabla que muestra el grupo familiar con columna de acciones. */
   private JTable tablaFamilia;
+
+  /** Panel del formulario de agregar/editar miembro; oculto por defecto. */
   private JPanel panelFormFamilia;
+
+  /** Encabezado del formulario; cambia entre "Agregar" y "Editar". */
   private JLabel lblHeaderFormFamilia;
+
+  /** Muestra el nombre de la persona encontrada o creada para el miembro. */
   private JLabel lblPersonaSeleccionada;
+
+  /** Campo de búsqueda de persona por número de cédula. */
   private JTextField txtBuscarCedula;
+
+  /** Relación del miembro con el titular (esposo/a, hijo/a, etc.). */
   private JComboBox<String> cmbRelacion;
+
+  /** Toggle para indicar si este miembro es jefe de familia. */
   private JButton btnJefatura;
+
+  /** Ocupación o trabajo del miembro familiar. */
   private JTextField txtOcupacion;
+
+  /** Toggle para indicar si el miembro trabaja actualmente. */
   private JButton btnTrabaja;
+
+  /** Ingreso mensual del miembro en colones. */
   private JTextField txtIngreso;
 
+  /** Miembro que se está editando; null cuando se está agregando uno nuevo. */
   private MiembroFamiliar miembroEnEdicion;
+
+  /** Persona seleccionada mediante búsqueda por cédula o creación nueva. */
   private Persona personaSeleccionada;
 
+  /** Copia de la página actual de miembros, usada para mapear clics de la tabla. */
   private final List<MiembroFamiliar> listaMiembros = new ArrayList<>();
+
+  /** Paginador de los miembros familiares del expediente. */
   private final Paginador<MiembroFamiliar> pagFamilia = new Paginador<>();
+
+  /** Panel de controles de paginación para la tabla de familia. */
   private final JPanel panelPagFamilia = new JPanel(
     new FlowLayout(FlowLayout.CENTER, 8, 2)
   );
 
+  /**
+   * Crea la pestaña con el contexto compartido.
+   *
+   * @param ctx contexto compartido del diálogo
+   */
   public TabFamilia(ExpedienteContext ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * Construye y devuelve el panel principal de la pestaña.
+   * Incluye barra superior con título y botón Agregar, tabla de miembros y
+   * formulario de edición oculto en la parte inferior.
+   *
+   * @return JPanel con la estructura completa de la pestaña
+   */
   public JPanel construir() {
     JPanel p = new JPanel(new BorderLayout(0, 0));
     p.setBackground(AppColors.PANEL);
@@ -175,6 +222,13 @@ public class TabFamilia {
     return p;
   }
 
+  /**
+   * Construye el panel del formulario de agregar/editar miembro familiar.
+   * Incluye búsqueda por cédula, botones de buscar/crear persona y campos de relación,
+   * jefatura, ocupación, trabajo e ingreso.
+   *
+   * @return JPanel con encabezado azul y cuerpo del formulario
+   */
   private JPanel crearPanelFormFamilia() {
     JPanel contenedor = new JPanel(new BorderLayout(0, 0));
     contenedor.setOpaque(false);
@@ -327,12 +381,22 @@ public class TabFamilia {
     return contenedor;
   }
 
+  /**
+   * Activa el modo de solo lectura eliminando la columna de acciones de la tabla.
+   *
+   * @param readOnly true para activar el modo consulta; false no hace nada
+   */
   public void setReadOnly(boolean readOnly) {
     if (!readOnly) return;
-    if (tablaFamilia != null)
-      tablaFamilia.removeColumn(tablaFamilia.getColumnModel().getColumn(6));
+    if (tablaFamilia != null) tablaFamilia.removeColumn(
+      tablaFamilia.getColumnModel().getColumn(6)
+    );
   }
 
+  /**
+   * Carga los miembros familiares del expediente y los muestra en la tabla.
+   * No hace nada si el expediente aún no tiene ID.
+   */
   public void cargarDatos() {
     Expediente exp = ctx.getExpediente();
     if (exp == null || exp.getId() == null) return;
@@ -342,6 +406,9 @@ public class TabFamilia {
     refrescarTablaFamilia();
   }
 
+  /**
+   * Repopula la tabla con la página actual del paginador y actualiza los controles de paginación.
+   */
   private void refrescarTablaFamilia() {
     modeloFamilia.setRowCount(0);
     listaMiembros.clear();
@@ -379,6 +446,12 @@ public class TabFamilia {
     );
   }
 
+  /**
+   * Muestra u oculta el formulario de miembro.
+   * Al ocultar limpia todos los campos y reinicia el estado del formulario.
+   *
+   * @param visible true para mostrar el formulario, false para ocultarlo y limpiar
+   */
   private void mostrarFormFamilia(boolean visible) {
     if (!visible) {
       miembroEnEdicion = null;
@@ -398,6 +471,11 @@ public class TabFamilia {
     panelFormFamilia.getParent().repaint();
   }
 
+  /**
+   * Busca una persona por el número de cédula introducido en txtBuscarCedula.
+   * Si la encuentra, asigna personaSeleccionada y muestra el nombre en verde.
+   * Si no existe, limpia personaSeleccionada y muestra un mensaje en rojo.
+   */
   private void buscarPersonaPorCedula() {
     String cedula = txtBuscarCedula.getText().trim();
     if (cedula.isEmpty()) return;
@@ -425,6 +503,11 @@ public class TabFamilia {
     }
   }
 
+  /**
+   * Abre un diálogo modal para registrar una nueva persona con datos mínimos
+   * (nombres, apellidos, tipo de documento, número de documento y teléfono).
+   * Al guardar, persiste la persona, la asigna como personaSeleccionada y cierra el diálogo.
+   */
   private void abrirFormNuevaPersona() {
     JDialog dlg = new JDialog(
       ctx.getOwner(),
@@ -529,6 +612,11 @@ public class TabFamilia {
     dlg.setVisible(true);
   }
 
+  /**
+   * Valida y persiste el miembro familiar con los datos del formulario.
+   * Requiere que el expediente esté guardado y que haya una persona seleccionada.
+   * En modo adición detecta duplicados comparando el ID de la persona.
+   */
   private void confirmarMiembro() {
     Expediente exp = ctx.getExpediente();
     if (exp == null || exp.getId() == null) {
@@ -590,6 +678,11 @@ public class TabFamilia {
     mostrarFormFamilia(false);
   }
 
+  /**
+   * Carga los datos del miembro en la fila indicada en el formulario para su edición.
+   *
+   * @param row índice de la fila en listaMiembros (página actual)
+   */
   private void cargarMiembroEnFormulario(int row) {
     if (row < 0 || row >= listaMiembros.size()) return;
     MiembroFamiliar m = listaMiembros.get(row);
@@ -623,6 +716,12 @@ public class TabFamilia {
     mostrarFormFamilia(true);
   }
 
+  /**
+   * Pide confirmación y elimina el miembro en la fila indicada.
+   * Si el miembro tiene ID en base de datos, lo borra a través del controlador.
+   *
+   * @param row índice de la fila en listaMiembros (página actual)
+   */
   private void eliminarMiembro(int row) {
     if (row < 0 || row >= listaMiembros.size()) return;
     int confirm = JOptionPane.showConfirmDialog(
@@ -640,6 +739,18 @@ public class TabFamilia {
     cargarDatos();
   }
 
+  /**
+   * Agrega dos pares etiqueta-campo en una misma fila del GridBagLayout.
+   *
+   * @param p    panel destino
+   * @param row  fila destino
+   * @param lc   constraints para etiquetas
+   * @param fc   constraints para campos
+   * @param lbl1 texto de la primera etiqueta
+   * @param c1   primer campo
+   * @param lbl2 texto de la segunda etiqueta
+   * @param c2   segundo campo
+   */
   private void agregarFila(
     JPanel p,
     int row,
@@ -664,6 +775,12 @@ public class TabFamilia {
     p.add(c2, fc);
   }
 
+  /**
+   * Crea una etiqueta con la fuente y el color estándar para los campos del formulario.
+   *
+   * @param texto texto de la etiqueta
+   * @return JLabel con Segoe UI 12pt en color TEXTO_GRIS
+   */
   private JLabel etiqueta(String texto) {
     JLabel l = new JLabel(texto);
     l.setFont(new Font("Segoe UI", Font.PLAIN, 12));

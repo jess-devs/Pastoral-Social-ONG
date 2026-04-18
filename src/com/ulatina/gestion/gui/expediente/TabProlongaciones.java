@@ -11,26 +11,53 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 
-/** Tab 8 — Prolongaciones de ayuda registradas en el expediente. */
+/**
+ * Pestaña 8 — Prolongaciones de ayuda del expediente.
+ * Registra extensiones del período de asistencia con fecha y observaciones.
+ * Cada prolongación queda asociada al usuario de sesión que la registra.
+ */
 public class TabProlongaciones {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
 
+  /** Panel del formulario de registro de prolongaciones; se oculta en modo solo lectura. */
   private JPanel formPanel;
+
+  /** Modelo de datos de la tabla de prolongaciones. */
   private DefaultTableModel modeloProlongaciones;
+
+  /** Campo requerido: fecha de la prolongación en formato dd/MM/yyyy. */
   private JFormattedTextField txtFechaProlongacion;
+
+  /** Observaciones o motivo de la prolongación. */
   private JTextField txtObsProlongacion;
 
+  /** Paginador de las prolongaciones del expediente. */
   private final Paginador<ProlongacionAyuda> pagProlongaciones =
     new Paginador<>();
+
+  /** Panel de controles de paginación para la tabla de prolongaciones. */
   private final JPanel panelPagProlongaciones = new JPanel(
     new FlowLayout(FlowLayout.CENTER, 8, 2)
   );
 
+  /**
+   * Crea la pestaña con el contexto compartido.
+   *
+   * @param ctx contexto compartido del diálogo
+   */
   public TabProlongaciones(ExpedienteContext ctx) {
     this.ctx = ctx;
   }
 
+  /**
+   * Construye y devuelve el panel principal de la pestaña.
+   * La zona norte contiene el formulario de registro.
+   * La zona central contiene la tabla de prolongaciones con controles de paginación.
+   *
+   * @return JPanel con la estructura completa de la pestaña
+   */
   public JPanel construir() {
     JPanel p = new JPanel(new BorderLayout(0, 12));
     p.setBackground(AppColors.PANEL);
@@ -107,11 +134,20 @@ public class TabProlongaciones {
     return p;
   }
 
+  /**
+   * Activa el modo de solo lectura ocultando el formulario de registro.
+   *
+   * @param readOnly true para activar el modo consulta; false no hace nada
+   */
   public void setReadOnly(boolean readOnly) {
     if (!readOnly) return;
     if (formPanel != null) formPanel.setVisible(false);
   }
 
+  /**
+   * Carga las prolongaciones del expediente y refresca la tabla.
+   * No hace nada si el expediente aún no tiene ID o si la tabla no está inicializada.
+   */
   public void cargarDatos() {
     Expediente exp = ctx.getExpediente();
     if (
@@ -123,6 +159,9 @@ public class TabProlongaciones {
     refrescarTablaProlongaciones();
   }
 
+  /**
+   * Repopula la tabla con la página actual del paginador y actualiza los controles de paginación.
+   */
   private void refrescarTablaProlongaciones() {
     modeloProlongaciones.setRowCount(0);
     for (ProlongacionAyuda pr : pagProlongaciones.getPagina()) {
@@ -149,6 +188,11 @@ public class TabProlongaciones {
     );
   }
 
+  /**
+   * Valida que la fecha no esté vacía, crea la ProlongacionAyuda con el usuario
+   * de sesión como registrador y la persiste. Limpia los campos al finalizar.
+   * Requiere que el expediente esté guardado.
+   */
   private void confirmarProlongacion() {
     String fechaStr = txtFechaProlongacion.getText();
     if (

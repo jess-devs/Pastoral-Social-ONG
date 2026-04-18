@@ -16,49 +16,105 @@ import javax.swing.*;
 import javax.swing.border.*;
 
 /**
- * Tab 1 — Datos del titular y del expediente.
- * Implementa TabConDatosGuardables: validar() y aplicarAlModelo() son llamados
- * por FrmDetalleExpediente.guardar() antes de persistir.
+ * Pestaña 1 — Datos del titular y datos generales del expediente.
+ * Implementa TabConDatosGuardables; FrmDetalleExpediente llama a validar()
+ * y aplicarAlModelo() antes de persistir.
  */
 public class TabDatos implements TabConDatosGuardables {
 
+  /** Contexto compartido con el resto de pestañas. */
   private final ExpedienteContext ctx;
+
+  /** Callback que recibe true cuando el marcador seleccionado es URGENTE, false en otro caso. */
   private final Consumer<Boolean> onMarcadorUrgente;
 
+  /** Campo requerido: nombres del titular. */
   private JTextField txtNombres;
+
+  /** Campo requerido: apellidos del titular. */
   private JTextField txtApellidos;
+
+  /** Tipo de documento de identidad del titular (cédula, pasaporte, DIMEX, etc.). */
   private JComboBox<TipoDocumentoPersona> cmbTipoDoc;
+
+  /** Campo requerido: número de documento de identidad del titular. */
   private JTextField txtNumeroDoc;
+
+  /** Fecha de nacimiento del titular en formato dd/MM/yyyy. */
   private JFormattedTextField txtFechaNac;
+
+  /** Sexo del titular. */
   private JComboBox<Sexo> cmbSexo;
+
+  /** Estado civil del titular. */
   private JComboBox<EstadoCivil> cmbEstadoCivil;
+
+  /** Número de teléfono de contacto del titular. */
   private JTextField txtTelefono;
+
+  /** Dirección de residencia del titular. */
   private JTextField txtDireccion;
+
+  /** Nacionalidad del titular. */
   private JTextField txtNacionalidad;
+
+  /** País de origen del titular. */
   private JTextField txtPaisOrigen;
+
+  /** Profesión u oficio del titular. */
   private JTextField txtProfesion;
+
+  /** Nivel de educación alcanzado por el titular. */
   private JTextField txtNivelEducacion;
+
+  /** Descripción de las condiciones de salud del titular; borde ámbar para destacarlo. */
   private JTextArea txtCondicionSalud;
+
+  /** Indica si el titular cuenta con seguro de salud. */
   private JCheckBox chkTieneSeguro;
+
+  /** Condición migratoria del titular (ej: residente, refugiado). */
   private JTextField txtCondicionMigratoria;
+
+  /** Nombre del trabajador social o entrevistador que abre el expediente. */
   private JTextField txtEntrevistador;
+
+  /** Estado administrativo del expediente (EN_PROCESO, CERRADO, etc.). */
   private JComboBox<EstadoExpediente> cmbEstado;
+
+  /** Parroquia a la que pertenece el expediente. */
   private JComboBox<Parroquia> cmbParroquia;
+
+  /** Campo requerido: fecha en que se inicia el expediente, en formato dd/MM/yyyy. */
   private JFormattedTextField txtFechaInicio;
+
+  /** Fecha prevista de conclusión del caso, en formato dd/MM/yyyy. */
   private JFormattedTextField txtFechaPrevista;
+
+  /** Notas u observaciones generales del caso. */
   private JTextArea txtObservaciones;
+
+  /** Marcador de prioridad visual: NINGUNO, URGENTE, PRIORITARIO o NORMAL. */
   private JComboBox<String> cmbColorMarcador;
 
   /**
-   * @param ctx                contexto compartido.
-   * @param onMarcadorUrgente  callback que recibe true cuando el marcador es URGENTE.
-   *                           Permite que FrmDetalleExpediente actualice el badge.
+   * Crea la pestaña con el contexto compartido y el callback de urgencia.
+   *
+   * @param ctx               contexto compartido del diálogo
+   * @param onMarcadorUrgente callback invocado con true cuando el marcador es URGENTE;
+   *                          permite a FrmDetalleExpediente mostrar u ocultar el badge de urgencia
    */
   public TabDatos(ExpedienteContext ctx, Consumer<Boolean> onMarcadorUrgente) {
     this.ctx = ctx;
     this.onMarcadorUrgente = onMarcadorUrgente;
   }
 
+  /**
+   * Construye y devuelve el panel de la pestaña con dos secciones:
+   * "DATOS DEL TITULAR" y "DATOS DEL EXPEDIENTE", envuelto en un JScrollPane.
+   *
+   * @return JScrollPane con el formulario completo
+   */
   public JScrollPane construir() {
     JPanel p = new JPanel(new GridBagLayout());
     p.setBackground(AppColors.PANEL);
@@ -336,6 +392,11 @@ public class TabDatos implements TabConDatosGuardables {
     return scroll;
   }
 
+  /**
+   * Carga los datos en los campos del formulario.
+   * En modo nuevo establece valores por defecto (estado EN_PROCESO, fecha de hoy, usuario actual).
+   * En modo edición popula los campos desde el expediente y la persona titular.
+   */
   public void cargarDatos() {
     for (Parroquia par : ctx
       .getParroquiaController()
@@ -413,8 +474,12 @@ public class TabDatos implements TabConDatosGuardables {
     }
   }
 
-  // ─── TabConDatosGuardables ────────────────────────────────────────────────
-
+  /**
+   * Valida que los campos obligatorios tengan valor.
+   *
+   * @throws IllegalStateException si nombres, apellidos o número de documento están vacíos,
+   *                               o si no hay parroquias disponibles en el sistema
+   */
   @Override
   public void validar() throws IllegalStateException {
     if (
@@ -464,14 +529,27 @@ public class TabDatos implements TabConDatosGuardables {
     exp.setColorMarcador("NINGUNO".equals(marcador) ? null : marcador);
   }
 
-  // ─── Getters para guardar() en FrmDetalleExpediente ──────────────────────
-
+  /**
+   * Devuelve el número de documento ingresado, usado por guardar() para detectar duplicados.
+   *
+   * @return número de documento sin espacios al inicio ni al final
+   */
   public String getNumeroDocumento() {
     return txtNumeroDoc.getText().trim();
   }
 
-  // ─── Helpers privados de layout ──────────────────────────────────────────
-
+  /**
+   * Agrega dos pares etiqueta-campo en una misma fila del GridBagLayout.
+   *
+   * @param p    panel destino con GridBagLayout
+   * @param row  fila en la que se colocan los componentes
+   * @param lc   constraints para las etiquetas
+   * @param fc   constraints para los campos
+   * @param lbl1 texto de la primera etiqueta
+   * @param c1   primer componente de entrada
+   * @param lbl2 texto de la segunda etiqueta
+   * @param c2   segundo componente de entrada
+   */
   private void agregarFila(
     JPanel p,
     int row,
@@ -496,6 +574,12 @@ public class TabDatos implements TabConDatosGuardables {
     p.add(c2, fc);
   }
 
+  /**
+   * Crea una etiqueta con la fuente y el color estándar para los campos del formulario.
+   *
+   * @param texto texto de la etiqueta
+   * @return JLabel con Segoe UI 12pt en color TEXTO_GRIS
+   */
   private JLabel etiqueta(String texto) {
     JLabel l = new JLabel(texto);
     l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
