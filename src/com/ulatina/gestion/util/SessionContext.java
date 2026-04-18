@@ -7,19 +7,19 @@ import com.ulatina.gestion.model.Usuario;
  */
 public final class SessionContext {
 
-    private static Usuario usuarioActual;
+  private static Usuario usuarioActual;
 
-    private SessionContext() {}
+  private SessionContext() {}
 
-    public static Usuario getUsuarioActual() {
-        return usuarioActual;
-    }
+  public static Usuario getUsuarioActual() {
+    return usuarioActual;
+  }
 
-    public static void setUsuarioActual(Usuario usuario) {
-        usuarioActual = usuario;
-    }
+  public static void setUsuarioActual(Usuario usuario) {
+    usuarioActual = usuario;
+  }
 
-    public static void cerrarSesion() {
-        usuarioActual = null;
-    }
+  public static void cerrarSesion() {
+    usuarioActual = null;
+  }
 }
