@@ -166,7 +166,13 @@ public class FrmLogin extends JFrame {
         txtRegEmail    = campo();
         txtRegPassword = campoPass();
         txtRegConfirm  = campoPass();
-        cmbRegRol       = new JComboBox<>(RolUsuario.values());
+
+        /**
+         * Coloca por default el rol CONSULTA_VICARIAL.
+         */
+        cmbRegRol = new JComboBox<>(RolUsuario.values());
+        cmbRegRol.setSelectedItem(RolUsuario.CONSULTA_VICARIAL);
+
         cmbRegParroquia = new JComboBox<>();
         estilizarCombo(cmbRegRol);
         estilizarCombo(cmbRegParroquia);
@@ -175,7 +181,7 @@ public class FrmLogin extends JFrame {
             public Component getListCellRendererComponent(JList<?> list, Object value,
                     int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                setText(value instanceof Parroquia ? ((Parroquia) value).getNombre() : "— Sin parroquia —");
+                setText(value instanceof Parroquia ? ((Parroquia) value).getNombre() : "Sin parroquia");
                 return this;
             }
         });
@@ -200,16 +206,6 @@ public class FrmLogin extends JFrame {
         p.add(vspace(4));
         p.add(txtRegConfirm);
         p.add(vspace(12));
-
-        p.add(etiqueta("Rol"));
-        p.add(vspace(4));
-        p.add(cmbRegRol);
-        p.add(vspace(12));
-
-        p.add(etiqueta("Parroquia"));
-        p.add(vspace(4));
-        p.add(cmbRegParroquia);
-        p.add(vspace(22));
 
         JButton btnCrear = UIFactory.crearBoton("Crear cuenta", AppColors.PRIMARIO, Color.WHITE,
                 e -> accionRegistrar());
@@ -381,13 +377,13 @@ public class FrmLogin extends JFrame {
 
     /**
      * Cambia la vista activa y ajusta el alto del frame:
-     * LOGIN=480, REGISTRO=680, RECUPERAR=510.
+     * LOGIN=480, REGISTRO=580, RECUPERAR=530.
      * @param vista
      */
     private void mostrar(String vista) {
         cardLayout.show(panelCards, vista);
         int alto = VISTA_LOGIN.equals(vista) ? 480
-                 : VISTA_REGISTRO.equals(vista) ? 680 : 510;
+                 : VISTA_REGISTRO.equals(vista) ? 580 : 530;
         setSize(440, alto);
         setLocationRelativeTo(null);
     }
