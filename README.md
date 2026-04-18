@@ -33,3 +33,7 @@ Desarrollar un sistema de gestión centralizada de beneficiarios, mediante el cu
 
 - Reducir el tiempo administrativo del voluntario durante el proceso de atención mediante flujos guiados dentro del sistema.
 - Proveer a la coordinación provincial de reportes de alcance: cuántas familias atendidas, qué tipo de ayuda, con qué frecuencia y en qué sedes.
+
+## Proyecto Universitario
+
+Este proyecto fue desarrollado como trabajo académico en la Universidad Latina de Costa Rica.
