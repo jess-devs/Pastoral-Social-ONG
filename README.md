@@ -1,10 +1,10 @@
 ![img.png](src/files/images/Header-ULatina.png)
-# Contexto del proyecto.
+# Contexto del proyecto
 
 La Pastoral Social de una provincia religiosa opera actualmente sin un sistema informático que centralice la gestión de sus beneficiarios. Cada sede (iglesia u ONG asociada) trabaja de forma independiente con registros manuales, lo que genera un problema estructural: una misma persona puede presentarse en múltiples sedes y recibir ayuda repetida sin que nadie lo detecte.
 Esto no solo implica un uso inequitativo de recursos limitados (comestibles, medicamentos, ayuda económica), sino que también priva a familias verdaderamente vulnerables de recibir la asistencia que merecen.
 
-# Objetivo principal del proyecto.
+# Objetivo principal del proyecto
 
 Desarrollar un sistema de gestión centralizada de beneficiarios, mediante el cual la Pastoral Social de la provincia pueda registrar, controlar y dar seguimiento a las ayudas sociales otorgadas, evitando duplicidades entre residencias o instituciones beneficiarias, garantizando así una distribución equitativa de los recursos disponibles.
 
@@ -12,7 +12,7 @@ Desarrollar un sistema de gestión centralizada de beneficiarios, mediante el cu
 
 ![img.png](src/files/images/Diagrama-Pastoral-Social.png)
 
-## Objetivos secundarios.
+## Objetivos secundarios
 
 ### Operativos
 
