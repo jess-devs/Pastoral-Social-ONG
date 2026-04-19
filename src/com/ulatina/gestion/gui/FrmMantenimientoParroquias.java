@@ -2,6 +2,7 @@ package com.ulatina.gestion.gui;
 
 import com.ulatina.gestion.controller.ParroquiaController;
 import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.Parroquia;
 
 import javax.swing.*;
@@ -17,22 +18,38 @@ import java.util.List;
 
 public class FrmMantenimientoParroquias extends JPanel {
 
-    // ─── Controller ──────────────────────────────────────────────────────────
+    /**
+     * Se inicializan el controlador de parroquias para ser utilizado e ingresar
+     * los metodos necesarios a ser utilizados.
+     * Se llama al FrmPanel administrativo para ser utilizado en caso que el usuario
+     * requiera devolverse al menu principal a realizar otras gestiones como
+     */
     private final ParroquiaController parroquiaController = new ParroquiaController();
     private final FrmPanelAdministrativo frmMain;
 
-    // ─── CardLayout vistas ───────────────────────────────────────────────────
+    /**
+     * Se crean las variables que se llamarán durante la creacion del resto de la vista
+     */
     private static final String VISTA_LISTA = "LISTA";
     private static final String VISTA_FORM = "FORM";
 
+    /**
+     * Se crea la carta que se va a utilizar.
+     * Se crea el panel principan que contendra el contenido de la vista.
+     */
     private CardLayout cardLayout;
     private JPanel panelCards;
 
-    // ─── Tabla ───────────────────────────────────────────────────────────────
+    /**
+     * Se crea la tabla y el modelo que contendra los datos de las parroquias.
+     */
     private JTable tabla;
     private DefaultTableModel modelo;
 
-    // ─── Formulario ──────────────────────────────────────────────────────────
+    /**
+     * Se crean los diferentes elemenos que se utilizaran para que el usuario
+     * digite los datos de la parroquia nueva o que puede editar.
+     */
     private JTextField txtNombre;
     private JTextField txtVicaria;
     private JTextField txtSector;
@@ -43,14 +60,28 @@ public class FrmMantenimientoParroquias extends JPanel {
 
     private Parroquia parroquiaEditando = null;
 
-    // ─── Constructor ─────────────────────────────────────────────────────────
+    /**
+     * Se crea el constructor de la vista de parrquias.
+     * Utiliza las "card" que divide las partes de la vista.
+     * Se utiliza el formado de encabezado ya establecido.
+     * Se utiliza el metodo de carga de tabla para mostrar los datos de las parroquias.
+     * Boton de volver implementado para regrear al inicio del panel de adminitracion
+     */
     public FrmMantenimientoParroquias(FrmPanelAdministrativo frmMain) {
         this.frmMain = frmMain;
         setLayout(new BorderLayout(0, 0));
         setBackground(AppColors.FONDO);
         setBorder(new EmptyBorder(28, 28, 28, 28));
 
-        add(crearEncabezado(), BorderLayout.NORTH);
+        // Barra superior: ← Volver + título dinámico
+        JPanel barTop = new JPanel(new BorderLayout());
+        barTop.setOpaque(false);
+        barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
+
+        JButton btnVolver = crearBoton("Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
+        btnVolver.addActionListener(e -> frmMain.volverAlGrid());
+
+        add(UIFactory.crearEncabezado("Mantenimiendo Parrquias", "Gestioná las parroquias que utilizan el sistema."), BorderLayout.NORTH);
 
         cardLayout  = new CardLayout();
         panelCards  = new JPanel(cardLayout);
@@ -59,68 +90,46 @@ public class FrmMantenimientoParroquias extends JPanel {
         panelCards.add(crearVistaLista(), VISTA_LISTA);
         panelCards.add(crearVistaFormulario(), VISTA_FORM);
 
-
         add(panelCards, BorderLayout.CENTER);
+        add(btnVolver, BorderLayout.SOUTH);
 
         cargarTabla();
     }
 
-    // ─── Encabezado ──────────────────────────────────────────────────────────
-    private JPanel crearEncabezado() {
-        JPanel p = new JPanel(new BorderLayout(0, 4));
-        p.setOpaque(false);
-        p.setBorder(new EmptyBorder(0, 0, 20, 0));
-
-        JLabel titulo = new JLabel("Mantenimiento Parroquias");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titulo.setForeground(AppColors.TEXTO);
-
-        JLabel subtitulo = new JLabel("Gestioná las parroquias que utilizan el sistema.");
-        subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitulo.setForeground(AppColors.TEXTO_GRIS);
-
-        // Barra superior: ← Volver + título dinámico
-        JPanel barTop = new JPanel(new BorderLayout());
-        barTop.setOpaque(false);
-        barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
-
-        JButton btnVolver = crearBoton("← Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
-        btnVolver.addActionListener(e -> frmMain.volverAlGrid());
-
-        p.add(titulo,    BorderLayout.NORTH);
-        p.add(subtitulo, BorderLayout.CENTER);
-        p.add(btnVolver, BorderLayout.SOUTH);
-        return p;
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // VISTA LISTA
-    // ═══════════════════════════════════════════════════════════════════════
+    /**
+     * Se crean los espacios con los botones de acciones.
+     */
     private JPanel crearVistaLista() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setOpaque(false);
 
-        // Barra superior con botón "+ Nueva"
         JPanel barTop = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         barTop.setOpaque(false);
 
+        //Boton desactivar
         JButton btnDesactivar = crearBoton("Desactivar Parroquia", AppColors.ROJO, AppColors.ROJO_H, Color.WHITE);
         btnDesactivar.addActionListener(e -> desactivarParroquia());
         barTop.add(btnDesactivar);
         barTop.add(Box.createHorizontalStrut(8));
+        //Boton Editar
         JButton btnEditar = crearBoton("Editar Parroquia", AppColors.AZUL, AppColors.AZUL_BORDE, Color.WHITE);
         btnEditar.addActionListener(e -> abrirEditar());
         barTop.add(btnEditar);
         barTop.add(Box.createHorizontalStrut(8));
+        //Boton Agregar
         JButton btnAgregar = crearBoton("Agregar Parroquia", AppColors.PRIMARIO, AppColors.PRIMARIO_H, Color.WHITE);
         btnAgregar.addActionListener(e -> abrirAgregar());
         barTop.add(btnAgregar);
 
+        //Posiciones de los botones dentro del panel.
         p.add(barTop, BorderLayout.NORTH);
         p.add(crearPanelTabla(), BorderLayout.CENTER);
         return p;
     }
 
+    /**
+     * Se crea el panel que contiene la tabla de parroquias
+     */
     private JPanel crearPanelTabla() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(AppColors.PANEL);
@@ -128,6 +137,7 @@ public class FrmMantenimientoParroquias extends JPanel {
                 new LineBorder(AppColors.BORDE, 1, true),
                 new EmptyBorder(0, 0, 0, 0)));
 
+        //Encabezados de la tabla.
         modelo = new DefaultTableModel(
                 new String[]{"ID","Nombre", "Vicaria", "Sector / Filial", "Estado"}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -142,7 +152,6 @@ public class FrmMantenimientoParroquias extends JPanel {
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setFocusable(false);
 
-        // Header
         JTableHeader header = tabla.getTableHeader();
         header.setBackground(AppColors.HEADER_TBL);
         header.setForeground(AppColors.TEXTO_GRIS);
@@ -150,12 +159,9 @@ public class FrmMantenimientoParroquias extends JPanel {
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
         header.setReorderingAllowed(false);
 
-        // Centrar columnas Estado
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         tabla.getColumnModel().getColumn(4).setCellRenderer(new EstadoBadgeRenderer());
-
-        // Anchos de columna
         tabla.getColumnModel().getColumn(0).setMinWidth(0);
         tabla.getColumnModel().getColumn(0).setMaxWidth(0);
         tabla.getColumnModel().getColumn(0).setWidth(0);
@@ -163,8 +169,6 @@ public class FrmMantenimientoParroquias extends JPanel {
         tabla.getColumnModel().getColumn(2).setPreferredWidth(130);
         tabla.getColumnModel().getColumn(3).setPreferredWidth(130);
         tabla.getColumnModel().getColumn(4).setPreferredWidth(90);
-
-        // Doble clic → editar
         tabla.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) abrirEditar();
@@ -175,22 +179,21 @@ public class FrmMantenimientoParroquias extends JPanel {
         return panel;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // VISTA FORMULARIO
-    // ═══════════════════════════════════════════════════════════════════════
+    /**
+     * Panel utilizado para los botones de acciones.
+     */
     private JPanel crearVistaFormulario() {
         JPanel p = new JPanel(new BorderLayout(0, 16));
         p.setOpaque(false);
 
-        // Barra superior: ← Volver + título dinámico
         JPanel barTop = new JPanel(new BorderLayout());
         barTop.setOpaque(false);
         barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        JButton btnVolver = crearBoton("← Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
+        JButton btnVolver = crearBoton("Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
         btnVolver.addActionListener(e -> mostrar(VISTA_LISTA));
 
-        lblTituloForm = new JLabel("Nueva Parroquia");
+        lblTituloForm = new JLabel("Agregar Parroquia");
         lblTituloForm.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblTituloForm.setForeground(AppColors.TEXTO);
         lblTituloForm.setBorder(new EmptyBorder(0, 14, 0, 0));
@@ -203,6 +206,10 @@ public class FrmMantenimientoParroquias extends JPanel {
         return p;
     }
 
+    /**
+     * Se genera el panel con los campos del formulario
+     * para agregar los datos de la parroquia.
+     */
     private JPanel crearTarjetaFormulario() {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(AppColors.PANEL);
@@ -247,6 +254,9 @@ public class FrmMantenimientoParroquias extends JPanel {
         return card;
     }
 
+    /**
+     * Genera la barra con los botones de acciones para agregar/editar parroquias.
+     */
     private JPanel crearBarraBotones() {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
         p.setOpaque(false);
@@ -262,7 +272,6 @@ public class FrmMantenimientoParroquias extends JPanel {
         return p;
     }
 
-    // ─── Helpers de UI ───────────────────────────────────────────────────────
     private JPanel crearCampo(String label, JComponent campo) {
         JPanel p = new JPanel(new BorderLayout(0, 4));
         p.setOpaque(false);
