@@ -18,7 +18,9 @@ import java.awt.event.*;
 import java.util.List;
 
 /**
- * FrmLogin — Login, Registro y Recuperar contraseña.
+ * Ventana de acceso al sistema. Maneja tres vistas mediante CardLayout:
+ * login, registro de cuenta nueva y recuperación de contraseña.
+ * El tamaño del frame se ajusta al cambiar de vista.
  */
 public class FrmLogin extends JFrame {
 
@@ -70,14 +72,17 @@ public class FrmLogin extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    // ─── Card ────────────────────────────────────────────────────────────────
+    /**
+     * Contenedor principal
+     * encabezado fijo + panelCards con las tres vistas.
+     * @return
+     */
     private JPanel crearCard() {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(AppColors.PANEL);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(AppColors.BORDE, 1),
                 new EmptyBorder(32, 36, 32, 36)));
-        // ancho fijo; alto lo controla setSize() por vista
 
         card.add(crearEncabezado(), BorderLayout.NORTH);
 
@@ -92,7 +97,6 @@ public class FrmLogin extends JFrame {
         return card;
     }
 
-    // ─── Encabezado ──────────────────────────────────────────────────────────
     private JPanel crearEncabezado() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -117,7 +121,6 @@ public class FrmLogin extends JFrame {
         return p;
     }
 
-    // ─── Panel Login ─────────────────────────────────────────────────────────
     private JPanel crearPanelLogin() {
         JPanel p = panelBase();
 
@@ -153,7 +156,6 @@ public class FrmLogin extends JFrame {
         return p;
     }
 
-    // ─── Panel Registro ──────────────────────────────────────────────────────
     private JPanel crearPanelRegistro() {
         JPanel p = panelBase();
 
@@ -218,19 +220,18 @@ public class FrmLogin extends JFrame {
         p.add(vspace(14));
         p.add(separador());
         p.add(vspace(12));
-        p.add(linkBtn("Volver al inicio de sesion", e -> mostrar(VISTA_LOGIN)));
+        p.add(linkBtn("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
 
         return p;
     }
 
-    // ─── Panel Recuperar ─────────────────────────────────────────────────────
     private JPanel crearPanelRecuperar() {
         JPanel p = panelBase();
 
-        p.add(subtitulo("Recuperar contrasena"));
+        p.add(subtitulo("Recuperar contraseña"));
         p.add(vspace(8));
 
-        JLabel info = new JLabel("Ingrese su correo y defina una nueva contrasena.");
+        JLabel info = new JLabel("Ingrese su correo y defina una nueva contraseña.");
         info.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         info.setForeground(AppColors.TEXTO_GRIS);
         info.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -246,17 +247,17 @@ public class FrmLogin extends JFrame {
         p.add(txtRecEmail);
         p.add(vspace(12));
 
-        p.add(etiqueta("Nueva contrasena"));
+        p.add(etiqueta("Nueva contraseña"));
         p.add(vspace(4));
         p.add(txtRecPassword);
         p.add(vspace(12));
 
-        p.add(etiqueta("Confirmar contrasena"));
+        p.add(etiqueta("Confirmar contraseña"));
         p.add(vspace(4));
         p.add(txtRecConfirm);
         p.add(vspace(22));
 
-        JButton btnReset = UIFactory.crearBoton("Restablecer contrasena", AppColors.PRIMARIO, Color.WHITE,
+        JButton btnReset = UIFactory.crearBoton("Restablecer contraseña", AppColors.PRIMARIO, Color.WHITE,
                 e -> accionRecuperar());
         btnReset.setAlignmentX(Component.LEFT_ALIGNMENT);
         btnReset.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
@@ -265,12 +266,16 @@ public class FrmLogin extends JFrame {
         p.add(vspace(14));
         p.add(separador());
         p.add(vspace(12));
-        p.add(linkBtn("Volver al inicio de sesion", e -> mostrar(VISTA_LOGIN)));
+        p.add(linkBtn("Volver al inicio de sesión", e -> mostrar(VISTA_LOGIN)));
 
         return p;
     }
 
-    // ─── Acciones ────────────────────────────────────────────────────────────
+    /**
+     * Valida credenciales y redirige según el rol:
+     * CONSULTA_VICARIAL abre FrmConsultaVicarial
+     * el resto FrmDashboard.
+     */
     private void accionLogin() {
         String email = txtLoginEmail.getText().trim();
         String pass  = new String(txtLoginPassword.getPassword());
@@ -282,18 +287,27 @@ public class FrmLogin extends JFrame {
 
         Usuario u = usuarioCtrl.login(email, pass);
         if (u == null) {
-            error("Correo o contrasena incorrectos, o usuario inactivo.");
+            error("Correo o contraseña incorrectos, o usuario inactivo.");
             txtLoginPassword.setText("");
             return;
         }
 
-        SessionContext.setUsuarioActual(u);
+
         SwingUtilities.invokeLater(() -> {
-            new FrmDashboard(u).setVisible(true);
+            if (u.getRol() == RolUsuario.CONSULTA_VICARIAL) {
+                new FrmConsultaVicarial(u).setVisible(true);
+            } else {
+                new FrmDashboard(u).setVisible(true);
+            }
             dispose();
         });
     }
 
+    /**
+     * Valida el formulario y crea el usuario.
+     * Mínimo 6 caracteres de contraseña y no puede estar vacía.
+     * - las contraseñas deben coincidir.
+     */
     private void accionRegistrar() {
         String nombre  = txtRegNombre.getText().trim();
         String email   = txtRegEmail.getText().trim();
@@ -305,11 +319,11 @@ public class FrmLogin extends JFrame {
             return;
         }
         if (!pass.equals(confirm)) {
-            error("Las contrasennas no coinciden.");
+            error("Las contraseñas no coinciden.");
             return;
         }
         if (pass.length() < 6) {
-            error("La contrasena debe tener al menos 6 caracteres.");
+            error("La contraseña debe tener al menos 6 caracteres.");
             return;
         }
 
@@ -319,7 +333,7 @@ public class FrmLogin extends JFrame {
         try {
             usuarioCtrl.registrar(nombre, email, pass, rol, parroquia);
             JOptionPane.showMessageDialog(this,
-                    "Cuenta creada correctamente. Ya puede iniciar sesion.",
+                    "Cuenta creada correctamente. Ya puede iniciar sesión.",
                     "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
             limpiarRegistro();
             mostrar(VISTA_LOGIN);
@@ -330,6 +344,10 @@ public class FrmLogin extends JFrame {
         }
     }
 
+    /**
+     * Busca el usuario por correo y actualiza su contraseña si existe.
+     * Mismas validaciones de longitud de contraseña y coincidencia.
+     */
     private void accionRecuperar() {
         String email   = txtRecEmail.getText().trim();
         String pass    = new String(txtRecPassword.getPassword());
@@ -340,28 +358,32 @@ public class FrmLogin extends JFrame {
             return;
         }
         if (!pass.equals(confirm)) {
-            error("Las contrasennas no coinciden.");
+            error("Las contraseñas no coinciden.");
             return;
         }
         if (pass.length() < 6) {
-            error("La contrasena debe tener al menos 6 caracteres.");
+            error("La contraseña debe tener al menos 6 caracteres.");
             return;
         }
 
         boolean ok = usuarioCtrl.cambiarPassword(email, pass);
         if (!ok) {
-            error("No se encontro ningun usuario con ese correo.");
+            error("No se encontró ningún usuario con ese correo.");
             return;
         }
 
         JOptionPane.showMessageDialog(this,
-                "Contrasena restablecida correctamente.",
-                "Exito", JOptionPane.INFORMATION_MESSAGE);
+                "Contraseña restablecida correctamente.",
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
         limpiarRecuperar();
         mostrar(VISTA_LOGIN);
     }
 
-    // ─── Navegación ──────────────────────────────────────────────────────────
+    /**
+     * Cambia la vista activa y ajusta el alto del frame:
+     * LOGIN=480, REGISTRO=680, RECUPERAR=510.
+     * @param vista
+     */
     private void mostrar(String vista) {
         cardLayout.show(panelCards, vista);
         int alto = VISTA_LOGIN.equals(vista) ? 480
@@ -370,7 +392,10 @@ public class FrmLogin extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    // ─── Helpers de datos ────────────────────────────────────────────────────
+    /**
+     * Llena el combo de parroquias desde BD.
+     * El primer ítem es null ("— Sin parroquia —").
+     */
     private void cargarParroquias() {
         cmbRegParroquia.removeAllItems();
         cmbRegParroquia.addItem(null);
@@ -395,7 +420,6 @@ public class FrmLogin extends JFrame {
         JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    // ─── Componentes base ────────────────────────────────────────────────────
     private JPanel panelBase() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));

@@ -30,20 +30,46 @@ public class ProlongacionAyuda implements Serializable {
     @JoinColumn(name = "expediente_id", nullable = false)
     private Expediente expediente;
 
-    public ProlongacionAyuda() {}
+    public ProlongacionAyuda() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Date getFechaProlongacion() { return fechaProlongacion; }
-    public void setFechaProlongacion(Date fechaProlongacion) { this.fechaProlongacion = fechaProlongacion; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+    public Date getFechaProlongacion() {
+        return fechaProlongacion;
+    }
 
-    public Usuario getRegistradoPor() { return registradoPor; }
-    public void setRegistradoPor(Usuario registradoPor) { this.registradoPor = registradoPor; }
+    public void setFechaProlongacion(Date fechaProlongacion) {
+        this.fechaProlongacion = fechaProlongacion;
+    }
 
-    public Expediente getExpediente() { return expediente; }
-    public void setExpediente(Expediente expediente) { this.expediente = expediente; }
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public Usuario getRegistradoPor() {
+        return registradoPor;
+    }
+
+    public void setRegistradoPor(Usuario registradoPor) {
+        this.registradoPor = registradoPor;
+    }
+
+    public Expediente getExpediente() {
+        return expediente;
+    }
+
+    public void setExpediente(Expediente expediente) {
+        this.expediente = expediente;
+    }
 }

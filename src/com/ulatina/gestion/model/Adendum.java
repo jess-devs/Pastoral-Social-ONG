@@ -7,10 +7,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "adendum")
-@NamedQuery(
-        name = "Adendum.findByExpediente",
-        query = "SELECT a FROM Adendum a WHERE a.expediente.id = :expedienteId"
-)
+@NamedQuery(name = "Adendum.findByExpediente", query = "SELECT a FROM Adendum a WHERE a.expediente.id = :expedienteId")
 
 public class Adendum implements Serializable {
 
@@ -32,17 +29,38 @@ public class Adendum implements Serializable {
     @OneToMany(mappedBy = "adendum", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<GastoMensual> gastosMensuales = new ArrayList<>();
 
-    public Adendum() {}
+    public Adendum() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Expediente getExpediente() { return expediente; }
-    public void setExpediente(Expediente expediente) { this.expediente = expediente; }
+    public String getObservaciones() {
+        return observaciones;
+    }
 
-    public List<GastoMensual> getGastosMensuales() { return gastosMensuales; }
-    public void setGastosMensuales(List<GastoMensual> gastosMensuales) { this.gastosMensuales = gastosMensuales; }
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public Expediente getExpediente() {
+        return expediente;
+    }
+
+    public void setExpediente(Expediente expediente) {
+        this.expediente = expediente;
+    }
+
+    public List<GastoMensual> getGastosMensuales() {
+        return gastosMensuales;
+    }
+
+    public void setGastosMensuales(List<GastoMensual> gastosMensuales) {
+        this.gastosMensuales = gastosMensuales;
+    }
 }
