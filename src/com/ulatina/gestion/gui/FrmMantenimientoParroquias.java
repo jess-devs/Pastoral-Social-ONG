@@ -22,7 +22,7 @@ public class FrmMantenimientoParroquias extends JPanel {
      * Se inicializan el controlador de parroquias para ser utilizado e ingresar
      * los metodos necesarios a ser utilizados.
      * Se llama al FrmPanel administrativo para ser utilizado en caso que el usuario
-     * requiera devolverse al menu principal a realizar otras gestiones como
+     * requiera devolverse al menu principal a realizar otras gestiones como administrador.
      */
     private final ParroquiaController parroquiaController = new ParroquiaController();
     private final FrmPanelAdministrativo frmMain;
@@ -47,7 +47,7 @@ public class FrmMantenimientoParroquias extends JPanel {
     private DefaultTableModel modelo;
 
     /**
-     * Se crean los diferentes elemenos que se utilizaran para que el usuario
+     * Se crean los diferentes componentes que se utilizaran para que el usuario
      * digite los datos de la parroquia nueva o que puede editar.
      */
     private JTextField txtNombre;
@@ -58,6 +58,7 @@ public class FrmMantenimientoParroquias extends JPanel {
     private JLabel lblTituloForm;
     private JCheckBox chkEstatus;
 
+    //Usuario seleccionado para interactuar.
     private Parroquia parroquiaEditando = null;
 
     /**
@@ -73,7 +74,6 @@ public class FrmMantenimientoParroquias extends JPanel {
         setBackground(AppColors.FONDO);
         setBorder(new EmptyBorder(28, 28, 28, 28));
 
-        // Barra superior: ← Volver + título dinámico
         JPanel barTop = new JPanel(new BorderLayout());
         barTop.setOpaque(false);
         barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
@@ -319,7 +319,9 @@ public class FrmMantenimientoParroquias extends JPanel {
         return btn;
     }
 
-    // ─── Lógica ──────────────────────────────────────────────────────────────
+    /**
+     * Logica utliada dentro de la vista de parroquias
+     */
     private void cargarTabla() {
         modelo.setRowCount(0);
         try {

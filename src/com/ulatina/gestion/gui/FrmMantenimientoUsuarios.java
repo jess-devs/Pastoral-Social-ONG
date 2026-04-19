@@ -3,6 +3,7 @@ package com.ulatina.gestion.gui;
 import com.ulatina.gestion.controller.ParroquiaController;
 import com.ulatina.gestion.controller.UsuarioController;
 import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.Parroquia;
 import com.ulatina.gestion.model.Usuario;
 import com.ulatina.gestion.model.enums.RolUsuario;
@@ -24,23 +25,39 @@ import java.util.List;
  */
 public class FrmMantenimientoUsuarios extends JPanel {
 
-    // ─── Controllers ─────────────────────────────────────────────────────────
+    /**
+     * Se inicializan el controlador de parroquias para ser utilizado e ingresar
+     * los metodos necesarios a ser utilizados.
+     * Se llama al FrmPanel administrativo para ser utilizado en caso que el usuario
+     * requiera devolverse al menu principal a realizar otras gestiones como administrador.
+     */
     private final UsuarioController    usuarioController   = new UsuarioController();
     private final ParroquiaController  parroquiaController = new ParroquiaController();
     private final FrmPanelAdministrativo frmMain;
 
-    // ─── CardLayout vistas ────────────────────────────────────────────────────
+    /**
+     * Se crean las variables que se llamarán durante la creacion del resto de la vista
+     */
     private static final String VISTA_LISTA = "LISTA";
     private static final String VISTA_FORM  = "FORM";
 
+    /**
+     * Se crea la carta que se va a utilizar.
+     * Se crea el panel principan que contendra el contenido de la vista.
+     */
     private CardLayout cardLayout;
     private JPanel     panelCards;
 
-    // ─── Tabla ───────────────────────────────────────────────────────────────
+    /**
+     * Se crea la tabla y el modelo que contendra los datos de las parroquias.
+     */
     private JTable            tabla;
     private DefaultTableModel modelo;
 
-    // ─── Formulario ──────────────────────────────────────────────────────────
+    /**
+     * Se crean los diferentes componentes que se utilizaran para que el usuario
+     * digite los datos de la parroquia nueva o que puede editar.
+     */
     private JTextField     txtNombre;
     private JTextField     txtEmail;
     private JPasswordField pswPassword;
@@ -50,16 +67,30 @@ public class FrmMantenimientoUsuarios extends JPanel {
     private JCheckBox      chkEstatus;
     private JLabel         lblTituloForm;
 
+    //Usuario seleccionado para interactuar.
     private Usuario usuarioEditando = null;
 
-    // ─── Constructor ─────────────────────────────────────────────────────────
+    /**
+     * Se crea el constructor de la vista de Usuarios.
+     * Utiliza las "card" que divide las partes de la vista.
+     * Se utiliza el formado de encabezado ya establecido.
+     * Se utiliza el metodo de carga de tabla para mostrar los datos de las parroquias.
+     * Boton de volver implementado para regrear al inicio del panel de adminitracion
+     */
     public FrmMantenimientoUsuarios(FrmPanelAdministrativo frmMain) {
         this.frmMain = frmMain;
         setLayout(new BorderLayout(0, 0));
         setBackground(AppColors.FONDO);
         setBorder(new EmptyBorder(28, 28, 28, 28));
 
-        add(crearEncabezado(), BorderLayout.NORTH);
+        JPanel barTop = new JPanel(new BorderLayout());
+        barTop.setOpaque(false);
+        barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
+
+        JButton btnVolver = crearBoton("Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
+        btnVolver.addActionListener(e -> frmMain.volverAlGrid());
+
+        add(UIFactory.crearEncabezado("Mantenimiendo Usuarios", "Gestioná los usuarios y sus accesos al sistema."), BorderLayout.NORTH);
 
         cardLayout = new CardLayout();
         panelCards = new JPanel(cardLayout);
@@ -69,36 +100,14 @@ public class FrmMantenimientoUsuarios extends JPanel {
         panelCards.add(crearVistaFormulario(), VISTA_FORM);
 
         add(panelCards, BorderLayout.CENTER);
+        add(btnVolver, BorderLayout.SOUTH);
 
         cargarTabla();
     }
 
-    // ─── Encabezado ──────────────────────────────────────────────────────────
-    private JPanel crearEncabezado() {
-        JPanel p = new JPanel(new BorderLayout(0, 4));
-        p.setOpaque(false);
-        p.setBorder(new EmptyBorder(0, 0, 20, 0));
-
-        JLabel titulo = new JLabel("Mantenimiento Usuarios");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titulo.setForeground(AppColors.TEXTO);
-
-        JLabel subtitulo = new JLabel("Administrá los usuarios y sus accesos al sistema.");
-        subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitulo.setForeground(AppColors.TEXTO_GRIS);
-
-        JButton btnVolver = crearBoton("← Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
-        btnVolver.addActionListener(e -> frmMain.volverAlGrid());
-
-        p.add(titulo,    BorderLayout.NORTH);
-        p.add(subtitulo, BorderLayout.CENTER);
-        p.add(btnVolver, BorderLayout.SOUTH);
-        return p;
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // VISTA LISTA
-    // ═══════════════════════════════════════════════════════════════════════
+    /**
+     * Se crean los espacios con los botones de acciones.
+     */
     private JPanel crearVistaLista() {
         JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setOpaque(false);
@@ -106,30 +115,36 @@ public class FrmMantenimientoUsuarios extends JPanel {
         JPanel barTop = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         barTop.setOpaque(false);
 
+        //Boton desactivar
         JButton btnDesactivar = crearBoton("Desactivar Usuario", AppColors.ROJO, AppColors.ROJO_H, Color.WHITE);
         btnDesactivar.addActionListener(e -> desactivarUsuario());
         barTop.add(btnDesactivar);
         barTop.add(Box.createHorizontalStrut(8));
-
+        //Boton Editar
         JButton btnEditar = crearBoton("Editar Usuario", AppColors.AZUL, AppColors.AZUL_BORDE, Color.WHITE);
         btnEditar.addActionListener(e -> abrirEditar());
         barTop.add(btnEditar);
         barTop.add(Box.createHorizontalStrut(8));
-
+        //Boton Agregar
         JButton btnAgregar = crearBoton("Agregar Usuario", AppColors.PRIMARIO, AppColors.PRIMARIO_H, Color.WHITE);
         btnAgregar.addActionListener(e -> abrirAgregar());
         barTop.add(btnAgregar);
 
+        //Posiciones de los botones dentro del panel.
         p.add(barTop,            BorderLayout.NORTH);
         p.add(crearPanelTabla(), BorderLayout.CENTER);
         return p;
     }
 
+    /**
+     * Se crea el panel que contiene la tabla de parroquias
+     */
     private JPanel crearPanelTabla() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(AppColors.PANEL);
         panel.setBorder(new LineBorder(AppColors.BORDE, 1, true));
 
+        //Encabezados de la tabla.
         modelo = new DefaultTableModel(
                 new String[]{"ID", "Nombre", "Email", "Rol", "Estado"}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -173,9 +188,9 @@ public class FrmMantenimientoUsuarios extends JPanel {
         return panel;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // VISTA FORMULARIO
-    // ═══════════════════════════════════════════════════════════════════════
+    /**
+    //     * Panel utilizado para los botones de acciones.
+    */
     private JPanel crearVistaFormulario() {
         JPanel p = new JPanel(new BorderLayout(0, 16));
         p.setOpaque(false);
@@ -184,7 +199,7 @@ public class FrmMantenimientoUsuarios extends JPanel {
         barTop.setOpaque(false);
         barTop.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        JButton btnVolver = crearBoton("← Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
+        JButton btnVolver = crearBoton("Volver", AppColors.GRIS_BTN, AppColors.GRIS_BTN_H, AppColors.TEXTO);
         btnVolver.addActionListener(e -> mostrar(VISTA_LISTA));
 
         lblTituloForm = new JLabel("Agregar Usuario");
@@ -200,6 +215,10 @@ public class FrmMantenimientoUsuarios extends JPanel {
         return p;
     }
 
+    /**
+     * Se genera el panel con los campos del formulario
+     * para agregar los datos de la parroquia.
+     */
     private JPanel crearTarjetaFormulario() {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(AppColors.PANEL);
@@ -226,6 +245,9 @@ public class FrmMantenimientoUsuarios extends JPanel {
         cmbParroquia = new JComboBox<>();
         estilizarCombo(cmbRol);
         estilizarCombo(cmbParroquia);
+        chkEstatus = new JCheckBox("Estatus Parroquia");
+        chkEstatus.isSelected();
+
         cargarParroquias();
 
         chkEstatus = new JCheckBox("Usuario activo");
@@ -257,6 +279,9 @@ public class FrmMantenimientoUsuarios extends JPanel {
         return card;
     }
 
+    /**
+     * Genera la barra con los botones de acciones para agregar/editar parroquias.
+     */
     private JPanel crearBarraBotones() {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
         p.setOpaque(false);
@@ -272,7 +297,6 @@ public class FrmMantenimientoUsuarios extends JPanel {
         return p;
     }
 
-    // ─── Helpers de UI ───────────────────────────────────────────────────────
     private JPanel crearCampo(String label, JComponent campo) {
         JPanel p = new JPanel(new BorderLayout(0, 4));
         p.setOpaque(false);
@@ -326,7 +350,9 @@ public class FrmMantenimientoUsuarios extends JPanel {
         return btn;
     }
 
-    // ─── Lógica ──────────────────────────────────────────────────────────────
+    /**
+     * Logica utliada dentro de la vista de parroquias
+     */
     private void cargarTabla() {
         modelo.setRowCount(0);
         try {
