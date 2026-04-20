@@ -383,7 +383,6 @@ public class FrmMantenimientoParroquias extends JPanel {
         if (fila == -1) return;
 
         Long id = (Long) modelo.getValueAt(fila, 0);
-        // Buscar la parroquia en el controller
         try {
             List<Parroquia> lista = parroquiaController.findAll();
             parroquiaEditando = lista.stream()

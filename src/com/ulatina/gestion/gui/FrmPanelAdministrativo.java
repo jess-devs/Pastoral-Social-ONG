@@ -1,6 +1,7 @@
 package com.ulatina.gestion.gui;
 
 import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.gui.util.UIFactory;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,6 +12,9 @@ import java.awt.event.MouseEvent;
 
 public class FrmPanelAdministrativo extends JPanel {
 
+    /**
+     * Se crean las variables que se llamarán durante la creacion del resto de la vista
+     */
     private JPanel panelContenido;
     private JPanel cardParroquias;
     private JPanel cardUsuarios;
@@ -22,33 +26,26 @@ public class FrmPanelAdministrativo extends JPanel {
         setBorder(new EmptyBorder(28, 28, 28, 28));
 
         add(crearEncabezado(), BorderLayout.NORTH);
-
-        // Contenedor donde cargarán las vistas
         panelContenido = new JPanel(new BorderLayout());
         panelContenido.setOpaque(false);
-
-        // Vista inicial → Grid de tarjetas
         panelContenido.add(crearGrid(), BorderLayout.CENTER);
 
         add(panelContenido, BorderLayout.CENTER);
     }
 
-    // ─── Encabezado ───────────────────────────────────────────
     private JPanel crearEncabezado() {
         JPanel p = new JPanel(new BorderLayout(0, 4));
         p.setOpaque(false);
         p.setBorder(new EmptyBorder(0, 0, 24, 0));
 
-        JLabel subtitulo = new JLabel("Seleccioná una sección para administrar");
-        subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitulo.setForeground(AppColors.TEXTO);
-
-        p.add(subtitulo, BorderLayout.SOUTH);
+        p.add(UIFactory.crearEncabezado("Mantenimiento Usuarios", "Gestioná los diferentes modulos del sistema."));
 
         return p;
     }
 
-    // ─── Grid de tarjetas ─────────────────────────────────────
+    /**
+     * Se crean los espacios con los botones de acciones (Parroquias / Usuarios).
+     */
     private JPanel crearGrid() {
         JPanel grid = new JPanel(new GridLayout(1, 3, 18, 0));
         grid.setOpaque(false);
@@ -69,17 +66,8 @@ public class FrmPanelAdministrativo extends JPanel {
                 this::abrirGestionUsuarios
         );
 
-        cardRoles = crearTarjeta(
-                "Gestión de Roles",
-                "Configurá los roles y permisos",
-                AppColors.SIDE_BG,
-                AppColors.SIDE_TXT,
-                this::abrirGestionRoles
-        );
-
         grid.add(cardParroquias);
         grid.add(cardUsuarios);
-        grid.add(cardRoles);
 
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
@@ -87,7 +75,9 @@ public class FrmPanelAdministrativo extends JPanel {
         return wrapper;
     }
 
-    // ─── Fábrica de tarjeta ───────────────────────────────────
+    /**
+     * Se crean las tarjetas de los
+     */
     private JPanel crearTarjeta(String titulo, String descripcion,
                                 Color bg, Color fg, Runnable accion) {
 
@@ -130,7 +120,9 @@ public class FrmPanelAdministrativo extends JPanel {
         return card;
     }
 
-    // ─── Cambiar Panel ───────────────────────────────────────────
+    /**
+     * Metodos para cambiar de vista dentro del panel principal del panel de administracion.
+     */
     private void cambiarVista(JPanel nuevaVista, String titulo) {
 
         panelContenido.removeAll();
@@ -139,27 +131,19 @@ public class FrmPanelAdministrativo extends JPanel {
         panelContenido.revalidate();
         panelContenido.repaint();
     }
-
-    // ─── Acciones ────────────────────────────────────────────────
     public void volverAlGrid() {
         panelContenido.removeAll();
         panelContenido.add(crearGrid(), BorderLayout.CENTER);
         panelContenido.revalidate();
         panelContenido.repaint();
     }
-
     private void abrirGestionParroquias() {
         cambiarVista(new FrmMantenimientoParroquias(this), "Mantenimiento Parroquias");
         System.out.println("Entra a la ventana de parroquias");
     }
-
     private void abrirGestionUsuarios() {
         cambiarVista(new FrmMantenimientoUsuarios(this), "Mantenimiento Usuarios");
         System.out.println("Entra a la ventana de Usuarios");
     }
 
-    private void abrirGestionRoles() {
-        cambiarVista(new FrmMantenimientoRoles(), "Gestión Roles");
-        System.out.println("Entra a la ventana de Roles");
-    }
 }
