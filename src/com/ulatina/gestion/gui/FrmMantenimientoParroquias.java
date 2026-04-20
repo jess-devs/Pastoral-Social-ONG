@@ -4,6 +4,7 @@ import com.ulatina.gestion.controller.ParroquiaController;
 import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.Parroquia;
+import com.ulatina.gestion.model.Usuario;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -340,8 +341,34 @@ public class FrmMantenimientoParroquias extends JPanel {
         }
     }
 
-    private void desactivarParroquia(){
-        System.out.println("Pendiente logica para desactivar Parroquia desde el main");
+    private void desactivarParroquia() {
+        int fila = tabla.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccioná una Parroquia de la tabla.", "Sin selección", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String nombre = modelo.getValueAt(fila, 1).toString();
+        int confirmacion = JOptionPane.showConfirmDialog(this,
+                "¿Desactivar Parroquia \"" + nombre,
+                "Confirmar desactivación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (confirmacion != JOptionPane.YES_OPTION) return;
+
+        Long id = (Long) modelo.getValueAt(fila, 0);
+        try {
+            List<Parroquia> lista = parroquiaController.findAll();
+            Parroquia p = lista.stream()
+                    .filter(pa -> pa.getId().equals(id))
+                    .findFirst()
+                    .orElse(null);
+
+            if (p != null) {
+                parroquiaController.desactivarParroquia(p);
+                cargarTabla();
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void abrirAgregar() {
@@ -379,6 +406,9 @@ public class FrmMantenimientoParroquias extends JPanel {
         mostrar(VISTA_FORM);
     }
 
+    /**
+     * Llamado de campos para guardar los datos de la parroquia ingresada.
+     */
     private void guardar() {
         String nombre  = txtNombre.getText().trim();
         String vicaria = txtVicaria.getText().trim();
@@ -430,11 +460,14 @@ public class FrmMantenimientoParroquias extends JPanel {
         txtTelefono.setText("");
     }
 
+    /**
+     * Cambio de vista.
+     * @param vista
+     */
     private void mostrar(String vista) {
         cardLayout.show(panelCards, vista);
     }
 
-    // ─── Renderers personalizados ─────────────────────────────────────────────
     static class EstadoBadgeRenderer extends DefaultTableCellRenderer {
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                                                                  boolean sel, boolean foc, int r, int c) {

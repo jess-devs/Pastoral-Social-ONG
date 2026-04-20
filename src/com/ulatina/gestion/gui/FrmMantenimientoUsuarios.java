@@ -434,45 +434,23 @@ public class FrmMantenimientoUsuarios extends JPanel {
         mostrar(VISTA_FORM);
     }
 
+    /**
+     * Llamado de campos para guardar los datos de la parroquia ingresada.
+     */
     private void guardar() {
         String nombre = txtNombre.getText().trim();
         String email  = txtEmail.getText().trim();
-        RolUsuario rol       = (RolUsuario) cmbRol.getSelectedItem();
-        Parroquia  parroquia = (Parroquia)  cmbParroquia.getSelectedItem();
-        boolean    estatus   = chkEstatus.isSelected();
+        RolUsuario rol = (RolUsuario) cmbRol.getSelectedItem();
+        Parroquia parroquia = (Parroquia)  cmbParroquia.getSelectedItem();
+        boolean estatus = chkEstatus.isSelected();
 
         if (nombre.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nombre y Email son obligatorios.", "Campos requeridos", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Campos requeridos", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        try {
-            if (usuarioEditando == null) {
-                // Nuevo usuario
-                String pass = new String(pswPassword.getPassword());
-                if (pass.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "La contraseña es obligatoria.", "Campos requeridos", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                usuarioController.saveUsuario(nombre, email, pass, rol, parroquia, estatus);
-            } else {
-                // Edición
-                usuarioEditando.setNombre(nombre);
-                usuarioEditando.setRol(rol);
-                usuarioEditando.setParroquia(parroquia);
-                usuarioEditando.setActivo(estatus);
-                usuarioController.editUsuario(usuarioEditando);
-            }
-
             cargarTabla();
             mostrar(VISTA_LISTA);
             JOptionPane.showMessageDialog(this, "Usuario guardado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error de validación", JOptionPane.WARNING_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     private void desactivarUsuario() {
@@ -498,7 +476,7 @@ public class FrmMantenimientoUsuarios extends JPanel {
                     .orElse(null);
 
             if (u != null) {
-                usuarioController.desactivarUsuario(u);
+                usuarioController.desactivatedUsuario(u);
                 cargarTabla();
             }
         } catch (Exception ex) {
@@ -518,7 +496,6 @@ public class FrmMantenimientoUsuarios extends JPanel {
         cardLayout.show(panelCards, vista);
     }
 
-    // ─── Renderers ───────────────────────────────────────────────────────────
     static class RolBadgeRenderer extends DefaultTableCellRenderer {
         private static final java.util.Map<String, Color[]> COLORES = new java.util.HashMap<>();
         static {

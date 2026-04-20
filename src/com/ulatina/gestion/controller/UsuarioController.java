@@ -166,7 +166,7 @@ public class UsuarioController {
      * Esto es así para tener una trazabilidad de todas las gestiones que han ocurrido
      * por el sistema.
      */
-    public void desactivarUsuario(Usuario u) {
+    public void desactivatedUsuario(Usuario u) {
         u.setActivo(false);
         usuarioDAO.update(u);
     }
