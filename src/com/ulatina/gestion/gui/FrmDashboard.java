@@ -118,6 +118,7 @@ public class FrmDashboard extends JFrame {
 
         bRep.setVisible(false);
         bCons.setVisible(false);
+        bAdmin.setVisible(usuario.getRol() == RolUsuario.ADMIN);
 
         sb.add(bDash);
         sb.add(bExp);
