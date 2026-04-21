@@ -234,8 +234,7 @@ public class FrmMantenimientoParroquias extends JPanel {
         txtDireccion = crearTextField();
         txtTelefono = crearTextField();
 
-        chkEstatus = new JCheckBox("Estatus Parroquia");
-        chkEstatus.isSelected();
+        chkEstatus = new JCheckBox("Parroquia activa");
         chkEstatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
         // Fila 0: Nombre | Vicaria | Estatus
@@ -246,7 +245,7 @@ public class FrmMantenimientoParroquias extends JPanel {
         g.gridx = 1;
         grid.add(crearCampo("Vicaria", txtVicaria), g);
         g.gridx = 2;
-        grid.add(chkEstatus = new JCheckBox(), g);
+        grid.add(chkEstatus, g);
 
         // Fila 1: Sector/Filial | Dirección | Teléfono
         g.gridx = 0;
