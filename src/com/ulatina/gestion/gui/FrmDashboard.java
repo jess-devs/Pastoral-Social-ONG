@@ -119,7 +119,7 @@ public class FrmDashboard extends JFrame {
         bRep.setVisible(false);
         bCons.setVisible(false);
         bAdmin.setVisible(usuario.getRol() == RolUsuario.ADMIN);
-        bEven.setVisible(usuario.getRol() == RolUsuario.COORDINADOR || usuario.getRol() == RolUsuario.ADMIN);
+        bEven.setVisible(usuario.getRol() == RolUsuario.COORDINADOR || usuario.getRol() == RolUsuario.ADMIN || usuario.getRol() == RolUsuario.VOLUNTARIO);
 
         sb.add(bDash);
         sb.add(bExp);
@@ -418,7 +418,7 @@ public class FrmDashboard extends JFrame {
     }
 
     private void mostrarEventos() {
-        cambiarVista(new FrmEvento(), "Eventos");
+        cambiarVista(new FrmEvento(usuario), "Eventos");
     }
 
     private void mostrarPanelAdministrativo() {

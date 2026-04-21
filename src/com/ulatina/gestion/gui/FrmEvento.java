@@ -6,6 +6,8 @@ import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.Evento;
 import com.ulatina.gestion.model.Parroquia;
+import com.ulatina.gestion.model.Usuario;
+import com.ulatina.gestion.model.enums.RolUsuario;
 import com.ulatina.gestion.model.enums.TipoEvento;
 
 import javax.swing.*;
@@ -32,6 +34,8 @@ public class FrmEvento extends JPanel {
     /** Formato de fecha para mostrar valores en la tabla (ej: 15/04/26). */
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
 
+    private final Usuario usuario;
+
     // Componentes
     private JTextField txtBuscar;
     private JTable tabla;
@@ -46,7 +50,8 @@ public class FrmEvento extends JPanel {
     /**
      * Constructor: inicializa el panel y construye la interfaz completa.
      */
-    public FrmEvento() {
+    public FrmEvento(Usuario usuario) {
+        this.usuario = usuario;
         setLayout(new BorderLayout(0, 8));
         setBackground(AppColors.FONDO);
         setBorder(new EmptyBorder(20, 24, 20, 24));
@@ -92,8 +97,17 @@ public class FrmEvento extends JPanel {
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         btns.setOpaque(false);
-        btns.add(UIFactory.crearBoton("Ver / Editar", AppColors.AZUL, Color.WHITE, e -> abrirFormulario(false)));
-        btns.add(UIFactory.crearBoton("Eliminar", AppColors.ROJO, Color.WHITE, e -> eliminarEvento()));
+        JButton btnEditar = UIFactory.crearBoton("Ver / Editar", AppColors.AZUL, Color.WHITE, e -> abrirFormulario(false));
+        JButton btnEliminar = UIFactory.crearBoton("Eliminar", AppColors.ROJO, Color.WHITE, e -> eliminarEvento());
+
+        boolean esReadOnly = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL || usuario.getRol() == RolUsuario.VOLUNTARIO;
+        btnEditar.setEnabled(!esReadOnly);
+        btnEliminar.setEnabled(!esReadOnly);
+        btnEditar.setVisible(!esReadOnly);
+        btnEliminar.setVisible(!esReadOnly);
+
+        btns.add(btnEditar);
+        btns.add(btnEliminar);
         p.add(btns, BorderLayout.EAST);
         return p;
     }
@@ -118,7 +132,11 @@ public class FrmEvento extends JPanel {
             revalidate();
             repaint();
         }));
-        derecha.add(UIFactory.crearBoton("+ Nuevo", AppColors.PRIMARIO, Color.WHITE, e -> abrirFormulario(true)));
+        JButton btnNuevo = UIFactory.crearBoton("+ Nuevo", AppColors.PRIMARIO, Color.WHITE, e -> abrirFormulario(true));
+        boolean esReadOnly = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL || usuario.getRol() == RolUsuario.VOLUNTARIO;
+        btnNuevo.setEnabled(!esReadOnly);
+        btnNuevo.setVisible(!esReadOnly);
+        derecha.add(btnNuevo);
 
         p.add(txtBuscar, BorderLayout.CENTER);
         p.add(derecha, BorderLayout.EAST);
@@ -355,7 +373,7 @@ public class FrmEvento extends JPanel {
             return;
         }
         Window owner = SwingUtilities.getWindowAncestor(this);
-        FrmDetalleEvento dlg = new FrmDetalleEvento(owner, ev, this::cargarTabla);
+        FrmDetalleEvento dlg = new FrmDetalleEvento(owner, ev, usuario, this::cargarTabla);
         dlg.setVisible(true);
     }
 

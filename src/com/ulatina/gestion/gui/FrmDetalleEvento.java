@@ -6,6 +6,8 @@ import com.ulatina.gestion.gui.util.AppColors;
 import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.Evento;
 import com.ulatina.gestion.model.Parroquia;
+import com.ulatina.gestion.model.Usuario;
+import com.ulatina.gestion.model.enums.RolUsuario;
 import com.ulatina.gestion.model.enums.TipoEvento;
 
 import javax.swing.*;
@@ -26,6 +28,7 @@ public class FrmDetalleEvento extends JDialog {
     private final Runnable onGuardado;
     private final SimpleDateFormat sdfFecha = new SimpleDateFormat("dd/MM/yyyy");
     private final SimpleDateFormat sdfHora  = new SimpleDateFormat("HH:mm");
+    private final Usuario usuario;
 
     // ─── Controllers ──────────────────────────────────────────────────────────
     private final EventoController eventoController = new EventoController();
@@ -43,10 +46,11 @@ public class FrmDetalleEvento extends JDialog {
     private JComboBox<Parroquia> cmbParroquia;
 
     // ─── Constructor ──────────────────────────────────────────────────────────
-    public FrmDetalleEvento(Window owner, Evento evento, Runnable onGuardado) {
+    public FrmDetalleEvento(Window owner, Evento evento, Usuario usuario, Runnable onGuardado) {
         super(owner, ModalityType.APPLICATION_MODAL);
         this.evento = evento;
         this.esNuevo = (evento == null);
+        this.usuario = usuario;
         this.onGuardado = onGuardado;
 
         initComponents();
@@ -211,6 +215,17 @@ public class FrmDetalleEvento extends JDialog {
         scrollArea.setBorder(BorderFactory.createEmptyBorder());
         form.add(scrollArea, areaC);
 
+        boolean esReadOnly = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL || usuario.getRol() == RolUsuario.VOLUNTARIO;
+        if (esReadOnly) {
+            txtNombre.setEditable(false);
+            txtFecha.setEditable(false);
+            txtHora.setEditable(false);
+            txtLugar.setEditable(false);
+            cmbTipo.setEnabled(false);
+            cmbParroquia.setEnabled(false);
+            txtDescripcion.setEditable(false);
+        }
+
         return form;
     }
 
@@ -224,10 +239,16 @@ public class FrmDetalleEvento extends JDialog {
 
         pie.add(UIFactory.crearBotonDialog("Cancelar", AppColors.GRIS_BTN, AppColors.TEXTO,
                 e -> dispose()));
-        pie.add(UIFactory.crearBotonDialog(
+        JButton btnGuardar = UIFactory.crearBotonDialog(
                 esNuevo ? "Crear Evento" : "Guardar Cambios",
                 AppColors.PRIMARIO, Color.WHITE,
-                e -> guardar()));
+                e -> guardar());
+
+        boolean esReadOnly = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL || usuario.getRol() == RolUsuario.VOLUNTARIO;
+        btnGuardar.setEnabled(!esReadOnly);
+        btnGuardar.setVisible(!esReadOnly);
+
+        pie.add(btnGuardar);
         return pie;
     }
 
