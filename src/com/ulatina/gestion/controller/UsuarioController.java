@@ -95,7 +95,9 @@ public class UsuarioController {
             throw new RuntimeException("SHA-256 no disponible", e);
         }
     }
-
+    /**
+     * Devuelve el listado completo de los usuarios ingresados.
+     */
     public List<Usuario> findAll() {
         try {
             return usuarioDAO.findAll();
@@ -104,7 +106,9 @@ public class UsuarioController {
             return Collections.emptyList();
         }
     }
-
+    /**
+     * Devuelve el listado completo de los usuarios activos en la platarma.
+     */
     public List<Usuario> findActivos() {
         try {
             return usuarioDAO.findActivos();
@@ -113,7 +117,10 @@ public class UsuarioController {
             return Collections.emptyList();
         }
     }
-
+    /**
+     * Devuelve el listado completo de los usuarios por el parametro de
+     * "email".
+     */
     public Usuario findByEmail(String email) {
         try {
             return usuarioDAO.findByEmail(email.trim().toLowerCase());
@@ -123,7 +130,7 @@ public class UsuarioController {
         }
     }
 
-    // ─── Guardar nuevo usuario ────────────────────────────────────────────────
+    // llamar función de chus
 
     public void saveUsuario(String nombre, String email, String password,
                             RolUsuario rol, Parroquia parroquia, boolean activo) {
@@ -141,15 +148,25 @@ public class UsuarioController {
         usuarioDAO.save(u);
     }
 
-    // Editar usuario existente ─────────────────────────────────────────────
-
+    /**
+     * El siguiente metodo es utilizado para editar los datos del usuario
+     * ingresado.
+     * Utiliza el siguiente parametro que extrae los actuales ingresados
+     * en la base para hacer la edición.
+     * @param u
+     */
     public void editUsuario(Usuario u) {
         usuarioDAO.update(u);
     }
 
-    // Desactivar ───────────────────────────────────
-
-    public void desactivarUsuario(Usuario u) {
+    /**
+     * El metodo desactivar usuarios es utilizado para que desde la visualizacion
+     * principal el usuario pueda colocar como inactivo el uso de algun usuario
+     * en caso de que sea neesario.
+     * Esto es así para tener una trazabilidad de todas las gestiones que han ocurrido
+     * por el sistema.
+     */
+    public void desactivatedUsuario(Usuario u) {
         u.setActivo(false);
         usuarioDAO.update(u);
     }

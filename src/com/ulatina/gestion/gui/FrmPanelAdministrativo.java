@@ -12,6 +12,9 @@ import java.awt.event.MouseEvent;
 
 public class FrmPanelAdministrativo extends JPanel {
 
+    /**
+     * Se crean las variables que se llamarán durante la creacion del resto de la vista
+     */
     private JPanel panelContenido;
     private JPanel cardParroquias;
     private JPanel cardUsuarios;
@@ -22,20 +25,27 @@ public class FrmPanelAdministrativo extends JPanel {
         setBackground(AppColors.FONDO);
         setBorder(new EmptyBorder(28, 28, 28, 28));
 
-        add(UIFactory.crearEncabezado("Panel Administrativo",
-                "Seleccioná una sección para administrar"), BorderLayout.NORTH);
-
-        // Contenedor donde cargarán las vistas
+        add(crearEncabezado(), BorderLayout.NORTH);
         panelContenido = new JPanel(new BorderLayout());
         panelContenido.setOpaque(false);
-
-        // Vista inicial → Grid de tarjetas
         panelContenido.add(crearGrid(), BorderLayout.CENTER);
 
         add(panelContenido, BorderLayout.CENTER);
     }
 
-    // ─── Grid de tarjetas ─────────────────────────────────────
+    private JPanel crearEncabezado() {
+        JPanel p = new JPanel(new BorderLayout(0, 4));
+        p.setOpaque(false);
+        p.setBorder(new EmptyBorder(0, 0, 24, 0));
+
+        p.add(UIFactory.crearEncabezado("Mantenimiento Usuarios", "Gestioná los diferentes modulos del sistema."));
+
+        return p;
+    }
+
+    /**
+     * Se crean los espacios con los botones de acciones (Parroquias / Usuarios).
+     */
     private JPanel crearGrid() {
         JPanel grid = new JPanel(new GridLayout(1, 3, 18, 0));
         grid.setOpaque(false);
@@ -56,17 +66,8 @@ public class FrmPanelAdministrativo extends JPanel {
                 this::abrirGestionUsuarios
         );
 
-        cardRoles = crearTarjeta(
-                "Gestión de Roles",
-                "Configurá los roles y permisos",
-                AppColors.SIDE_BG,
-                AppColors.SIDE_TXT,
-                this::abrirGestionRoles
-        );
-
         grid.add(cardParroquias);
         grid.add(cardUsuarios);
-        grid.add(cardRoles);
 
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
@@ -74,7 +75,9 @@ public class FrmPanelAdministrativo extends JPanel {
         return wrapper;
     }
 
-    // ─── Fábrica de tarjeta ───────────────────────────────────
+    /**
+     * Se crean las tarjetas de los
+     */
     private JPanel crearTarjeta(String titulo, String descripcion,
                                 Color bg, Color fg, Runnable accion) {
 
@@ -97,19 +100,24 @@ public class FrmPanelAdministrativo extends JPanel {
         lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblDesc.setForeground(fg);
 
-        gbc.gridy = 0; card.add(lblTitulo, gbc);
-        gbc.gridy = 1; card.add(lblDesc, gbc);
+        gbc.gridy = 0;
+        card.add(lblTitulo, gbc);
+        gbc.gridy = 1;
+        card.add(lblDesc, gbc);
 
         card.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) {
+            @Override
+            public void mouseEntered(MouseEvent e) {
                 card.setBackground(AppColors.SIDE_ACTV);
             }
 
-            @Override public void mouseExited(MouseEvent e) {
+            @Override
+            public void mouseExited(MouseEvent e) {
                 card.setBackground(AppColors.SIDE_BG);
             }
 
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 accion.run();
             }
         });
@@ -117,7 +125,9 @@ public class FrmPanelAdministrativo extends JPanel {
         return card;
     }
 
-    // ─── Cambiar Panel ───────────────────────────────────────────
+    /**
+     * Metodos para cambiar de vista dentro del panel principal del panel de administracion.
+     */
     private void cambiarVista(JPanel nuevaVista, String titulo) {
 
         panelContenido.removeAll();
@@ -127,7 +137,6 @@ public class FrmPanelAdministrativo extends JPanel {
         panelContenido.repaint();
     }
 
-    // ─── Acciones ────────────────────────────────────────────────
     public void volverAlGrid() {
         panelContenido.removeAll();
         panelContenido.add(crearGrid(), BorderLayout.CENTER);
@@ -145,8 +154,4 @@ public class FrmPanelAdministrativo extends JPanel {
         System.out.println("Entra a la ventana de Usuarios");
     }
 
-    private void abrirGestionRoles() {
-        cambiarVista(new FrmMantenimientoRoles(), "Gestión Roles");
-        System.out.println("Entra a la ventana de Roles");
-    }
 }
