@@ -346,8 +346,8 @@ public class FrmMantenimientoParroquias extends JPanel {
                 modelo.addRow(new Object[]{
                         p.getId(),
                         p.getNombre(),
-                        p.getSectorFilial(),
                         p.getVicaria(),
+                        p.getSectorFilial(),
                         Boolean.TRUE.equals(p.getActiva()) ? "Activo" : "Inactivo"
                 });
             }
@@ -414,6 +414,7 @@ public class FrmMantenimientoParroquias extends JPanel {
             txtSector.setText(parroquiaEditando.getSectorFilial() != null ? parroquiaEditando.getSectorFilial() : "");
             txtDireccion.setText(parroquiaEditando.getDireccion() != null ? parroquiaEditando.getDireccion() : "");
             txtTelefono.setText(parroquiaEditando.getTelefono() != null ? parroquiaEditando.getTelefono() : "");
+            chkEstatus.setSelected(Boolean.TRUE.equals(parroquiaEditando.getActiva()));
         }
 
         lblTituloForm.setText("Editar Parroquia");
@@ -472,6 +473,7 @@ public class FrmMantenimientoParroquias extends JPanel {
         txtSector.setText("");
         txtDireccion.setText("");
         txtTelefono.setText("");
+        chkEstatus.setSelected(true);
     }
 
     /**
@@ -490,7 +492,7 @@ public class FrmMantenimientoParroquias extends JPanel {
             JLabel lbl = new JLabel(v != null ? v.toString() : "");
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setOpaque(true);
-            boolean activa = "Activa".equals(v);
+            boolean activa = "Activo".equals(v);
             lbl.setBackground(activa ? AppColors.VERDE_BG : AppColors.ROJO_CARD_BG);
             lbl.setForeground(activa ? AppColors.VERDE_FG : AppColors.ROJO_CARD_FG);
             lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));

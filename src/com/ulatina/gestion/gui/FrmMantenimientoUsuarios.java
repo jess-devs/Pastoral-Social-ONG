@@ -466,9 +466,28 @@ public class FrmMantenimientoUsuarios extends JPanel {
             JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Campos requeridos", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        cargarTabla();
-        mostrar(VISTA_LISTA);
-        JOptionPane.showMessageDialog(this, "Usuario guardado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+        try {
+            if (usuarioEditando == null) {
+                String password = new String(pswPassword.getPassword()).trim();
+                if (password.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "La contraseña es obligatoria.", "Campos requeridos", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                usuarioController.saveUsuario(nombre, email, password, rol, parroquia, estatus);
+            } else {
+                usuarioEditando.setNombre(nombre);
+                usuarioEditando.setRol(rol);
+                usuarioEditando.setParroquia(parroquia);
+                usuarioEditando.setActivo(estatus);
+                usuarioController.editUsuario(usuarioEditando);
+            }
+            cargarTabla();
+            mostrar(VISTA_LISTA);
+            JOptionPane.showMessageDialog(this, "Usuario guardado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void desactivarUsuario() {
