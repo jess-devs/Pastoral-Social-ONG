@@ -31,41 +31,41 @@ public class FrmMantenimientoUsuarios extends JPanel {
      * Se llama al FrmPanel administrativo para ser utilizado en caso que el usuario
      * requiera devolverse al menu principal a realizar otras gestiones como administrador.
      */
-    private final UsuarioController    usuarioController   = new UsuarioController();
-    private final ParroquiaController  parroquiaController = new ParroquiaController();
+    private final UsuarioController usuarioController = new UsuarioController();
+    private final ParroquiaController parroquiaController = new ParroquiaController();
     private final FrmPanelAdministrativo frmMain;
 
     /**
      * Se crean las variables que se llamarán durante la creacion del resto de la vista
      */
     private static final String VISTA_LISTA = "LISTA";
-    private static final String VISTA_FORM  = "FORM";
+    private static final String VISTA_FORM = "FORM";
 
     /**
      * Se crea la carta que se va a utilizar.
      * Se crea el panel principan que contendra el contenido de la vista.
      */
     private CardLayout cardLayout;
-    private JPanel     panelCards;
+    private JPanel panelCards;
 
     /**
      * Se crea la tabla y el modelo que contendra los datos de las parroquias.
      */
-    private JTable            tabla;
+    private JTable tabla;
     private DefaultTableModel modelo;
 
     /**
      * Se crean los diferentes componentes que se utilizaran para que el usuario
      * digite los datos de la parroquia nueva o que puede editar.
      */
-    private JTextField     txtNombre;
-    private JTextField     txtEmail;
+    private JTextField txtNombre;
+    private JTextField txtEmail;
     private JPasswordField pswPassword;
-    private JPanel         panelPassword;
+    private JPanel panelPassword;
     private JComboBox<RolUsuario> cmbRol;
-    private JComboBox<Parroquia>  cmbParroquia;
-    private JCheckBox      chkEstatus;
-    private JLabel         lblTituloForm;
+    private JComboBox<Parroquia> cmbParroquia;
+    private JCheckBox chkEstatus;
+    private JLabel lblTituloForm;
 
     //Usuario seleccionado para interactuar.
     private Usuario usuarioEditando = null;
@@ -131,7 +131,7 @@ public class FrmMantenimientoUsuarios extends JPanel {
         barTop.add(btnAgregar);
 
         //Posiciones de los botones dentro del panel.
-        p.add(barTop,            BorderLayout.NORTH);
+        p.add(barTop, BorderLayout.NORTH);
         p.add(crearPanelTabla(), BorderLayout.CENTER);
         return p;
     }
@@ -147,7 +147,10 @@ public class FrmMantenimientoUsuarios extends JPanel {
         //Encabezados de la tabla.
         modelo = new DefaultTableModel(
                 new String[]{"ID", "Nombre", "Email", "Rol", "Estado"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
 
         tabla = new JTable(modelo);
@@ -179,7 +182,8 @@ public class FrmMantenimientoUsuarios extends JPanel {
         tabla.getColumnModel().getColumn(4).setPreferredWidth(90);
 
         tabla.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) abrirEditar();
             }
         });
@@ -189,8 +193,8 @@ public class FrmMantenimientoUsuarios extends JPanel {
     }
 
     /**
-    //     * Panel utilizado para los botones de acciones.
-    */
+     * //     * Panel utilizado para los botones de acciones.
+     */
     private JPanel crearVistaFormulario() {
         JPanel p = new JPanel(new BorderLayout(0, 16));
         p.setOpaque(false);
@@ -207,10 +211,10 @@ public class FrmMantenimientoUsuarios extends JPanel {
         lblTituloForm.setForeground(AppColors.TEXTO);
         lblTituloForm.setBorder(new EmptyBorder(0, 14, 0, 0));
 
-        barTop.add(btnVolver,     BorderLayout.WEST);
+        barTop.add(btnVolver, BorderLayout.WEST);
         barTop.add(lblTituloForm, BorderLayout.CENTER);
 
-        p.add(barTop,                   BorderLayout.NORTH);
+        p.add(barTop, BorderLayout.NORTH);
         p.add(crearTarjetaFormulario(), BorderLayout.CENTER);
         return p;
     }
@@ -230,10 +234,10 @@ public class FrmMantenimientoUsuarios extends JPanel {
         grid.setOpaque(false);
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(8, 6, 8, 6);
-        g.fill   = GridBagConstraints.HORIZONTAL;
+        g.fill = GridBagConstraints.HORIZONTAL;
 
-        txtNombre   = crearTextField();
-        txtEmail    = crearTextField();
+        txtNombre = crearTextField();
+        txtEmail = crearTextField();
         pswPassword = new JPasswordField();
         pswPassword.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         pswPassword.setBorder(BorderFactory.createCompoundBorder(
@@ -241,7 +245,7 @@ public class FrmMantenimientoUsuarios extends JPanel {
                 new EmptyBorder(6, 10, 6, 10)));
         pswPassword.setPreferredSize(new Dimension(0, 36));
 
-        cmbRol       = new JComboBox<>(RolUsuario.values());
+        cmbRol = new JComboBox<>(RolUsuario.values());
         cmbParroquia = new JComboBox<>();
         estilizarCombo(cmbRol);
         estilizarCombo(cmbParroquia);
@@ -256,25 +260,31 @@ public class FrmMantenimientoUsuarios extends JPanel {
         chkEstatus.setOpaque(false);
 
         // Fila 0: Nombre | Email
-        g.gridx = 0; g.gridy = 0; g.weightx = 0.5;
+        g.gridx = 0;
+        g.gridy = 0;
+        g.weightx = 0.5;
         grid.add(crearCampo("Nombre Completo", txtNombre), g);
         g.gridx = 1;
         grid.add(crearCampo("Email", txtEmail), g);
 
         // Fila 1: Rol | Parroquia
-        g.gridx = 0; g.gridy = 1;
+        g.gridx = 0;
+        g.gridy = 1;
         grid.add(crearCampo("Rol", cmbRol), g);
         g.gridx = 1;
         grid.add(crearCampo("Parroquia", cmbParroquia), g);
 
         // Fila 2: Password | Estatus
         panelPassword = crearCampo("Contraseña", pswPassword);
-        g.gridx = 0; g.gridy = 2; g.weightx = 0.5; g.gridwidth = 1;
+        g.gridx = 0;
+        g.gridy = 2;
+        g.weightx = 0.5;
+        g.gridwidth = 1;
         grid.add(panelPassword, g);
         g.gridx = 1;
         grid.add(chkEstatus, g);
 
-        card.add(grid,                BorderLayout.CENTER);
+        card.add(grid, BorderLayout.CENTER);
         card.add(crearBarraBotones(), BorderLayout.SOUTH);
         return card;
     }
@@ -303,7 +313,7 @@ public class FrmMantenimientoUsuarios extends JPanel {
         JLabel lbl = new JLabel(label);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lbl.setForeground(AppColors.TEXTO_GRIS);
-        p.add(lbl,   BorderLayout.NORTH);
+        p.add(lbl, BorderLayout.NORTH);
         p.add(campo, BorderLayout.CENTER);
         return p;
     }
@@ -326,7 +336,8 @@ public class FrmMantenimientoUsuarios extends JPanel {
 
     private JButton crearBoton(String texto, Color bg, Color hover, Color fg) {
         JButton btn = new JButton(texto) {
-            @Override protected void paintComponent(Graphics g2) {
+            @Override
+            protected void paintComponent(Graphics g2) {
                 Graphics2D g = (Graphics2D) g2.create();
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g.setColor(getBackground());
@@ -344,8 +355,15 @@ public class FrmMantenimientoUsuarios extends JPanel {
         btn.setOpaque(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { btn.setBackground(hover); }
-            @Override public void mouseExited(MouseEvent e)  { btn.setBackground(bg);    }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(hover);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(bg);
+            }
         });
         return btn;
     }
@@ -439,18 +457,18 @@ public class FrmMantenimientoUsuarios extends JPanel {
      */
     private void guardar() {
         String nombre = txtNombre.getText().trim();
-        String email  = txtEmail.getText().trim();
+        String email = txtEmail.getText().trim();
         RolUsuario rol = (RolUsuario) cmbRol.getSelectedItem();
-        Parroquia parroquia = (Parroquia)  cmbParroquia.getSelectedItem();
+        Parroquia parroquia = (Parroquia) cmbParroquia.getSelectedItem();
         boolean estatus = chkEstatus.isSelected();
 
         if (nombre.isEmpty() || email.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Campos requeridos", JOptionPane.WARNING_MESSAGE);
             return;
         }
-            cargarTabla();
-            mostrar(VISTA_LISTA);
-            JOptionPane.showMessageDialog(this, "Usuario guardado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        cargarTabla();
+        mostrar(VISTA_LISTA);
+        JOptionPane.showMessageDialog(this, "Usuario guardado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void desactivarUsuario() {
@@ -498,16 +516,19 @@ public class FrmMantenimientoUsuarios extends JPanel {
 
     static class RolBadgeRenderer extends DefaultTableCellRenderer {
         private static final java.util.Map<String, Color[]> COLORES = new java.util.HashMap<>();
+
         static {
-            COLORES.put("ADMIN",             new Color[]{ new Color(0xEDE9FE), new Color(0x5B21B6) });
-            COLORES.put("COORDINADOR",       new Color[]{ new Color(0xDCFCE7), new Color(0x166534) });
-            COLORES.put("VOLUNTARIO",        new Color[]{ new Color(0xFED7AA), new Color(0x92400E) });
-            COLORES.put("CONSULTA_VICARIAL", new Color[]{ new Color(0xDBEAFE), new Color(0x1E40AF) });
+            COLORES.put("ADMIN", new Color[]{AppColors.PURP_BG, AppColors.PURPURA_H});
+            COLORES.put("COORDINADOR", new Color[]{AppColors.VERDE_BG, AppColors.VERDE_FG});
+            COLORES.put("VOLUNTARIO", new Color[]{AppColors.ALQUILER_BG, AppColors.AMBAR_FG});
+            COLORES.put("CONSULTA_VICARIAL", new Color[]{AppColors.AZUL_CARD_BG, AppColors.AZUL_DEEP});
         }
-        @Override public Component getTableCellRendererComponent(JTable t, Object v,
-                                                                 boolean sel, boolean foc, int r, int c) {
+
+        @Override
+        public Component getTableCellRendererComponent(JTable t, Object v,
+                                                       boolean sel, boolean foc, int r, int c) {
             String texto = v != null ? v.toString() : "";
-            Color[] cols = COLORES.getOrDefault(texto, new Color[]{ new Color(0xF3F4F6), new Color(0x374151) });
+            Color[] cols = COLORES.getOrDefault(texto, new Color[]{AppColors.GRID_TBL, AppColors.BADGE_FG[3]});
             JLabel lbl = new JLabel(texto);
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setOpaque(true);
@@ -523,14 +544,15 @@ public class FrmMantenimientoUsuarios extends JPanel {
     }
 
     static class EstadoBadgeRenderer extends DefaultTableCellRenderer {
-        @Override public Component getTableCellRendererComponent(JTable t, Object v,
-                                                                 boolean sel, boolean foc, int r, int c) {
+        @Override
+        public Component getTableCellRendererComponent(JTable t, Object v,
+                                                       boolean sel, boolean foc, int r, int c) {
             boolean activo = "Activo".equals(v);
             JLabel lbl = new JLabel(v != null ? v.toString() : "");
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setOpaque(true);
-            lbl.setBackground(activo ? new Color(0xDCFCE7) : new Color(0xFEE2E2));
-            lbl.setForeground(activo ? new Color(0x166534) : new Color(0x991B1B));
+            lbl.setBackground(activo ? AppColors.VERDE_BG : AppColors.ROJO_CARD_BG);
+            lbl.setForeground(activo ? AppColors.VERDE_FG : AppColors.ROJO_CARD_FG);
             lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
             lbl.setBorder(new EmptyBorder(3, 10, 3, 10));
             JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));

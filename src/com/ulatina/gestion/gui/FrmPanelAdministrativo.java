@@ -100,19 +100,24 @@ public class FrmPanelAdministrativo extends JPanel {
         lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblDesc.setForeground(fg);
 
-        gbc.gridy = 0; card.add(lblTitulo, gbc);
-        gbc.gridy = 1; card.add(lblDesc, gbc);
+        gbc.gridy = 0;
+        card.add(lblTitulo, gbc);
+        gbc.gridy = 1;
+        card.add(lblDesc, gbc);
 
         card.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) {
+            @Override
+            public void mouseEntered(MouseEvent e) {
                 card.setBackground(AppColors.SIDE_ACTV);
             }
 
-            @Override public void mouseExited(MouseEvent e) {
+            @Override
+            public void mouseExited(MouseEvent e) {
                 card.setBackground(AppColors.SIDE_BG);
             }
 
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 accion.run();
             }
         });
@@ -131,16 +136,19 @@ public class FrmPanelAdministrativo extends JPanel {
         panelContenido.revalidate();
         panelContenido.repaint();
     }
+
     public void volverAlGrid() {
         panelContenido.removeAll();
         panelContenido.add(crearGrid(), BorderLayout.CENTER);
         panelContenido.revalidate();
         panelContenido.repaint();
     }
+
     private void abrirGestionParroquias() {
         cambiarVista(new FrmMantenimientoParroquias(this), "Mantenimiento Parroquias");
         System.out.println("Entra a la ventana de parroquias");
     }
+
     private void abrirGestionUsuarios() {
         cambiarVista(new FrmMantenimientoUsuarios(this), "Mantenimiento Usuarios");
         System.out.println("Entra a la ventana de Usuarios");

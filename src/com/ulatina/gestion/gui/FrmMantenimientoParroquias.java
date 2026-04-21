@@ -84,8 +84,8 @@ public class FrmMantenimientoParroquias extends JPanel {
 
         add(UIFactory.crearEncabezado("Mantenimiendo Parrquias", "Gestioná las parroquias que utilizan el sistema."), BorderLayout.NORTH);
 
-        cardLayout  = new CardLayout();
-        panelCards  = new JPanel(cardLayout);
+        cardLayout = new CardLayout();
+        panelCards = new JPanel(cardLayout);
         panelCards.setOpaque(false);
 
         panelCards.add(crearVistaLista(), VISTA_LISTA);
@@ -140,8 +140,11 @@ public class FrmMantenimientoParroquias extends JPanel {
 
         //Encabezados de la tabla.
         modelo = new DefaultTableModel(
-                new String[]{"ID","Nombre", "Vicaria", "Sector / Filial", "Estado"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+                new String[]{"ID", "Nombre", "Vicaria", "Sector / Filial", "Estado"}, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
 
         tabla = new JTable(modelo);
@@ -171,7 +174,8 @@ public class FrmMantenimientoParroquias extends JPanel {
         tabla.getColumnModel().getColumn(3).setPreferredWidth(130);
         tabla.getColumnModel().getColumn(4).setPreferredWidth(90);
         tabla.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) abrirEditar();
             }
         });
@@ -199,7 +203,7 @@ public class FrmMantenimientoParroquias extends JPanel {
         lblTituloForm.setForeground(AppColors.TEXTO);
         lblTituloForm.setBorder(new EmptyBorder(0, 14, 0, 0));
 
-        barTop.add(btnVolver,     BorderLayout.WEST);
+        barTop.add(btnVolver, BorderLayout.WEST);
         barTop.add(lblTituloForm, BorderLayout.CENTER);
 
         p.add(barTop, BorderLayout.NORTH);
@@ -222,20 +226,22 @@ public class FrmMantenimientoParroquias extends JPanel {
         grid.setOpaque(false);
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(8, 6, 8, 6);
-        g.fill   = GridBagConstraints.HORIZONTAL;
+        g.fill = GridBagConstraints.HORIZONTAL;
 
-        txtNombre   = crearTextField();
-        txtVicaria  = crearTextField();
-        txtSector   = crearTextField();
+        txtNombre = crearTextField();
+        txtVicaria = crearTextField();
+        txtSector = crearTextField();
         txtDireccion = crearTextField();
-        txtTelefono  = crearTextField();
+        txtTelefono = crearTextField();
 
         chkEstatus = new JCheckBox("Estatus Parroquia");
         chkEstatus.isSelected();
         chkEstatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
         // Fila 0: Nombre | Vicaria | Estatus
-        g.gridx = 0; g.gridy = 0; g.weightx = 0.5;
+        g.gridx = 0;
+        g.gridy = 0;
+        g.weightx = 0.5;
         grid.add(crearCampo("Nombre", txtNombre), g);
         g.gridx = 1;
         grid.add(crearCampo("Vicaria", txtVicaria), g);
@@ -243,7 +249,9 @@ public class FrmMantenimientoParroquias extends JPanel {
         grid.add(chkEstatus = new JCheckBox(), g);
 
         // Fila 1: Sector/Filial | Dirección | Teléfono
-        g.gridx = 0; g.gridy = 1; g.weightx = 0.33;
+        g.gridx = 0;
+        g.gridy = 1;
+        g.weightx = 0.33;
         grid.add(crearCampo("Sector / Filial", txtSector), g);
         g.gridx = 1;
         grid.add(crearCampo("Dirección", txtDireccion), g);
@@ -279,7 +287,7 @@ public class FrmMantenimientoParroquias extends JPanel {
         JLabel lbl = new JLabel(label);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lbl.setForeground(AppColors.TEXTO_GRIS);
-        p.add(lbl,   BorderLayout.NORTH);
+        p.add(lbl, BorderLayout.NORTH);
         p.add(campo, BorderLayout.CENTER);
         return p;
     }
@@ -296,7 +304,8 @@ public class FrmMantenimientoParroquias extends JPanel {
 
     private JButton crearBoton(String texto, Color bg, Color hover, Color fg) {
         JButton btn = new JButton(texto) {
-            @Override protected void paintComponent(Graphics g2) {
+            @Override
+            protected void paintComponent(Graphics g2) {
                 Graphics2D g = (Graphics2D) g2.create();
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g.setColor(getBackground());
@@ -314,8 +323,15 @@ public class FrmMantenimientoParroquias extends JPanel {
         btn.setOpaque(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { btn.setBackground(hover); }
-            @Override public void mouseExited(MouseEvent e)  { btn.setBackground(bg);    }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(hover);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(bg);
+            }
         });
         return btn;
     }
@@ -409,7 +425,7 @@ public class FrmMantenimientoParroquias extends JPanel {
      * Llamado de campos para guardar los datos de la parroquia ingresada.
      */
     private void guardar() {
-        String nombre  = txtNombre.getText().trim();
+        String nombre = txtNombre.getText().trim();
         String vicaria = txtVicaria.getText().trim();
         String sectorFilial = txtSector.getText().trim();
         String direccion = txtDireccion.getText().trim();
@@ -461,6 +477,7 @@ public class FrmMantenimientoParroquias extends JPanel {
 
     /**
      * Cambio de vista.
+     *
      * @param vista
      */
     private void mostrar(String vista) {
@@ -468,14 +485,15 @@ public class FrmMantenimientoParroquias extends JPanel {
     }
 
     static class EstadoBadgeRenderer extends DefaultTableCellRenderer {
-        @Override public Component getTableCellRendererComponent(JTable t, Object v,
-                                                                 boolean sel, boolean foc, int r, int c) {
+        @Override
+        public Component getTableCellRendererComponent(JTable t, Object v,
+                                                       boolean sel, boolean foc, int r, int c) {
             JLabel lbl = new JLabel(v != null ? v.toString() : "");
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setOpaque(true);
             boolean activa = "Activa".equals(v);
-            lbl.setBackground(activa ? new Color(0xDCFCE7) : new Color(0xFEE2E2));
-            lbl.setForeground(activa ? new Color(0x166534) : new Color(0x991B1B));
+            lbl.setBackground(activa ? AppColors.VERDE_BG : AppColors.ROJO_CARD_BG);
+            lbl.setForeground(activa ? AppColors.VERDE_FG : AppColors.ROJO_CARD_FG);
             lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
             lbl.setBorder(new EmptyBorder(3, 10, 3, 10));
             JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));

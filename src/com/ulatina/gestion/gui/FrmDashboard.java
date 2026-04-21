@@ -33,8 +33,8 @@ public class FrmDashboard extends JFrame {
         this.usuario = usuario;
         setTitle("Pastoral Social");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setMinimumSize(new Dimension(960, 620));
-        setPreferredSize(new Dimension(1080, 680));
+        setMinimumSize(new Dimension(1100, 700));
+        setPreferredSize(new Dimension(1280, 800));
         setLayout(new BorderLayout());
 
         sidebar = crearSidebar();
