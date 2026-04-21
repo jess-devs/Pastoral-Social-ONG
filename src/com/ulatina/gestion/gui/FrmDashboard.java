@@ -116,8 +116,8 @@ public class FrmDashboard extends JFrame {
             mostrarProximamente("Consulta Vicarial");
         });
 
-        boolean esConsultaVicarial = usuario.getRol() == RolUsuario.CONSULTA_VICARIAL;
-        bCons.setVisible(!esConsultaVicarial);
+        bRep.setVisible(false);
+        bCons.setVisible(false);
 
         sb.add(bDash);
         sb.add(bExp);
@@ -291,10 +291,10 @@ public class FrmDashboard extends JFrame {
                 }));
         grid.add(modulo("Eventos", "Registro y asistencia", AppColors.VERDE_BG, AppColors.VERDE_FG,
                 () -> mostrarEventos()));
-        grid.add(modulo("Reportes", "Estadísticas y análisis", AppColors.AMBAR_BG, AppColors.AMBAR_FG,
-                () -> mostrarProximamente("Reportes")));
-        grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector", AppColors.PURP_BG, AppColors.PURPURA,
-                () -> mostrarProximamente("Consulta Vicarial")));
+        //grid.add(modulo("Reportes", "Estadísticas y análisis", AppColors.AMBAR_BG, AppColors.AMBAR_FG,
+        //() -> mostrarProximamente("Reportes")));
+        //grid.add(modulo("Consulta Vicarial", "Búsqueda por vicaria / sector", AppColors.PURP_BG, AppColors.PURPURA,
+        //() -> mostrarProximamente("Consulta Vicarial")));
         grid.add(modulo("Familias", "Miembros y núcleo familiar", AppColors.VERDE_BG, AppColors.VERDE_FG,
                 () -> mostrarProximamente("Familias")));
         grid.add(modulo("Administración", "Usuarios, roles y parroquias", AppColors.ROJO_CARD_BG,
@@ -419,7 +419,7 @@ public class FrmDashboard extends JFrame {
         cambiarVista(new FrmEvento(), "Eventos");
     }
 
-    private void mostrarPanelAdministrativo(){
+    private void mostrarPanelAdministrativo() {
         cambiarVista(new FrmPanelAdministrativo(), "Panel Administrativo");
     }
 
@@ -433,7 +433,9 @@ public class FrmDashboard extends JFrame {
         cambiarVista(p, nombre);
     }
 
-    /** Marca el botón del sidebar que corresponde al nombre del módulo */
+    /**
+     * Marca el botón del sidebar que corresponde al nombre del módulo
+     */
     private void activarNav(String nombre) {
         for (Component c : sidebar.getComponents()) {
             if (c instanceof JButton) {
