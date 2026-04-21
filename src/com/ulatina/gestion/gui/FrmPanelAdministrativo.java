@@ -82,7 +82,7 @@ public class FrmPanelAdministrativo extends JPanel {
                                 Color bg, Color fg, Runnable accion) {
 
         JPanel card = new JPanel(new GridBagLayout());
-        card.setBackground(new Color(0x1E2130));
+        card.setBackground(AppColors.SIDE_BG);
         card.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(fg, 1, true),
                 new EmptyBorder(24, 18, 24, 18)));
@@ -105,11 +105,11 @@ public class FrmPanelAdministrativo extends JPanel {
 
         card.addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) {
-                card.setBackground(new Color(0x3B82F6));
+                card.setBackground(AppColors.SIDE_ACTV);
             }
 
             @Override public void mouseExited(MouseEvent e) {
-                card.setBackground(new Color(0x1E2130));
+                card.setBackground(AppColors.SIDE_BG);
             }
 
             @Override public void mouseClicked(MouseEvent e) {

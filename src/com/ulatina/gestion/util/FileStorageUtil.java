@@ -13,85 +13,93 @@ import java.nio.file.StandardCopyOption;
  */
 public class FileStorageUtil {
 
-    public static final long MAX_BYTES = 5L * 1024 * 1024; // 5 MB (RNF-12)
+  public static final long MAX_BYTES = 5L * 1024 * 1024; // 5 MB (RNF-12)
 
-    private static final File BASE_DIR = new File(System.getProperty("user.dir"), "docs");
+  private static final File BASE_DIR = new File(
+    System.getProperty("user.dir"),
+    "docs"
+  );
 
-    /**
-     * Obtiene (y crea si no existe) la carpeta del expediente.
-     */
-    public static File getExpedienteDir(String numeroFicha) {
-        File dir = new File(BASE_DIR, sanitizar(numeroFicha));
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        return dir;
+  /**
+   * Obtiene (y crea si no existe) la carpeta del expediente.
+   */
+  public static File getExpedienteDir(String numeroFicha) {
+    File dir = new File(BASE_DIR, sanitizar(numeroFicha));
+    if (!dir.exists()) {
+      dir.mkdirs();
+    }
+    return dir;
+  }
+
+  /**
+   * Copia el archivo origen a la carpeta del expediente.
+   * Si ya existe un archivo con el mismo nombre se añade un sufijo numérico.
+   * @return El archivo destino copiado.
+   */
+  public static File copiarArchivo(File origen, String numeroFicha)
+    throws IOException {
+    File dir = getExpedienteDir(numeroFicha);
+    File destino = new File(dir, origen.getName());
+
+    if (destino.exists()) {
+      String nombre = origen.getName();
+      int punto = nombre.lastIndexOf('.');
+      String base = punto > 0 ? nombre.substring(0, punto) : nombre;
+      String ext = punto > 0 ? nombre.substring(punto) : "";
+      int n = 1;
+      do {
+        destino = new File(dir, base + "_" + n + ext);
+        n++;
+      } while (destino.exists());
     }
 
-    /**
-     * Copia el archivo origen a la carpeta del expediente.
-     * Si ya existe un archivo con el mismo nombre se añade un sufijo numérico.
-     * @return El archivo destino copiado.
-     */
-    public static File copiarArchivo(File origen, String numeroFicha) throws IOException {
-        File dir = getExpedienteDir(numeroFicha);
-        File destino = new File(dir, origen.getName());
+    Files.copy(
+      origen.toPath(),
+      destino.toPath(),
+      StandardCopyOption.REPLACE_EXISTING
+    );
+    return destino;
+  }
 
-        if (destino.exists()) {
-            String nombre = origen.getName();
-            int punto = nombre.lastIndexOf('.');
-            String base = punto > 0 ? nombre.substring(0, punto) : nombre;
-            String ext  = punto > 0 ? nombre.substring(punto)    : "";
-            int n = 1;
-            do {
-                destino = new File(dir, base + "_" + n + ext);
-                n++;
-            } while (destino.exists());
-        }
+  /**
+   * Retorna la ruta relativa que se persiste en archivoUrl:  EXP-xxx/nombre.pdf
+   */
+  public static String rutaRelativa(String numeroFicha, String nombreArchivo) {
+    return sanitizar(numeroFicha) + File.separator + nombreArchivo;
+  }
 
-        Files.copy(origen.toPath(), destino.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        return destino;
+  /**
+   * Abre el archivo con la aplicación predeterminada del sistema operativo.
+   */
+  public static void abrirArchivo(String archivoUrl) throws IOException {
+    File f = resolverRuta(archivoUrl);
+    if (!f.exists()) {
+      throw new IOException("Archivo no encontrado: " + f.getAbsolutePath());
     }
-
-    /**
-     * Retorna la ruta relativa que se persiste en archivoUrl:  EXP-xxx/nombre.pdf
-     */
-    public static String rutaRelativa(String numeroFicha, String nombreArchivo) {
-        return sanitizar(numeroFicha) + File.separator + nombreArchivo;
+    if (Desktop.isDesktopSupported()) {
+      Desktop.getDesktop().open(f);
+    } else {
+      throw new IOException("Desktop no soportado en este sistema.");
     }
+  }
 
-    /**
-     * Abre el archivo con la aplicación predeterminada del sistema operativo.
-     */
-    public static void abrirArchivo(String archivoUrl) throws IOException {
-        File f = resolverRuta(archivoUrl);
-        if (!f.exists()) {
-            throw new IOException("Archivo no encontrado: " + f.getAbsolutePath());
-        }
-        if (Desktop.isDesktopSupported()) {
-            Desktop.getDesktop().open(f);
-        } else {
-            throw new IOException("Desktop no soportado en este sistema.");
-        }
-    }
+  /**
+   * Elimina el archivo físico del disco.
+   * @return true si se eliminó o no existía, false si no se pudo eliminar.
+   */
+  public static boolean eliminarArchivo(String archivoUrl) {
+    if (archivoUrl == null || archivoUrl.trim().isEmpty()) return true;
+    File f = resolverRuta(archivoUrl);
+    return !f.exists() || f.delete();
+  }
 
-    /**
-     * Elimina el archivo físico del disco.
-     * @return true si se eliminó o no existía, false si no se pudo eliminar.
-     */
-    public static boolean eliminarArchivo(String archivoUrl) {
-        if (archivoUrl == null || archivoUrl.trim().isEmpty()) return true;
-        File f = resolverRuta(archivoUrl);
-        return !f.exists() || f.delete();
-    }
+  // ─── Interno ──────────────────────────────────────────────────────────────
 
-    // ─── Interno ──────────────────────────────────────────────────────────────
+  private static File resolverRuta(String archivoUrl) {
+    return new File(BASE_DIR, archivoUrl);
+  }
 
-    private static File resolverRuta(String archivoUrl) {
-        return new File(BASE_DIR, archivoUrl);
-    }
-
-    private static String sanitizar(String nombre) {
-        return nombre.replaceAll("[^a-zA-Z0-9._\\-]", "_");
-    }
+  private static String sanitizar(String nombre) {
+    return nombre.replaceAll("[^a-zA-Z0-9._\\-]", "_");
+  }
 }

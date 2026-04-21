@@ -2,6 +2,7 @@ package com.ulatina.gestion.gui;
 
 import com.ulatina.gestion.controller.ExpedienteController;
 import com.ulatina.gestion.gui.util.AppColors;
+import com.ulatina.gestion.gui.util.UIFactory;
 import com.ulatina.gestion.model.Usuario;
 import com.ulatina.gestion.model.enums.RolUsuario;
 import com.ulatina.gestion.util.JPAUtil;
@@ -361,16 +362,7 @@ public class FrmDashboard extends JFrame {
         lDesc.setForeground(AppColors.TEXTO_GRIS);
         lDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton btnAbr = new JButton("Abrir →");
-        btnAbr.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btnAbr.setForeground(AppColors.AZUL);
-        btnAbr.setBackground(null);
-        btnAbr.setBorderPainted(false);
-        btnAbr.setContentAreaFilled(false);
-        btnAbr.setFocusPainted(false);
-        btnAbr.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnAbr.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btnAbr.addActionListener(e -> accion.run());
+        JButton btnAbr = UIFactory.crearBotonLink("Abrir \u2192", e -> accion.run());
 
         c.add(icono);
         c.add(Box.createVerticalStrut(10));

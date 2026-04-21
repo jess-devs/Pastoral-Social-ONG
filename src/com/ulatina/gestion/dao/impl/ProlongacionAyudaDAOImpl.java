@@ -17,7 +17,9 @@ public class ProlongacionAyudaDAOImpl extends GenericDAOImpl<ProlongacionAyuda, 
     public List<ProlongacionAyuda> findByExpediente(Long expedienteId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT p FROM ProlongacionAyuda p WHERE p.expediente.id = :expedienteId", ProlongacionAyuda.class)
+            return em.createQuery(
+                    "SELECT p FROM ProlongacionAyuda p LEFT JOIN FETCH p.registradoPor WHERE p.expediente.id = :expedienteId",
+                    ProlongacionAyuda.class)
                      .setParameter("expedienteId", expedienteId)
                      .getResultList();
         } finally {

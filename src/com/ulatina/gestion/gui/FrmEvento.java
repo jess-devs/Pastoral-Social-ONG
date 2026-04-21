@@ -19,15 +19,20 @@ import java.awt.event.*;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-
+/**
+ * Panel principal para la gestión de eventos.
+ * Permite listar, buscar, filtrar, crear, editar y eliminar eventos.
+ */
 public class FrmEvento extends JPanel {
 
-    // ─── Controller ─────────────────────────────────────────────────────────
+    /** Controlador de eventos (interfaz con la capa lógica y base de datos). */
     private final EventoController eventoController = new EventoController();
+    /** Controlador de parroquias. */
     private final ParroquiaController parroquiaController = new ParroquiaController();
+    /** Formato de fecha para mostrar valores en la tabla (ej: 15/04/26). */
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
 
-    // ─── Componentes ─────────────────────────────────────────────────────────
+    // Componentes
     private JTextField txtBuscar;
     private JTable tabla;
     private DefaultTableModel modeloTabla;
@@ -38,6 +43,9 @@ public class FrmEvento extends JPanel {
     private JComboBox<String> cmbFiltroTipo;
     private Evento eventoSeleccionado = null;
 
+    /**
+     * Constructor: inicializa el panel y construye la interfaz completa.
+     */
     public FrmEvento() {
         setLayout(new BorderLayout(0, 8));
         setBackground(AppColors.FONDO);
@@ -64,12 +72,16 @@ public class FrmEvento extends JPanel {
         cargarTabla();
     }
 
-    // ─── Info bar ─────────────────────────────────────────────────────────────
+    /**
+     * Crea la barra de información (verde) que aparece al seleccionar un evento.
+     *
+     * @return Panel configurado
+     */
     private JPanel crearPanelInfoBar() {
         JPanel p = new JPanel(new BorderLayout(10, 0));
         p.setBackground(AppColors.VERDE_BG);
         p.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(0x86EFAC), 1, true),
+                new LineBorder(AppColors.VERDE_BORDE, 1, true),
                 new EmptyBorder(8, 14, 8, 14)));
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
 
@@ -86,42 +98,18 @@ public class FrmEvento extends JPanel {
         return p;
     }
 
-    // ─── Barra búsqueda ───────────────────────────────────────────────────────
+    /**
+     * Crea la barra superior con buscador y botones de acción.
+     *
+     * @return Panel de búsqueda
+     */
     private JPanel crearBarraBusqueda() {
         JPanel p = new JPanel(new BorderLayout(8, 0));
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
-        txtBuscar = new JTextField();
-        txtBuscar.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-        txtBuscar.setText("Buscar por nombre, lugar o parroquia...");
-        txtBuscar.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(AppColors.BORDE, 1, true),
-                new EmptyBorder(0, 12, 0, 12)));
-        txtBuscar.setPreferredSize(new Dimension(0, 36));
-        txtBuscar.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (txtBuscar.getText().startsWith("Buscar")) {
-                    txtBuscar.setText("");
-                    txtBuscar.setForeground(AppColors.TEXTO);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (txtBuscar.getText().isEmpty()) {
-                    txtBuscar.setText("Buscar por nombre, lugar o parroquia...");
-                    txtBuscar.setForeground(AppColors.TEXTO_GRIS);
-                }
-            }
-        });
-        txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filtrarTexto(); }
-        });
+        txtBuscar = UIFactory.crearCampoBusqueda(
+                "Buscar por nombre, lugar o parroquia...", this::filtrarTexto);
 
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         derecha.setOpaque(false);
@@ -137,7 +125,11 @@ public class FrmEvento extends JPanel {
         return p;
     }
 
-    // ─── Tabla ────────────────────────────────────────────────────────────────
+    /**
+     * Configura el panel central que contiene la tabla de eventos.
+     *
+     * @return Panel con tabla configurada
+     */
     private JPanel crearPanelTabla() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(AppColors.PANEL);
@@ -154,7 +146,7 @@ public class FrmEvento extends JPanel {
         tabla.setRowHeight(38);
         tabla.setShowVerticalLines(false);
         tabla.setShowHorizontalLines(true);
-        tabla.setGridColor(new Color(243, 244, 246));
+        tabla.setGridColor(AppColors.GRID_TBL);
         tabla.setSelectionBackground(AppColors.FILA_SEL);
         tabla.setSelectionForeground(AppColors.TEXTO);
         tabla.setIntercellSpacing(new Dimension(0, 0));
@@ -164,8 +156,10 @@ public class FrmEvento extends JPanel {
         tabla.getTableHeader().setForeground(AppColors.TEXTO_GRIS);
         tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, AppColors.BORDE));
         tabla.getTableHeader().setReorderingAllowed(false);
-
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(45);
+        tabla.getColumnModel().getColumn(0).setMinWidth(0);
+        tabla.getColumnModel().getColumn(0).setMaxWidth(0);
+        tabla.getColumnModel().getColumn(0).setWidth(0);
+        tabla.getColumnModel().getColumn(0).setResizable(false);
         tabla.getColumnModel().getColumn(1).setPreferredWidth(200);
         tabla.getColumnModel().getColumn(2).setPreferredWidth(80);
         tabla.getColumnModel().getColumn(3).setPreferredWidth(65);
@@ -173,17 +167,14 @@ public class FrmEvento extends JPanel {
         tabla.getColumnModel().getColumn(5).setPreferredWidth(110);
         tabla.getColumnModel().getColumn(6).setPreferredWidth(160);
 
-        // Centrado para ID, Fecha, Hora
         DefaultTableCellRenderer centrado = new DefaultTableCellRenderer();
         centrado.setHorizontalAlignment(SwingConstants.CENTER);
         tabla.getColumnModel().getColumn(0).setCellRenderer(centrado);
         tabla.getColumnModel().getColumn(2).setCellRenderer(centrado);
         tabla.getColumnModel().getColumn(3).setCellRenderer(centrado);
 
-        // Badge para Tipo
         tabla.getColumnModel().getColumn(5).setCellRenderer(new TipoBadgeRenderer());
 
-        // Padding izquierdo para Nombre, Lugar y Parroquia
         DefaultTableCellRenderer izqPad = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
@@ -218,7 +209,11 @@ public class FrmEvento extends JPanel {
         return p;
     }
 
-    // ─── Filtros ──────────────────────────────────────────────────────────────
+    /**
+     * Crea el panel inferior con opciones de filtrado.
+     *
+     * @return Panel de filtros
+     */
     private JPanel crearPanelFiltros() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -263,7 +258,9 @@ public class FrmEvento extends JPanel {
         return p;
     }
 
-    // ─── Lógica de datos ──────────────────────────────────────────────────────
+    /**
+     * Carga todos los eventos desde la base de datos y los muestra en la tabla.
+     */
     private void cargarTabla() {
         modeloTabla.setRowCount(0);
         eventoSeleccionado = null;
@@ -293,16 +290,21 @@ public class FrmEvento extends JPanel {
         }
     }
 
+    /**
+     * Filtra las filas de la tabla según el texto en el campo de búsqueda.
+     */
     private void filtrarTexto() {
         String texto = txtBuscar.getText().trim();
         if (texto.startsWith("Buscar") || texto.isEmpty()) {
             sorter.setRowFilter(null);
             return;
         }
-        // Filtra por Nombre (col 1), Lugar (col 4) y Parroquia (col 6)
         sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 1, 4, 6));
     }
 
+    /**
+     * Aplica el filtro seleccionado en el combo de tipos de evento.
+     */
     private void aplicarFiltros() {
         String tipo = (String) cmbFiltroTipo.getSelectedItem();
         List<RowFilter<DefaultTableModel, Object>> filtros = new java.util.ArrayList<>();
@@ -311,6 +313,9 @@ public class FrmEvento extends JPanel {
         sorter.setRowFilter(filtros.isEmpty() ? null : RowFilter.andFilter(filtros));
     }
 
+    /**
+     * Limpia todos los filtros y restablece el buscador.
+     */
     private void limpiarFiltros() {
         cmbFiltroTipo.setSelectedIndex(0);
         sorter.setRowFilter(null);
@@ -318,6 +323,9 @@ public class FrmEvento extends JPanel {
         txtBuscar.setForeground(AppColors.TEXTO_GRIS);
     }
 
+    /**
+     * Actualiza la barra de información con los datos del evento seleccionado.
+     */
     private void actualizarSeleccion() {
         int fila = tabla.getSelectedRow();
         if (fila < 0) {
@@ -335,6 +343,10 @@ public class FrmEvento extends JPanel {
         revalidate();
     }
 
+    /**
+     * Abre el formulario de creación o edición de evento.
+     * @param esNuevo true para crear nuevo, false para editar existente.
+     */
     private void abrirFormulario(boolean esNuevo) {
         Evento ev = esNuevo ? null : eventoSeleccionado;
         if (!esNuevo && ev == null) {
@@ -347,6 +359,9 @@ public class FrmEvento extends JPanel {
         dlg.setVisible(true);
     }
 
+    /**
+     * Elimina el evento seleccionado tras confirmar con el usuario.
+     */
     private void eliminarEvento() {
         if (eventoSeleccionado == null) {
             JOptionPane.showMessageDialog(this, "Seleccione un evento primero.",
@@ -373,7 +388,9 @@ public class FrmEvento extends JPanel {
         }
     }
 
-    // ─── Badge renderer para TipoEvento ──────────────────────────────────────
+    /**
+     * Renderer personalizado que muestra el tipo de evento como una insignia de color.
+     */
     private static class TipoBadgeRenderer extends DefaultTableCellRenderer {
 
         @Override
@@ -406,18 +423,24 @@ public class FrmEvento extends JPanel {
             return wrapper;
         }
 
+        /**
+         * Devuelve el color correspondiente al tipo de evento.
+         * @param tipo Nombre del tipo
+         * @param foreground true para el color del texto, false para el fondo
+         * @return Color asociado
+         */
         private static Color tipoColor(String tipo, boolean foreground) {
             switch (tipo) {
                 case "REUNION":
-                    return foreground ? new Color(0x1E40AF) : new Color(0xDBEAFE);
+                    return foreground ? AppColors.AZUL_DEEP : AppColors.AZUL_CARD_BG;
                 case "CAPACITACION":
-                    return foreground ? new Color(0x166534) : new Color(0xDCFCE7);
+                    return foreground ? AppColors.VERDE_FG : AppColors.VERDE_BG;
                 case "ENTREGA":
-                    return foreground ? new Color(0x92400E) : new Color(0xFEF3C7);
+                    return foreground ? AppColors.AMBAR_FG : AppColors.AMBAR_BG;
                 case "CELEBRACION":
-                    return foreground ? new Color(0x6D28D9) : new Color(0xEDE9FE);
-                default: // OTRO
-                    return foreground ? new Color(0x374151) : new Color(0xF3F4F6);
+                    return foreground ? AppColors.PURPURA : AppColors.PURP_BG;
+                default:
+                    return foreground ? AppColors.BADGE_FG[3] : AppColors.BADGE_BG[3];
             }
         }
     }
